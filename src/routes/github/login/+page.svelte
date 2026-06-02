@@ -35,7 +35,7 @@
 </svelte:head>
 
 <main class="page">
-  <h1>GitHub Frontend</h1>
+  <h1>Fast GitHub UI</h1>
   <p>Enter a GitHub personal access token to get started.</p>
 
   <form onsubmit={handleSubmit}>

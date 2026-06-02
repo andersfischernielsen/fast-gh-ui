@@ -12,7 +12,7 @@
 </script>
 
 <svelte:head>
-  <title>Settings — GitHub Frontend</title>
+  <title>Settings — Fast GitHub UI</title>
 </svelte:head>
 
 <div class="settings">
