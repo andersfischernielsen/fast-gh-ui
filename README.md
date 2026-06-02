@@ -1,9 +1,13 @@
-# sv
+# github-frontend
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A faster UI for GitHub notifications, PRs and Issues.
 
-## Creating a project
+![screenshot-1.png](screenshots/1.png)
 
-If you're seeing this, you've probably already done this step. Congrats!
+![screenshot-2.png](screenshots/2.png)
 
-This project uses [`vp`](https://viteplus.dev/).
+---
+
+Written using Svelte with all data being fetched from the GitHub API, focusing on performant fetching and rendering.
+
+Requires a Classic GitHub token (only ever persisted in the browser). No data is being stored on the server.

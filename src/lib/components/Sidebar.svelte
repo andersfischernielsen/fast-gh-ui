@@ -35,7 +35,7 @@
     {/each}
   </nav>
   <div class="sidebar-footer">
-    <a class="settings-btn" href="/settings">Settings</a>
+    <button class="nav-btn" onclick={() => goto('/settings')}>Settings</button>
     <button class="logout-btn" onclick={logout}>Logout</button>
   </div>
 </aside>
