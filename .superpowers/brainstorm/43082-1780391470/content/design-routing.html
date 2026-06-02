@@ -1,0 +1,70 @@
+<h2>Routing & State Management</h2>
+
+<div class="section">
+  <h3>Routes</h3>
+  <pre
+    style="font-size: 0.85rem; background: var(--bg-secondary); padding: 1rem; border-radius: 8px"
+  >
+/login                — TokenGate (enter/save GitHub token)
+/                     — Notifications list (default view)
+/@[owner]/[repo]/pull/[number]  — PR detail view
+/notifications         — (alias to /)
+/settings              — token management, preferences
+</pre
+  >
+</div>
+
+<div class="section">
+  <h3>SvelteKit Route Structure</h3>
+  <pre
+    style="font-size: 0.85rem; background: var(--bg-secondary); padding: 1rem; border-radius: 8px"
+  >
+src/routes/
+├── +layout.svelte           — checks token, redirects to /login if missing
+├── +page.svelte             — Notifications list (default)
+├── login/
+│   └── +page.svelte         — Token input page
+├── settings/
+│   └── +page.svelte         — Token management
+├── settings/
+│   └── +page.svelte
+└── [owner]/
+    └── [repo]/
+        └── pull/
+            └── [number]/
+                └── +page.svelte  — PR detail (tabs rendered client-side)
+</pre
+  >
+</div>
+
+<div class="section">
+  <h3>State Management</h3>
+  <p>Svelte 5 runes in a lightweight store pattern — no external state library needed:</p>
+  <pre
+    style="font-size: 0.85rem; background: var(--bg-secondary); padding: 1rem; border-radius: 8px"
+  >
+src/lib/
+├── stores/
+│   ├── token.svelte.ts      — $state for token, persisted to localStorage
+│   ├── notifications.svelte.ts — $state for notification list + filters
+│   └── current-pr.svelte.ts — $state for active PR data
+├── github/                  — (data layer, covered above)
+└── components/              — (UI components)
+</pre
+  >
+  <p>
+    Each store is a <code>.svelte.ts</code> module exporting reactive state via runes. Components
+    import and use them directly — no providers, no context tree.
+  </p>
+</div>
+
+<div class="section">
+  <h3>Token Flow</h3>
+  <ol>
+    <li>User enters token on <code>/login</code></li>
+    <li>Stored in localStorage, loaded into Svelte $state on app init</li>
+    <li><code>+layout.svelte</code> checks if token exists → redirect to /login if missing</li>
+    <li>Octokit client created from token in browser — never sent to server</li>
+    <li>Logout clears localStorage + redirects to /login</li>
+  </ol>
+</div>

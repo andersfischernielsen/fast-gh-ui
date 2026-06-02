@@ -1,0 +1,79 @@
+<script lang="ts">
+  interface PRFile {
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+  }
+
+  let { files, selectedFile, onselect }:
+    { files: PRFile[]; selectedFile: string | null; onselect: (filename: string) => void } = $props();
+
+  function fileIcon(status: string): string {
+    if (status === 'added') return '+';
+    if (status === 'removed') return '−';
+    return '•';
+  }
+</script>
+
+<aside class="file-tree">
+  <div class="tree-header">
+    <span>{files.length} files</span>
+  </div>
+  <div class="tree-list">
+    {#each files as file (file.filename)}
+      <button
+        class="file-item"
+        class:selected={selectedFile === file.filename}
+        onclick={() => onselect(file.filename)}
+      >
+        <span class="icon" class:added={file.status === 'added'} class:removed={file.status === 'removed'}>{fileIcon(file.status)}</span>
+        <span class="name">{file.filename}</span>
+        <span class="counts">
+          <span class="add">+{file.additions}</span>
+          <span class="del">−{file.deletions}</span>
+        </span>
+      </button>
+    {/each}
+  </div>
+</aside>
+
+<style>
+  .file-tree {
+    width: 240px;
+    min-width: 200px;
+    border-right: 1px solid #d0d7de;
+    overflow-y: auto;
+    background: #f6f8fa;
+  }
+  .tree-header {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #656d76;
+    border-bottom: 1px solid #d0d7de;
+  }
+  .tree-list { padding: 4px 0; }
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 12px;
+    font-family: monospace;
+    cursor: pointer;
+  }
+  .file-item:hover { background: #eaeef2; }
+  .file-item.selected { background: #ddf4ff; }
+  .icon { width: 14px; text-align: center; }
+  .icon.added { color: #1a7f37; }
+  .icon.removed { color: #cf222e; }
+  .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .counts { display: flex; gap: 6px; font-size: 11px; }
+  .add { color: #1a7f37; }
+  .del { color: #cf222e; }
+</style>

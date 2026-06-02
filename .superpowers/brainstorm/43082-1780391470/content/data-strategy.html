@@ -1,0 +1,35 @@
+<h2>Data & caching strategy</h2>
+<p class="subtitle">Performance is a priority. How should we handle GitHub API data?</p>
+
+<div class="options">
+  <div class="option" data-choice="live" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Live-only (minimal caching)</h3>
+      <p>
+        Fetch fresh data every time. Use GitHub's ETag/conditional requests to avoid re-downloading.
+        Simplest, but slower on repeated views.
+      </p>
+    </div>
+  </div>
+  <div class="option" data-choice="local-cache" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>IndexedDB cache layer</h3>
+      <p>
+        Cache API responses in IndexedDB. Show cached data instantly, refresh in background. Much
+        faster for navigation, more complex.
+      </p>
+    </div>
+  </div>
+  <div class="option" data-choice="sw-cache" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Service Worker + Cache API</h3>
+      <p>
+        Service Worker intercepts Octokit calls, caches responses. Works offline, instant repeat
+        views. Most complex but best perf.
+      </p>
+    </div>
+  </div>
+</div>

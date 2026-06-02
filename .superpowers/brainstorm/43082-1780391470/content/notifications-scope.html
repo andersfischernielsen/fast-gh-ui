@@ -1,0 +1,35 @@
+<h2>Notifications scope</h2>
+<p class="subtitle">What's the primary notifications workflow?</p>
+
+<div class="options">
+  <div class="option" data-choice="all" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Everything (full inbox replacement)</h3>
+      <p>
+        All GitHub notifications — issues, PRs, discussions, releases, mentions. Act as a full
+        GitHub Notifications replacement.
+      </p>
+    </div>
+  </div>
+  <div class="option" data-choice="prs-only" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>PRs-focused only</h3>
+      <p>
+        Only pull requests and their discussion threads. Issues and other notifications are out of
+        scope for now.
+      </p>
+    </div>
+  </div>
+  <div class="option" data-choice="prs+issues" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>PRs + Issues</h3>
+      <p>
+        PRs and issues together (the ones you're subscribed to or participating in). Skip releases,
+        discussions, etc.
+      </p>
+    </div>
+  </div>
+</div>

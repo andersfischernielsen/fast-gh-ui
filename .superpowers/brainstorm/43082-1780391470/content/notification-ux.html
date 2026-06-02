@@ -1,0 +1,35 @@
+<h2>Notifications viewing pattern</h2>
+<p class="subtitle">How should notifications be organized and navigated?</p>
+
+<div class="options">
+  <div class="option" data-choice="simple-list" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Simple chronological list</h3>
+      <p>
+        Flat list, newest first. Filter by repo/type. Click to open the linked PR/issue. Like GitHub
+        notifications page but faster.
+      </p>
+    </div>
+  </div>
+  <div class="option" data-choice="grouped" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Grouped by repository</h3>
+      <p>
+        Notifications grouped by repo, then by thread. Better for triaging per-repo. Collapse/expand
+        groups.
+      </p>
+    </div>
+  </div>
+  <div class="option" data-choice="inbox-zero" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Inbox-zero style</h3>
+      <p>
+        Thread-based grouping (like email). Mark done/snooze/archive. Focus on processing, not just
+        reading.
+      </p>
+    </div>
+  </div>
+</div>

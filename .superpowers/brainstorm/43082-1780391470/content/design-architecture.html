@@ -1,0 +1,53 @@
+<h2>Architecture Overview</h2>
+<div class="section">
+  <p>
+    <strong>SSR SvelteKit SPA</strong> — SvelteKit in SSR mode for fast first paint, client-side
+    navigation after hydration. Token stored in localStorage, Octokit calls from browser only.
+    Static-ish deployment (adapter-auto works).
+  </p>
+</div>
+
+<h3>Component Tree</h3>
+<pre
+  style="
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background: var(--bg-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+  "
+>
+App
+├── TokenGate          — login screen, token input
+└── Shell              — authenticated layout
+    ├── Sidebar        — repo list, filters
+    └── MainPanel
+        ├── NotificationsList    — chronological, filterable
+        └── PRView
+            ├── PRHeader         — title, status, meta
+            ├── PRTabs           — Conversation | Commits | Checks | Files
+            ├── Conversation     — comments threaded
+            ├── Commits          — commit list with expand
+            ├── Checks           — check runs + status
+            └── FilesChanged     — file tree + diff viewer
+                ├── FileTree     — collapsible file list
+                ├── DiffViewer   — unified/split toggle, syntax highlight
+                └── InlineComment — read/write comments on lines
+</pre>
+
+<h3>Data Flow</h3>
+<div class="section">
+  <ol>
+    <li><strong>Octokit</strong> instantiated client-side with token from localStorage</li>
+    <li>
+      <strong>IndexedDB cache</strong> layer wraps Octokit calls — return cached data immediately,
+      fetch+update in background
+    </li>
+    <li><strong>GitHub API responses</strong> cached by URL + ETag for conditional requests</li>
+    <li><strong>Svelte 5 runes</strong> ($state, $derived, $effect) for reactive UI</li>
+    <li>
+      API calls happen in <code>onMount</code> or user-triggered actions, NOT in SvelteKit load
+      functions (token not available server-side)
+    </li>
+  </ol>
+</div>
