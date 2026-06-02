@@ -25,11 +25,11 @@
   function prHref(item: NotificationItemType): string {
     const match = item.subject.url.match(/repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/);
     if (match) {
-      return `/${match[1]}/${match[2]}/pull/${match[3]}`;
+      return `/github/${match[1]}/${match[2]}/pull/${match[3]}`;
     }
     const issueMatch = item.subject.url.match(/repos\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
     if (issueMatch) {
-      return `/${issueMatch[1]}/${issueMatch[2]}/issues/${issueMatch[3]}`;
+      return `/github/${issueMatch[1]}/${issueMatch[2]}/issues/${issueMatch[3]}`;
     }
     return '#';
   }

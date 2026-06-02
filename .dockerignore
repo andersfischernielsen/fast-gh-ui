@@ -1,0 +1,15 @@
+node_modules
+.svelte-kit
+build
+.git
+.gitignore
+*.md
+.vercel
+.netlify
+.wrangler
+.DS_Store
+.vscode
+.zed
+.superpowers
+docs
+.vite

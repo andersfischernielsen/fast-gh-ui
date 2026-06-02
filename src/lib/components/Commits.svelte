@@ -49,7 +49,7 @@
 {:else}
   <div class="commits">
     {#each commits as commit (commit.sha)}
-      <a class="commit" href="/{owner}/{repo}/pull/{number}/commits/{commit.sha}">
+      <a class="commit" href="/github/{owner}/{repo}/pull/{number}/commits/{commit.sha}">
         <div class="commit-meta">
           <span class="sha">{shortSha(commit.sha)}</span>
           <span class="author">{commit.author.login}</span>

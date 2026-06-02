@@ -7,7 +7,7 @@
 
   function handleLogout() {
     clearToken();
-    goto('/login');
+    goto('/github/login');
   }
 </script>
 

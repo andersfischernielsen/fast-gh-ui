@@ -8,6 +8,6 @@
   let number = $derived($page.params.number);
 
   onMount(() => {
-    goto(`/${owner}/${repo}/pull/${number}/conversation`, { replaceState: true });
+    goto(`/github/${owner}/${repo}/pull/${number}/conversation`, { replaceState: true });
   });
 </script>

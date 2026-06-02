@@ -3,7 +3,7 @@
 
   let { commitsCount = -1, filesCount = 0 }: { commitsCount?: number; filesCount?: number } = $props();
 
-  let base = $derived(`/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`);
+  let base = $derived(`/github/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`);
   let active = $derived($page.route.id?.split('/').pop() ?? 'conversation');
 </script>
 

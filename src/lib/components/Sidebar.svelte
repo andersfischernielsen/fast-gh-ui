@@ -12,7 +12,7 @@
 
   function logout() {
     clearToken();
-    goto('/login');
+    goto('/github/login');
   }
 </script>
 
@@ -35,7 +35,7 @@
     {/each}
   </nav>
   <div class="sidebar-footer">
-    <button class="nav-btn" onclick={() => goto('/settings')}>Settings</button>
+    <button class="nav-btn" onclick={() => goto('/github/settings')}>Settings</button>
     <button class="logout-btn" onclick={logout}>Logout</button>
   </div>
 </aside>

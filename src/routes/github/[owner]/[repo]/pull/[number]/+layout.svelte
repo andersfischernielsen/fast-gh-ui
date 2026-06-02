@@ -23,7 +23,7 @@
     <p class="status error">{error.value}</p>
   {:else if pr.value}
     <div class="top-bar">
-      <a class="back-btn" href="/">← Notifications</a>
+      <a class="back-btn" href="/github">← Notifications</a>
       <a class="github-btn" href={pr.value.htmlUrl} target="_blank" rel="noopener">Open on GitHub ↗</a>
     </div>
     <PRHeader pr={pr.value} {owner} {repo} />

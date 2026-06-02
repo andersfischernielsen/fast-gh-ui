@@ -56,7 +56,7 @@
     <p class="status error">{issueError}</p>
   {:else if issueData}
     <div class="top-bar">
-      <a class="back-btn" href="/">← Notifications</a>
+      <a class="back-btn" href="/github">← Notifications</a>
       <a class="github-btn" href={issueData.htmlUrl} target="_blank" rel="noopener">Open on GitHub ↗</a>
     </div>
     <IssueHeader issue={issueData} {owner} {repo} />
