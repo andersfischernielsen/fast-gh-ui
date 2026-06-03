@@ -86,14 +86,14 @@
       class="avatar"
       src={comment.user.avatarUrl}
       alt=""
-      width="32"
-      height="32"
+      width="20"
+      height="20"
     />
     <strong>{comment.user.login}</strong>
-    <a class="date" href={comment.htmlUrl} target="_blank" rel="noopener"
-      >{formatDate(comment.createdAt)}</a
-    >
     <span class="header-right">
+      <a class="date" href={comment.htmlUrl} target="_blank" rel="noopener"
+        >{formatDate(comment.createdAt)}</a
+      >
       {#if onupdate || ondelete}
         <span class="actions">
           {#if onupdate}
@@ -107,8 +107,9 @@
             >
           {/if}
           {#if ondelete}
-            <button class="action-btn danger" onclick={() => handleDelete(comment.id)}
-              >Delete</button
+            <button
+              class="action-btn danger"
+              onclick={() => handleDelete(comment.id)}>Delete</button
             >
           {/if}
         </span>
@@ -117,12 +118,9 @@
   </div>
   <div class="comment-body">
     {#if editing && editingReplyId === null}
-      <textarea bind:value={editBody} rows={3} disabled={submitting}
-      ></textarea>
+      <textarea bind:value={editBody} rows={3} disabled={submitting}></textarea>
       <div class="edit-actions">
-        <button class="cancel" onclick={() => (editing = false)}
-          >Cancel</button
-        >
+        <button class="cancel" onclick={() => (editing = false)}>Cancel</button>
         <button
           class="submit"
           onclick={handleEdit}
@@ -234,13 +232,14 @@
     overflow: hidden;
   }
   .comment-header {
+    font-family: "SF Mono", Menlo, Monaco, monospace;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 6px 10px;
     background: #f6f8fa;
     border-bottom: 1px solid #d0d7de;
-    font-size: 14px;
+    font-size: 12px;
   }
   .avatar {
     border-radius: 50%;
@@ -248,7 +247,8 @@
   .date {
     font-weight: 400;
     color: #656d76;
-    font-size: 12px;
+    font-size: 11px;
+    text-decoration: none;
   }
   .header-right {
     margin-left: auto;
