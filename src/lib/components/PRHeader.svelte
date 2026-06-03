@@ -138,13 +138,8 @@
       {pr.merged ? "merged" : pr.state}
     </span>
     <span>{pr.user.login}</span>
-    <span>{pr.head.ref} → {pr.base.ref}</span>
-    <span class="stats"
-      ><span class="add">+{pr.additions}</span>
-      <span class="del">−{pr.deletions}</span>
-      ({pr.changedFiles} files)</span
-    >
-    <span class="review-summary">
+    <span class="branch-ref">{pr.head.ref} → {pr.base.ref}</span>
+<span class="review-summary">
       {#if reviewsLoading}
         <span class="review-loading">...</span>
       {:else}
@@ -156,6 +151,11 @@
         {/if}
       {/if}
     </span>
+    <span class="stats"
+      ><span class="add">+{pr.additions}</span>
+      <span class="del">−{pr.deletions}</span>
+      <span class="file-count">({pr.changedFiles} files)</span></span
+    >
   </div>
 </header>
 
@@ -163,6 +163,7 @@
   .header {
     padding: 16px 24px;
     border-bottom: 1px solid var(--border-primary);
+    container-type: inline-size;
   }
   .repo-name {
     font-size: 12px;
@@ -184,6 +185,9 @@
     font-weight: 600;
     line-height: 1.4;
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .title-actions {
     display: flex;
@@ -293,6 +297,7 @@
   }
   .stats {
     font-family: monospace;
+    white-space: nowrap;
   }
   .stats .add {
     color: var(--text-success);
@@ -315,5 +320,22 @@
   }
   .review-changes {
     color: var(--text-danger);
+  }
+
+  .branch-ref {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  @container (max-width: 500px) {
+    .branch-ref {
+      display: none;
+    }
+    .file-count {
+      display: none;
+    }
   }
 </style>

@@ -133,3 +133,9 @@ body {
   color: var(--text-primary);
   background: var(--bg-primary);
 }
+
+@media (max-width: 768px) {
+  .shortcut-hint {
+    display: none;
+  }
+}

@@ -112,6 +112,7 @@
   .list-panel {
     width: 100%;
     min-width: 300px;
+    container-type: inline-size;
     border-right: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
@@ -173,5 +174,18 @@
   }
   .status.error {
     color: var(--text-danger);
+  }
+
+  @container (max-width: 360px) {
+    .list-header {
+      font-size: 11px;
+      height: 40px;
+    }
+    .list-header button {
+      font-size: 11px;
+    }
+    .unread-filter {
+      font-size: 11px;
+    }
   }
 </style>

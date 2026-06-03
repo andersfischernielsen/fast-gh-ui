@@ -22,7 +22,8 @@
     Checks
   </a>
   <a class="tab" class:active={active === "changes"} href="{base}/changes">
-    Files changed
+    <span class="full-label">Files changed</span>
+    <span class="short-label">Files</span>
   </a>
 </nav>
 
@@ -32,6 +33,7 @@
     border-bottom: 1px solid var(--border-primary);
     background: var(--bg-secondary);
     padding: 0 16px;
+    overflow-x: auto;
   }
   .tab {
     padding: 10px 16px;
@@ -43,6 +45,7 @@
     color: var(--text-secondary);
     font-family: inherit;
     text-decoration: none;
+    white-space: nowrap;
   }
   .tab:hover {
     color: var(--text-primary);
@@ -51,5 +54,18 @@
     color: var(--text-primary);
     border-bottom-color: var(--text-accent);
     font-weight: 600;
+  }
+
+  .short-label {
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .full-label {
+      display: none;
+    }
+    .short-label {
+      display: inline;
+    }
   }
 </style>

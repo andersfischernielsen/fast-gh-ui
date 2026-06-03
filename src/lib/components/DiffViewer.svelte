@@ -41,8 +41,6 @@
     onReplyComment?: (commentId: number, body: string) => Promise<void>;
   } = $props();
 
-  let viewMode = $state<"unified" | "split">("unified");
-
   let selecting = $state(false);
   let selectionStart = $state<number | null>(null);
   let selectionEnd = $state<number | null>(null);
@@ -260,194 +258,107 @@
 </script>
 
 <div class="diff-viewer">
-  <div class="toolbar">
-    <button
-      class:active={viewMode === "unified"}
-      onclick={() => (viewMode = "unified")}>Unified</button
-    >
-    <button
-      class:active={viewMode === "split"}
-      onclick={() => (viewMode = "split")}>Split</button
-    >
-  </div>
   <div class="diff-lines" bind:this={containerEl}>
-    {#if viewMode === "unified"}
-      {#each lines as line, i (i)}
-        <div
-          class="diff-row"
-          class:row-add={line.type === "add"}
-          class:row-remove={line.type === "remove"}
-          class:row-header={line.type === "header"}
-          class:selected={isSelected(line)}
-          class:has-comment={(line.newLine != null &&
-            linesWithComments.has(line.newLine)) ||
-            (line.oldLine != null && linesWithComments.has(line.oldLine))}
-          data-line={line.newLine ?? line.oldLine ?? ""}
-          data-type={line.type}
-        >
-          {#if line.type === "header"}
-            <span class="ln ln-old"></span>
-            <span class="ln ln-new"></span>
-            <span class="code">{line.content}</span>
-          {:else}
-            <span class="ln ln-old">{line.oldLine ?? ""}</span>
-            <span class="ln ln-new">{line.newLine ?? ""}</span>
-            <span class="code-line">
-              <span class="code"
-                >{(line.type === "add"
-                  ? "+"
-                  : line.type === "remove"
-                    ? "-"
-                    : " ") + line.content}</span
-              >
-            </span>
+    <table class="diff-table">
+      <tbody>
+        {#each lines as line, i (i)}
+          <tr
+            class="diff-row"
+            class:row-add={line.type === "add"}
+            class:row-remove={line.type === "remove"}
+            class:row-header={line.type === "header"}
+            class:selected={isSelected(line)}
+            class:has-comment={(line.newLine != null &&
+              linesWithComments.has(line.newLine)) ||
+              (line.oldLine != null && linesWithComments.has(line.oldLine))}
+            data-line={line.newLine ?? line.oldLine ?? ""}
+            data-type={line.type}
+          >
+            {#if line.type === "header"}
+              <td class="ln ln-old"></td>
+              <td class="ln ln-new"></td>
+              <td class="cell-code">{line.content}</td>
+            {:else}
+              <td class="ln ln-old">{line.oldLine ?? ""}</td>
+              <td class="ln ln-new">{line.newLine ?? ""}</td>
+              <td class="cell-code">
+                <span class="code"
+                  >{(line.type === "add"
+                    ? "+"
+                    : line.type === "remove"
+                      ? "-"
+                      : " ") + line.content}</span
+                >
+                {#if canSelect(line.type) && line.newLine && onCreateComment}
+                  <button
+                    class="add-btn"
+                    onmousedown={(e) => beginSelection(line.newLine!, e)}
+                    >+</button
+                  >
+                {/if}
+                {#if canSelect(line.type) && !line.newLine && line.oldLine && onCreateComment}
+                  <button
+                    class="add-btn"
+                    onmousedown={(e) => beginSelection(line.oldLine!, e)}
+                    >+</button
+                  >
+                {/if}
+              </td>
+            {/if}
+          </tr>
+          {#each commentsByIndex[i] as comment (comment.id)}
+            <tr class="comment-wrapper">
+              <td colspan="3">
+                <div class="comment-inner">
+                  <Comment
+                    comment={{
+                      id: comment.id,
+                      body: comment.body,
+                      user: comment.user,
+                      createdAt: comment.createdAt,
+                    }}
+                    replies={comment.replies}
+                    onupdate={onUpdateComment}
+                    ondelete={onDeleteComment}
+                    onreply={onReplyComment}
+                  />
+                </div>
+              </td>
+            </tr>
+          {/each}
+          {#if commentIndex === i}
+            <tr class="comment-input-row">
+              <td colspan="3">
+                <div class="comment-input">
+                  <span class="comment-range">
+                    {commentStartLine === commentEndLine
+                      ? `Comment on line R${commentStartLine}`
+                      : `Comment on lines R${commentStartLine} to R${commentEndLine}`}
+                  </span>
+                  <textarea
+                    bind:value={commentBody}
+                    placeholder="Write a comment..."
+                    rows={3}
+                    disabled={submitting}
+                  ></textarea>
+                  <div class="comment-actions">
+                    <button class="cancel" onclick={cancelComment}
+                      >Cancel</button
+                    >
+                    <button
+                      class="submit-btn"
+                      onclick={submitComment}
+                      disabled={submitting || !commentBody.trim()}
+                      >Comment</button
+                    >
+                  </div>
+                </div>
+              </td>
+            </tr>
           {/if}
-          {#if canSelect(line.type) && line.newLine && onCreateComment}
-            <button
-              class="add-btn"
-              onmousedown={(e) => beginSelection(line.newLine!, e)}>+</button
-            >
-          {/if}
-          {#if canSelect(line.type) && !line.newLine && line.oldLine && onCreateComment}
-            <button
-              class="add-btn"
-              onmousedown={(e) => beginSelection(line.oldLine!, e)}>+</button
-            >
-          {/if}
-        </div>
-        {#each commentsByIndex[i] as comment (comment.id)}
-          <div class="comment-wrapper">
-            <Comment
-              comment={{
-                id: comment.id,
-                body: comment.body,
-                user: comment.user,
-                createdAt: comment.createdAt,
-              }}
-              replies={comment.replies}
-              onupdate={onUpdateComment}
-              ondelete={onDeleteComment}
-              onreply={onReplyComment}
-            />
-          </div>
         {/each}
-        {#if commentIndex === i}
-          <div class="comment-input">
-            <span class="comment-range">
-              {commentStartLine === commentEndLine
-                ? `Comment on line R${commentStartLine}`
-                : `Comment on lines R${commentStartLine} to R${commentEndLine}`}
-            </span>
-            <textarea
-              bind:value={commentBody}
-              placeholder="Write a comment..."
-              rows={3}
-              disabled={submitting}
-            ></textarea>
-            <div class="comment-actions">
-              <button class="cancel" onclick={cancelComment}>Cancel</button>
-              <button
-                class="submit-btn"
-                onclick={submitComment}
-                disabled={submitting || !commentBody.trim()}>Comment</button
-              >
-            </div>
-          </div>
-        {/if}
-      {/each}
-    {:else}
-      {#each lines as line, i (i)}
-        <div
-          class="diff-row split-row"
-          class:row-add={line.type === "add"}
-          class:row-remove={line.type === "remove"}
-          class:row-header={line.type === "header"}
-          class:selected={isSelected(line)}
-          class:has-comment={(line.newLine != null &&
-            linesWithComments.has(line.newLine)) ||
-            (line.oldLine != null && linesWithComments.has(line.oldLine))}
-          data-line={line.newLine ?? line.oldLine ?? ""}
-          data-type={line.type}
-        >
-          {#if line.type === "header"}
-            <div class="split-col">
-              <span class="ln ln-old"></span>
-              <span class="code">{line.content}</span>
-            </div>
-            <div class="split-col">
-              <span class="ln ln-new"></span>
-              <span class="code">{line.content}</span>
-            </div>
-          {:else}
-            <div class="split-col">
-              <span class="ln ln-old">{line.oldLine ?? ""}</span>
-              <span class="code"
-                >{line.type !== "add"
-                  ? (line.type === "remove" ? "-" : " ") + line.content
-                  : ""}</span
-              >
-            </div>
-            <div class="split-col">
-              <span class="ln ln-new">{line.newLine ?? ""}</span>
-              <span class="code"
-                >{line.type !== "remove"
-                  ? (line.type === "add" ? "+" : " ") + line.content
-                  : ""}</span
-              >
-            </div>
-          {/if}
-          {#if canSelect(line.type) && line.newLine && onCreateComment}
-            <button
-              class="add-btn split-add"
-              onmousedown={(e) => beginSelection(line.newLine!, e)}>+</button
-            >
-          {/if}
-          {#if canSelect(line.type) && !line.newLine && line.oldLine && onCreateComment}
-            <button
-              class="add-btn split-add"
-              onmousedown={(e) => beginSelection(line.oldLine!, e)}>+</button
-            >
-          {/if}
-        </div>
-        {#each commentsByIndex[i] as comment (comment.id)}
-          <Comment
-            comment={{
-              id: comment.id,
-              body: comment.body,
-              user: comment.user,
-              createdAt: comment.createdAt,
-            }}
-            replies={comment.replies}
-            onupdate={onUpdateComment}
-            ondelete={onDeleteComment}
-            onreply={onReplyComment}
-          />
-        {/each}
-        {#if commentIndex === i}
-          <div class="comment-input">
-            <span class="comment-range">
-              {commentStartLine === commentEndLine
-                ? `Comment on line R${commentStartLine}`
-                : `Comment on lines R${commentStartLine} to R${commentEndLine}`}
-            </span>
-            <textarea
-              bind:value={commentBody}
-              placeholder="Write a comment..."
-              rows={3}
-              disabled={submitting}
-            ></textarea>
-            <div class="comment-actions">
-              <button class="cancel" onclick={cancelComment}>Cancel</button>
-              <button
-                class="submit-btn"
-                onclick={submitComment}
-                disabled={submitting || !commentBody.trim()}>Comment</button
-              >
-            </div>
-          </div>
-        {/if}
-      {/each}
-    {/if}
+      </tbody>
+    </table>
   </div>
 </div>
 
@@ -456,34 +367,18 @@
     font-family: "SF Mono", Menlo, Monaco, monospace;
     font-size: 12px;
   }
-  .toolbar {
-    display: flex;
-    gap: 4px;
-    padding: 4px 12px;
-    border-bottom: 1px solid var(--border-primary);
-    background: var(--bg-secondary);
-  }
-  .toolbar button {
-    padding: 2px 10px;
-    border: 1px solid var(--border-primary);
-    border-radius: 4px;
-    background: var(--bg-primary);
-    font-size: 11px;
-    cursor: pointer;
-    color: var(--text-primary);
-  }
-  .toolbar button.active {
-    background: var(--border-primary);
-  }
   .diff-lines {
     overflow-x: auto;
     overflow-y: auto;
   }
+  .diff-table {
+    border-collapse: collapse;
+    table-layout: auto;
+    width: 100%;
+  }
   .diff-row {
-    display: flex;
     line-height: 20px;
-    min-height: 20px;
-    position: relative;
+    height: 20px;
     font-size: 11px;
   }
   .diff-row.row-header {
@@ -514,41 +409,21 @@
   }
   .ln {
     width: 48px;
-    min-width: 48px;
     text-align: right;
     padding: 0 8px;
     color: var(--text-secondary);
     user-select: none;
     border-right: 1px solid var(--border-primary);
-    margin-right: 8px;
+    vertical-align: top;
   }
-  .ln.ln-new {
-    border-left: 1px solid var(--border-primary);
+  .cell-code {
+    padding: 0;
+    position: relative;
   }
   .code {
     white-space: pre;
-    overflow: hidden;
     padding-right: 8px;
-  }
-  .code-line {
-    display: flex;
-    align-items: center;
-    flex: 1;
-  }
-  .split-row {
-    gap: 0;
-  }
-  .split-col {
-    flex: 1;
-    display: flex;
-    min-width: 0;
-    border-right: 1px solid var(--border-primary);
-  }
-  .split-col:last-child {
-    border-right: none;
-  }
-  .row-header .split-col {
-    border-bottom: 1px solid var(--border-primary);
+    display: block;
   }
   .add-btn {
     opacity: 0;
@@ -576,9 +451,9 @@
   .add-btn:hover {
     background: var(--bg-selected);
   }
-  .split-add {
-    left: auto;
-    right: 6px;
+
+  .comment-input-row td {
+    padding: 0;
   }
   .comment-input {
     padding: 8px 8px 8px 104px;
@@ -630,10 +505,11 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
-
-  .comment-wrapper {
-    padding-left: 4px;
-    padding-right: 4px;
-    padding-top: 4px;
+  .comment-wrapper td {
+    padding: 0;
+    border-top: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    max-width: 80vw;
   }
 </style>

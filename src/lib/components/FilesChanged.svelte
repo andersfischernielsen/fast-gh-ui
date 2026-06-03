@@ -11,15 +11,6 @@
     deleteInlineComment,
   } from "$lib/github/pulls";
 
-  interface PRFile {
-    filename: string;
-    status: string;
-    additions: number;
-    deletions: number;
-    changes: number;
-    patch?: string;
-  }
-
   let { headSha: sha = "" }: { headSha?: string } = $props();
 
   let files = $state<PRFile[]>([]);
@@ -29,6 +20,7 @@
   let showFileComment = $state(false);
   let fileCommentBody = $state("");
   let fileSubmitting = $state(false);
+  let showTree = $state(false);
   let inlineComments = $state<
     Array<{
       id: number;
@@ -220,106 +212,123 @@
 {:else if error}
   <p class="status error">{error}</p>
 {:else}
-  <div class="files-changed">
-    <FileTree
-      {files}
-      {selectedFile}
-      onselect={(f: string) => (selectedFile = f)}
-    />
-    <div class="diff-panel">
-      {#if currentFile}
-        <div class="diff-header">
-          <span class="diff-filename">
-            <span>{currentFile.filename}</span>
-            <button
-              class="file-comment-btn"
-              onclick={() => (showFileComment = !showFileComment)}
-              title="Comment on this file">+</button
-            >
-          </span>
-          <span class="diff-stats">
-            <span class="add">+{currentFile.additions}</span>
-            <span class="del">−{currentFile.deletions}</span>
-          </span>
-        </div>
-        {#if showFileComment}
-          <div class="file-comment-input">
-            <textarea
-              bind:value={fileCommentBody}
-              placeholder="Write a comment on this file..."
-              rows={2}
-              disabled={fileSubmitting}
-            ></textarea>
-            <div class="file-comment-actions">
-              <button
-                class="cancel"
-                onclick={() => {
-                  showFileComment = false;
-                  fileCommentBody = "";
-                }}>Cancel</button
-              >
-              <button
-                class="submit"
-                onclick={async () => {
-                  if (!fileCommentBody.trim() || fileSubmitting || !currentFile)
-                    return;
-                  fileSubmitting = true;
-                  try {
-                    await createInlineComment(
-                      owner,
-                      repo,
-                      number,
-                      fileCommentBody,
-                      sha,
-                      currentFile.filename,
-                      1,
-                    );
-                    inlineComments = [
-                      ...inlineComments,
-                      {
-                        id: Date.now(),
-                        body: fileCommentBody,
-                        user: { login: "", avatarUrl: "" },
-                        createdAt: new Date().toISOString(),
-                        path: currentFile.filename,
-                        line: null,
-                        originalLine: 1,
-                        replies: [],
-                      },
-                    ];
-                    fileCommentBody = "";
-                    showFileComment = false;
-                  } finally {
-                    fileSubmitting = false;
-                  }
-                }}
-                disabled={fileSubmitting || !fileCommentBody.trim()}
-                >Comment</button
-              >
-            </div>
-          </div>
+  <div class="files-changed-container">
+    <button class="tree-trigger" onclick={() => (showTree = !showTree)}>
+      Files {showTree ? "▾" : "▸"}
+    </button>
+    <div class="files-changed">
+      <div class="tree-wrapper" class:tree-open={showTree}>
+        {#if showTree}
+          <div class="tree-overlay" role="button" tabindex="0" onclick={() => (showTree = false)} onkeydown={(e) => e.key === 'Enter' && (showTree = false)}></div>
         {/if}
-        <div class="diff-body">
-          {#if currentFile.patch}
-            <DiffViewer
-              patch={currentFile.patch}
-              inlineComments={inlineComments.filter(
-                (c) => c.path === currentFile.filename,
-              )}
-              currentFile={currentFile.filename}
-              headSha={sha}
-              {onCreateComment}
-              {onUpdateComment}
-              {onDeleteComment}
-              {onReplyComment}
-            />
-          {:else}
-            <p class="status">No diff available (binary file or too large)</p>
+        <FileTree
+          {files}
+          {selectedFile}
+          onselect={(f: string) => {
+            selectedFile = f;
+            showTree = false;
+          }}
+        />
+      </div>
+      <div class="diff-panel">
+        {#if currentFile}
+          <div class="diff-header">
+            <span class="diff-filename">
+              <span>{currentFile.filename}</span>
+              <button
+                class="file-comment-btn"
+                onclick={() => (showFileComment = !showFileComment)}
+                title="Comment on this file">+</button
+              >
+            </span>
+            <span class="diff-stats">
+              <span class="add">+{currentFile.additions}</span>
+              <span class="del">−{currentFile.deletions}</span>
+            </span>
+          </div>
+          {#if showFileComment}
+            <div class="file-comment-input">
+              <textarea
+                bind:value={fileCommentBody}
+                placeholder="Write a comment on this file..."
+                rows={2}
+                disabled={fileSubmitting}
+              ></textarea>
+              <div class="file-comment-actions">
+                <button
+                  class="cancel"
+                  onclick={() => {
+                    showFileComment = false;
+                    fileCommentBody = "";
+                  }}>Cancel</button
+                >
+                <button
+                  class="submit"
+                  onclick={async () => {
+                    if (
+                      !fileCommentBody.trim() ||
+                      fileSubmitting ||
+                      !currentFile
+                    )
+                      return;
+                    fileSubmitting = true;
+                    try {
+                      await createInlineComment(
+                        owner,
+                        repo,
+                        number,
+                        fileCommentBody,
+                        sha,
+                        currentFile.filename,
+                        1,
+                      );
+                      inlineComments = [
+                        ...inlineComments,
+                        {
+                          id: Date.now(),
+                          body: fileCommentBody,
+                          user: { login: "", avatarUrl: "" },
+                          createdAt: new Date().toISOString(),
+                          path: currentFile.filename,
+                          line: null,
+                          originalLine: 1,
+                          replies: [],
+                        },
+                      ];
+                      fileCommentBody = "";
+                      showFileComment = false;
+                    } finally {
+                      fileSubmitting = false;
+                    }
+                  }}
+                  disabled={fileSubmitting || !fileCommentBody.trim()}
+                  >Comment</button
+                >
+              </div>
+            </div>
           {/if}
-        </div>
-      {:else}
-        <p class="status">Select a file</p>
-      {/if}
+          <div class="diff-body">
+            {#if currentFile.patch}
+              <DiffViewer
+                patch={currentFile.patch}
+                inlineComments={inlineComments.filter(
+                  (c) => c.path === currentFile.filename,
+                )}
+                currentFile={currentFile.filename}
+                headSha={sha}
+                {onCreateComment}
+                {onUpdateComment}
+                {onDeleteComment}
+                {onReplyComment}
+              />
+            {:else}
+              <p class="status">No diff available (binary file or too large)</p>
+            {/if}
+          </div>
+        {:else}
+          <p class="status">Select a file</p>
+        {/if}
+      </div>
     </div>
   </div>
 {/if}
@@ -333,10 +342,69 @@
   .status.error {
     color: var(--text-danger);
   }
-  .files-changed {
+  .files-changed-container {
     display: flex;
+    flex-direction: column;
     height: 100%;
     overflow: hidden;
+  }
+  .tree-trigger {
+    display: none;
+  }
+  .files-changed {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+  }
+  .tree-wrapper {
+    display: contents;
+  }
+  .tree-overlay {
+    display: none;
+  }
+  @media (max-width: 768px) {
+    .tree-wrapper {
+      display: block;
+      position: relative;
+    }
+    .tree-trigger {
+      display: block;
+      padding: 12px 12px;
+      border: none;
+      border-bottom: 1px solid var(--border-primary);
+      background: var(--bg-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-primary);
+      font-family: inherit;
+      text-align: left;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .tree-trigger:hover {
+      background: var(--bg-tertiary);
+    }
+    .tree-wrapper:not(.tree-open) > :global(.file-tree) {
+      display: none;
+    }
+    .tree-wrapper.tree-open > :global(.file-tree) {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      z-index: 20;
+      box-shadow: 4px 0 8px var(--shadow-dialog);
+    }
+    .tree-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 19;
+    }
+    .tree-wrapper {
+      position: relative;
+    }
   }
   .diff-panel {
     flex: 1;

@@ -113,6 +113,7 @@
   }
   .markdown :global(img) {
     max-width: 100%;
+    height: auto;
   }
   .markdown :global(a) {
     color: var(--text-link);

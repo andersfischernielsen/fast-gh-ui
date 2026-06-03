@@ -52,7 +52,7 @@
 <style>
   .sidebar {
     width: 300px;
-    min-width: 120px;
+    container-type: inline-size;
     background: var(--bg-secondary);
     border-right: 1px solid var(--border-primary);
     display: flex;
@@ -125,5 +125,23 @@
   }
   .logout-btn {
     color: var(--text-danger);
+  }
+
+  @container (max-width: 119px) {
+    .sidebar-header {
+      font-size: 13px;
+      padding: 8px 10px;
+      height: 40px;
+    }
+    .repo-item {
+      font-size: 10px;
+      padding: 4px 6px;
+    }
+    .sidebar-footer button {
+      font-size: 10px;
+    }
+    .sidebar-github-link {
+      padding: 4px 8px;
+    }
   }
 </style>

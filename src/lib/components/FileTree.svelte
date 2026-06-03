@@ -52,11 +52,12 @@
 
 <style>
   .file-tree {
-    width: 240px;
-    min-width: 200px;
+    max-width: 320px;
+    min-width: 240px;
     border-right: 1px solid var(--border-primary);
     overflow-y: auto;
     background: var(--bg-secondary);
+    container-type: inline-size;
   }
   .tree-header {
     padding: 8px 12px;
@@ -114,5 +115,14 @@
   }
   .del {
     color: var(--text-danger);
+  }
+
+  @container (max-width: 200px) {
+    .counts {
+      display: none;
+    }
+    .icon {
+      display: none;
+    }
   }
 </style>

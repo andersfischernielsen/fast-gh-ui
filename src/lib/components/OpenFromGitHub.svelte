@@ -235,4 +235,13 @@
   .btn-open:hover {
     background: var(--text-link-hover);
   }
+
+  @container (max-width: 119px) {
+    .open-github-btn {
+      font-size: 10px;
+    }
+    .shortcut-hint {
+      display: none;
+    }
+  }
 </style>
