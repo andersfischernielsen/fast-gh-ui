@@ -138,30 +138,32 @@
     color: inherit;
   }
   .open-github-btn:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
 
   .shortcut-hint {
     font-size: 9px;
-    color: #8b949e;
+    color: var(--text-tertiary);
     padding: 1px 4px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     line-height: 1;
   }
 
   .github-dialog {
-    border: none;
+    border: 1px solid var(--border-primary);
     border-radius: 12px;
     padding: 0;
     margin: auto;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 24px var(--shadow-dialog);
     width: 420px;
     max-width: 90vw;
     font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
   .github-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--backdrop);
   }
 
   .dialog-content {
@@ -175,28 +177,30 @@
     margin: 0;
     font-size: 12px;
     font-weight: 600;
-    color: #1f2328;
+    color: var(--text-primary);
   }
 
-  .dialog-input {
+.dialog-input {
     padding: 5px 10px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
     width: 100%;
     box-sizing: border-box;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .dialog-input:focus {
     outline: none;
-    border-color: #0969da;
+    border-color: var(--text-link);
     box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.3);
   }
 
   .dialog-error {
     margin: 0;
     font-size: 12px;
-    color: #cf222e;
+    color: var(--text-danger);
   }
 
   .dialog-actions {
@@ -215,20 +219,20 @@
   }
 
   .btn-cancel {
-    background: #f6f8fa;
-    border: 1px solid #d0d7de;
-    color: #1f2328;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    color: var(--text-primary);
   }
   .btn-cancel:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
 
   .btn-open {
-    background: #0969da;
-    border: 1px solid #0969da;
-    color: #fff;
+    background: var(--text-link);
+    border: 1px solid var(--text-link);
+    color: var(--text-white);
   }
   .btn-open:hover {
-    background: #0858c2;
+    background: var(--text-link-hover);
   }
 </style>

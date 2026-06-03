@@ -5,10 +5,131 @@
   margin: 0;
   padding: 0;
 }
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --bg-code: #f0f0f0;
+  --bg-selected: #ddf4ff;
+  --bg-list-hover: #e8f0fe;
+  --bg-inset: #f1f8ff;
+
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-tertiary: #8b949e;
+  --text-link: #0969da;
+  --text-link-hover: #0858c2;
+  --text-danger: #cf222e;
+  --text-success: #1a7f37;
+  --text-accent: #fd8c73;
+  --text-white: #ffffff;
+  --text-warning: #9a6700;
+
+  --border-primary: #d0d7de;
+  --border-secondary: #f0f0f0;
+
+  --btn-primary-bg: #1f883d;
+  --btn-primary-hover: #1a7f37;
+  --btn-primary-text: #ffffff;
+  --btn-primary-border: #1f883d;
+
+  --btn-danger-bg: #cf222e;
+  --btn-danger-hover: #a40e26;
+  --btn-danger-text: #ffffff;
+
+  --btn-secondary-bg: #f6f8fa;
+  --btn-secondary-hover: #eaeef2;
+  --btn-secondary-text: #1f2328;
+  --btn-secondary-border: #d0d7de;
+
+  --state-open-bg: #dafbe1;
+  --state-open-text: #1a7f37;
+  --state-merged-bg: #fbefff;
+  --state-merged-text: #8250df;
+  --state-closed-bg: #ffebe9;
+  --state-closed-text: #cf222e;
+
+  --diff-add-bg: #dafbe1;
+  --diff-remove-bg: #ffebe9;
+  --diff-add-selected-bg: #a7d5ff;
+  --diff-remove-selected-bg: #fdb8c0;
+  --diff-add-comment-bg: #b8dec4;
+  --diff-remove-comment-bg: #f5cfd3;
+  --diff-header-bg: #f1f8ff;
+  --diff-header-text: #0550ae;
+  --diff-line-text: #656d76;
+
+  --shadow-dialog: rgba(0, 0, 0, 0.15);
+  --backdrop: rgba(0, 0, 0, 0.3);
+  --btn-merge-hover: #6e40c9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #1c2128;
+    --bg-code: #161b22;
+    --bg-selected: #0c2d6b;
+    --bg-list-hover: #1c2128;
+    --bg-inset: #161b22;
+
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-tertiary: #6e7681;
+    --text-link: #58a6ff;
+    --text-link-hover: #79c0ff;
+    --text-danger: #f85149;
+    --text-success: #3fb950;
+    --text-accent: #fd8c73;
+    --text-white: #ffffff;
+    --text-warning: #d29922;
+
+    --border-primary: #30363d;
+    --border-secondary: #21262d;
+
+    --btn-primary-bg: #238636;
+    --btn-primary-hover: #2ea043;
+    --btn-primary-text: #ffffff;
+    --btn-primary-border: #238636;
+
+    --btn-danger-bg: #da3633;
+    --btn-danger-hover: #b62324;
+    --btn-danger-text: #ffffff;
+
+    --btn-secondary-bg: #21262d;
+    --btn-secondary-hover: #30363d;
+    --btn-secondary-text: #e6edf3;
+    --btn-secondary-border: #30363d;
+
+    --state-open-bg: #1b3826;
+    --state-open-text: #3fb950;
+    --state-merged-bg: #2b1f3d;
+    --state-merged-text: #8957e5;
+    --state-closed-bg: #3d1c1c;
+    --state-closed-text: #f85149;
+
+    --diff-add-bg: #1b3826;
+    --diff-remove-bg: #3d1c1c;
+    --diff-add-selected-bg: #264b6d;
+    --diff-remove-selected-bg: #61302b;
+    --diff-add-comment-bg: #1f3a2a;
+    --diff-remove-comment-bg: #442222;
+    --diff-header-bg: #161b22;
+    --diff-header-text: #79c0ff;
+    --diff-line-text: #8b949e;
+
+    --shadow-dialog: rgba(0, 0, 0, 0.3);
+    --backdrop: rgba(0, 0, 0, 0.5);
+    --btn-merge-hover: #6e40c9;
+  }
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 12px;
   line-height: 1.5;
-  color: #1f2328;
-  background: #ffffff;
+  color: var(--text-primary);
+  background: var(--bg-primary);
 }

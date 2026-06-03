@@ -112,7 +112,7 @@
   .list-panel {
     width: 100%;
     min-width: 300px;
-    border-right: 1px solid #d0d7de;
+    border-right: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -122,7 +122,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
     height: 50px;
   }
 
@@ -134,29 +134,31 @@
   }
   .unread-filter {
     padding: 3px 6px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     font-family: inherit;
+    color: var(--text-primary);
     height: 25px;
   }
   .list-header button {
     padding: 4px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     font-size: 12px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    color: var(--text-primary);
   }
   .shortcut-hint {
     font-size: 9px;
-    color: #8b949e;
+    color: var(--text-tertiary);
     padding: 1px 4px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     line-height: 1;
   }
@@ -166,10 +168,10 @@
   }
   .status {
     padding: 16px;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
   .status.error {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

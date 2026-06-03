@@ -224,7 +224,7 @@
 
 <style>
   .comment {
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     margin-bottom: 4px;
     overflow: hidden;
@@ -234,8 +234,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 6px 10px;
-    background: #f6f8fa;
-    border-bottom: 1px solid #d0d7de;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
     font-size: 12px;
     font-family: "SF Mono", Menlo, Monaco, monospace;
   }
@@ -254,7 +254,7 @@
     gap: 8px;
   }
   .date {
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 11px;
     text-decoration: none;
   }
@@ -264,19 +264,19 @@
   }
   .action-btn {
     background: none;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 11px;
     cursor: pointer;
-    color: #656d76;
+    color: var(--text-secondary);
     padding: 1px 6px;
     font-family: inherit;
   }
   .action-btn:hover {
-    color: #1f2328;
+    color: var(--text-primary);
   }
   .action-btn.danger:hover {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .comment-body {
     padding: 12px 16px;
@@ -285,12 +285,14 @@
   .comment-body textarea {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .edit-actions {
     display: flex;
@@ -306,28 +308,28 @@
     cursor: pointer;
   }
   .edit-actions .cancel {
-    border: 1px solid #d0d7de;
-    background: #fff;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-primary);
   }
   .edit-actions .submit {
-    border: 1px solid #1f883d;
-    background: #1f883d;
-    color: #fff;
+    border: 1px solid var(--btn-primary-bg);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
   }
   .edit-actions .submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
   .replies {
-    border-top: 1px solid #d0d7de;
-    padding: 8px 16px;
-    background: #f6f8fa;
+    padding-left: 16px;
+    padding-bottom: 8px;
+    background: var(--bg-secondary);
   }
   .reply {
-    margin-bottom: 8px;
+    padding-bottom: 8px;
   }
   .reply:last-child {
-    margin-bottom: 0;
+    padding-bottom: 0;
   }
   .reply-header {
     display: flex;
@@ -335,35 +337,49 @@
     justify-content: space-between;
     gap: 6px;
     font-size: 12px;
-    margin-bottom: 4px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+    border-bottom: 1px solid var(--border-primary);
+    border-top: 1px solid var(--border-primary);
+    padding-bottom: 6px;
+    padding-top: 6px;
+  }
+  .reply-header:first-child {
+    margin-top: 0;
   }
   .reply-body {
     padding-left: 26px;
+    padding-top: 8px;
     font-size: 12px;
   }
   .reply-body textarea {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+      sans-serif;
     resize: vertical;
     box-sizing: border-box;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .reply-input {
-    border-top: 1px solid #d0d7de;
+    border-top: 1px solid var(--border-primary);
     padding: 10px 16px;
   }
   .reply-input textarea {
     width: 100%;
     padding: 8px 10px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+      sans-serif;
     resize: vertical;
     box-sizing: border-box;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .reply-actions {
     display: flex;
@@ -374,12 +390,13 @@
   .reply-btn {
     padding: 5px 12px;
     border-radius: 6px;
-    border: 1px solid #1f883d;
-    background: #1f883d;
-    color: #fff;
+    border: 1px solid var(--btn-primary-bg);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     font-size: 12px;
     font-weight: 600;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+      sans-serif;
     cursor: pointer;
   }
   .reply-btn:disabled {

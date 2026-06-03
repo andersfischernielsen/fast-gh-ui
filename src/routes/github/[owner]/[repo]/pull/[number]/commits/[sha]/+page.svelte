@@ -134,8 +134,8 @@
   }
   .commit-header {
     padding: 12px 16px;
-    border-bottom: 1px solid #d0d7de;
-    background: #f6f8fa;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
   }
   .commit-header h2 {
     font-size: 16px;
@@ -145,7 +145,7 @@
     display: flex;
     gap: 8px;
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .author {
     font-weight: 600;
@@ -153,7 +153,7 @@
   .sha {
     font-family: monospace;
     font-size: 12px;
-    background: #f0f0f0;
+    background: var(--bg-code);
     padding: 1px 6px;
     border-radius: 4px;
   }
@@ -165,15 +165,15 @@
   .file-list {
     width: 280px;
     min-width: 280px;
-    border-right: 1px solid #d0d7de;
+    border-right: 1px solid var(--border-primary);
     overflow-y: auto;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
   }
   .file-list h3 {
     padding: 10px 12px;
     font-size: 12px;
     font-weight: 600;
-    color: #656d76;
+    color: var(--text-secondary);
     text-transform: uppercase;
     margin: 0;
   }
@@ -189,12 +189,13 @@
     cursor: pointer;
     font-family: inherit;
     font-size: 12px;
+    color: var(--text-primary);
   }
   .file-item:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
   .file-item.active {
-    background: #d0d7de;
+    background: var(--border-primary);
   }
   .file-name {
     overflow: hidden;
@@ -209,22 +210,22 @@
     white-space: nowrap;
   }
   .added-badge {
-    color: #1a7f37;
+    color: var(--text-success);
     font-weight: 600;
   }
   .removed-badge {
-    color: #cf222e;
+    color: var(--text-danger);
     font-weight: 600;
   }
   .renamed-badge {
-    color: #0969da;
+    color: var(--text-link);
     font-weight: 600;
   }
   .adds {
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .dels {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .diff-view {
     flex: 1;
@@ -232,22 +233,22 @@
   }
   .diff-header {
     padding: 8px 16px;
-    background: #f6f8fa;
-    border-bottom: 1px solid #d0d7de;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
     font-family: monospace;
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .status {
     padding: 16px;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
   .status.error {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .no-diff {
     padding: 16px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
 </style>

@@ -460,19 +460,20 @@
     display: flex;
     gap: 4px;
     padding: 4px 12px;
-    border-bottom: 1px solid #d0d7de;
-    background: #f6f8fa;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
   }
   .toolbar button {
     padding: 2px 10px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background: #fff;
+    background: var(--bg-primary);
     font-size: 11px;
     cursor: pointer;
+    color: var(--text-primary);
   }
   .toolbar button.active {
-    background: #d0d7de;
+    background: var(--border-primary);
   }
   .diff-lines {
     overflow-x: auto;
@@ -486,43 +487,43 @@
     font-size: 11px;
   }
   .diff-row.row-header {
-    background: #f1f8ff;
-    color: #0550ae;
+    background: var(--diff-header-bg);
+    color: var(--diff-header-text);
     font-size: 11px;
   }
   .diff-row.row-add {
-    background: #dafbe1;
+    background: var(--diff-add-bg);
   }
   .diff-row.row-remove {
-    background: #ffebe9;
+    background: var(--diff-remove-bg);
   }
   .diff-row.row-add.selected {
-    background: #a7d5ff;
+    background: var(--diff-add-selected-bg);
   }
   .diff-row.row-remove.selected {
-    background: #fdb8c0;
+    background: var(--diff-remove-selected-bg);
   }
   .diff-row.row-add.has-comment {
-    background: #b8dec4;
+    background: var(--diff-add-comment-bg);
   }
   .diff-row.row-remove.has-comment {
-    background: #f5cfd3;
+    background: var(--diff-remove-comment-bg);
   }
   .diff-row:not(.row-add):not(.row-remove):not(.row-header).selected {
-    background: #ddf4ff;
+    background: var(--bg-selected);
   }
   .ln {
     width: 48px;
     min-width: 48px;
     text-align: right;
     padding: 0 8px;
-    color: #656d76;
+    color: var(--text-secondary);
     user-select: none;
-    border-right: 1px solid #d0d7de;
+    border-right: 1px solid var(--border-primary);
     margin-right: 8px;
   }
   .ln.ln-new {
-    border-left: 1px solid #d0d7de;
+    border-left: 1px solid var(--border-primary);
   }
   .code {
     white-space: pre;
@@ -541,13 +542,13 @@
     flex: 1;
     display: flex;
     min-width: 0;
-    border-right: 1px solid #d0d7de;
+    border-right: 1px solid var(--border-primary);
   }
   .split-col:last-child {
     border-right: none;
   }
   .row-header .split-col {
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
   }
   .add-btn {
     opacity: 0;
@@ -556,12 +557,12 @@
     top: 1px;
     width: 18px;
     height: 18px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background: #fff;
+    background: var(--bg-primary);
     font-size: 11px;
     font-weight: 600;
-    color: #0969da;
+    color: var(--text-link);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -573,7 +574,7 @@
     opacity: 1;
   }
   .add-btn:hover {
-    background: #ddf4ff;
+    background: var(--bg-selected);
   }
   .split-add {
     left: auto;
@@ -584,23 +585,25 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    background: #f6f8fa;
-    border-top: 1px solid #d0d7de;
-    border-bottom: 1px solid #d0d7de;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-primary);
+    border-bottom: 1px solid var(--border-primary);
   }
   .comment-range {
     font-size: 12px;
     font-weight: 600;
-    color: #1f2328;
+    color: var(--text-primary);
   }
   .comment-input textarea {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
     resize: vertical;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .comment-actions {
     display: flex;
@@ -614,13 +617,14 @@
     cursor: pointer;
   }
   .comment-actions .cancel {
-    border: 1px solid #d0d7de;
-    background: #fff;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
   .comment-actions .submit-btn {
-    border: 1px solid #1f883d;
-    background: #1f883d;
-    color: #fff;
+    border: 1px solid var(--btn-primary-bg);
+    background: var(--btn-primary-bg);
+    color: var(--text-white);
   }
   .comment-actions .submit-btn:disabled {
     opacity: 0.5;

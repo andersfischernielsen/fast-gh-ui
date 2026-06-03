@@ -53,8 +53,8 @@
   .sidebar {
     width: 300px;
     min-width: 120px;
-    background: #f6f8fa;
-    border-right: 1px solid #d0d7de;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border-primary);
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -65,10 +65,10 @@
     padding: 12px 16px;
     font-weight: 600;
     font-size: 16px;
-    color: #656d76;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
     height: 50px;
   }
 
@@ -90,22 +90,23 @@
     cursor: pointer;
     border-radius: 6px;
     font-family: inherit;
+    color: var(--text-primary);
   }
   .repo-item:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
   .repo-item.active {
-    background: #d0d7de;
+    background: var(--border-primary);
   }
   .sidebar-footer {
-    border-top: 1px solid #d0d7de;
+    border-top: 1px solid var(--border-primary);
     padding: 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
   .sidebar-github-link {
-    border-top: 1px solid #d0d7de;
+    border-top: 1px solid var(--border-primary);
     padding: 8px 12px;
   }
   .sidebar-footer button {
@@ -117,11 +118,12 @@
     text-align: left;
     border-radius: 6px;
     font-family: inherit;
+    color: var(--text-primary);
   }
   .sidebar-footer button:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
   .logout-btn {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

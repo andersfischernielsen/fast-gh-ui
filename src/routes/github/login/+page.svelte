@@ -140,14 +140,16 @@
   }
   input {
     padding: 0.625rem 0.75rem;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 0.875rem;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   button {
     padding: 0.625rem 1rem;
-    background: #1f883d;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     border: none;
     border-radius: 6px;
     font-size: 0.875rem;
@@ -159,7 +161,7 @@
     cursor: not-allowed;
   }
   .error-message {
-    color: #cf222e;
+    color: var(--text-danger);
     font-size: 0.8125rem;
     margin: 0;
   }
@@ -167,21 +169,21 @@
   .help {
     width: 100%;
     margin-top: 1.5rem;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     overflow: hidden;
   }
   .help h3 {
     padding: 8px 14px;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     font-size: 12px;
     font-weight: 600;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
   }
   .help-content {
     padding: 14px;
     font-size: 12px;
-    color: #1f2328;
+    color: var(--text-primary);
   }
   .help-content p {
     margin-bottom: 10px;
@@ -190,13 +192,13 @@
     margin-bottom: 0;
   }
   .help-content code {
-    background: #f0f0f0;
+    background: var(--bg-code);
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 12px;
   }
   .help-content a {
-    color: #0969da;
+    color: var(--text-link);
     text-decoration: none;
   }
 
@@ -210,10 +212,10 @@
     text-align: left;
     padding: 4px 8px;
     font-weight: 600;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .perm-table td {
     padding: 4px 8px;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-secondary);
   }
 </style>

@@ -112,7 +112,7 @@
     gap: 2px;
     padding: 10px 16px 10px 28px;
     border: none;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-secondary);
     background: none;
     width: 100%;
     text-align: left;
@@ -124,10 +124,10 @@
     color: inherit;
   }
   .item:hover {
-    background: #f6f8fa;
+    background: var(--bg-secondary);
   }
   .item.selected {
-    background: #e8f0fe;
+    background: var(--bg-list-hover);
   }
   .item.unread {
     font-weight: 600;
@@ -141,11 +141,11 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: #1a7f37;
+    background: var(--text-success);
   }
   .repo {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .title {
     font-size: 12px;
@@ -155,7 +155,7 @@
     font-weight: 600;
   }
   .number {
-    color: #656d76;
+    color: var(--text-secondary);
     font-weight: 400;
   }
   .meta {
@@ -168,8 +168,8 @@
     font-size: 11px;
     padding: 1px 6px;
     border-radius: 10px;
-    background: #ddf4ff;
-    color: #0969da;
+    background: var(--bg-selected);
+    color: var(--text-link);
   }
   .pr-state {
     font-size: 11px;
@@ -179,31 +179,31 @@
     text-transform: capitalize;
   }
   .pr-state.open {
-    background: #dafbe1;
-    color: #1a7f37;
+    background: var(--state-open-bg);
+    color: var(--text-success);
   }
   .pr-state.merged {
-    background: #fbefff;
-    color: #8250df;
+    background: var(--state-merged-bg);
+    color: var(--state-merged-text);
   }
   .pr-state.closed {
-    background: #ffebe9;
-    color: #cf222e;
+    background: var(--state-closed-bg);
+    color: var(--text-danger);
   }
   .time {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .toggle-btn {
     position: absolute;
     top: 6px;
     right: 8px;
     padding: 2px 8px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     font-size: 11px;
-    color: #656d76;
+    color: var(--text-secondary);
     cursor: pointer;
     font-family: inherit;
     opacity: 0;
@@ -213,6 +213,6 @@
     opacity: 1;
   }
   .toggle-btn:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
 </style>

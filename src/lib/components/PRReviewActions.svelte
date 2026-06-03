@@ -127,35 +127,35 @@
   }
   .review-btn {
     padding: 5px 16px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--btn-secondary-bg);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    color: #1f2328;
+    color: var(--btn-secondary-text);
     font-family: inherit;
     line-height: 1.4;
     box-sizing: border-box;
   }
   .review-btn:hover {
-    background: #eaeef2;
+    background: var(--btn-secondary-hover);
   }
   .merge-btn {
     padding: 5px 16px;
-    border: 1px solid #8250df;
+    border: 1px solid var(--state-merged-text);
     border-radius: 6px;
-    background: #8250df;
+    background: var(--state-merged-text);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    color: #fff;
+    color: var(--text-white);
     font-family: inherit;
     line-height: 1.4;
     box-sizing: border-box;
   }
   .merge-btn:hover:not(:disabled) {
-    background: #6e40c9;
+    background: var(--btn-merge-hover);
   }
   .merge-btn:disabled {
     opacity: 0.6;
@@ -163,7 +163,7 @@
   }
   .success {
     font-size: 12px;
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .overlay {
     position: fixed;
@@ -176,10 +176,10 @@
     right: 0;
     margin-top: 8px;
     width: 360px;
-    background: #fff;
-    border: 1px solid #d0d7de;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px var(--shadow-dialog);
     z-index: 101;
     padding: 12px;
     display: flex;
@@ -194,16 +194,18 @@
     width: 100%;
     min-height: 80px;
     padding: 8px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .error-msg {
     font-size: 12px;
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .pane-footer {
     display: flex;
@@ -212,15 +214,15 @@
   }
   .cancel-btn {
     padding: 5px 16px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--btn-secondary-bg);
     font-size: 12px;
     cursor: pointer;
     font-family: inherit;
   }
   .cancel-btn:hover {
-    background: #eaeef2;
+    background: var(--btn-secondary-hover);
   }
   .approve-btn,
   .request-changes-btn {
@@ -230,20 +232,20 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    color: #fff;
+    color: var(--text-white);
     font-family: inherit;
   }
   .approve-btn {
-    background: #1f883d;
+    background: var(--btn-primary-bg);
   }
   .approve-btn:hover:not(:disabled) {
-    background: #1a7f37;
+    background: var(--btn-primary-hover);
   }
   .request-changes-btn {
-    background: #cf222e;
+    background: var(--btn-danger-bg);
   }
   .request-changes-btn:hover:not(:disabled) {
-    background: #a40e26;
+    background: var(--btn-danger-hover);
   }
   .approve-btn:disabled,
   .request-changes-btn:disabled {

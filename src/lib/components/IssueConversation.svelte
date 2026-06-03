@@ -137,14 +137,14 @@
     padding: 24px;
   }
   .description {
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     padding: 12px 16px;
     margin-bottom: 16px;
   }
   .description h3 {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
     margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -154,7 +154,7 @@
   }
   .status {
     padding: 16px 0;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
 </style>

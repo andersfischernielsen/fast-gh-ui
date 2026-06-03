@@ -29,8 +29,8 @@
 <style>
   .tabs {
     display: flex;
-    border-bottom: 1px solid #d0d7de;
-    background: #f6f8fa;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
     padding: 0 16px;
   }
   .tab {
@@ -40,16 +40,16 @@
     background: none;
     font-size: 12px;
     cursor: pointer;
-    color: #656d76;
+    color: var(--text-secondary);
     font-family: inherit;
     text-decoration: none;
   }
   .tab:hover {
-    color: #1f2328;
+    color: var(--text-primary);
   }
   .tab.active {
-    color: #1f2328;
-    border-bottom-color: #fd8c73;
+    color: var(--text-primary);
+    border-bottom-color: var(--text-accent);
     font-weight: 600;
   }
 </style>

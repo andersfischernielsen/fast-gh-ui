@@ -312,7 +312,7 @@
     padding: 24px;
   }
   .description {
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     padding: 12px 16px;
     margin-bottom: 16px;
@@ -325,25 +325,25 @@
   }
   .desc-header h3 {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0;
   }
   .desc-edit-btn {
     padding: 2px 8px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     background: transparent;
     font-size: 11px;
-    color: #656d76;
+    color: var(--text-secondary);
     cursor: pointer;
     font-family: inherit;
     line-height: 1.4;
   }
   .desc-edit-btn:hover {
-    background: #f6f8fa;
-    color: #1f2328;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
   }
   .desc-edit-actions {
     display: flex;
@@ -352,17 +352,17 @@
   }
   .desc-save-btn {
     padding: 2px 8px;
-    border: 1px solid #1f883d;
+    border: 1px solid var(--btn-primary-border);
     border-radius: 4px;
-    background: #1f883d;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     font-size: 11px;
     cursor: pointer;
     font-family: inherit;
     line-height: 1.4;
   }
   .desc-save-btn:hover:not(:disabled) {
-    background: #1a7f37;
+    background: var(--btn-primary-hover);
   }
   .desc-save-btn:disabled {
     opacity: 0.6;
@@ -370,17 +370,17 @@
   }
   .desc-cancel-btn {
     padding: 2px 8px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background: #f6f8fa;
+    background: var(--btn-secondary-bg);
     font-size: 11px;
-    color: #1f2328;
+    color: var(--btn-secondary-text);
     cursor: pointer;
     font-family: inherit;
     line-height: 1.4;
   }
   .desc-cancel-btn:hover:not(:disabled) {
-    background: #eaeef2;
+    background: var(--btn-secondary-hover);
   }
   .desc-cancel-btn:disabled {
     opacity: 0.6;
@@ -390,18 +390,20 @@
     width: 100%;
     min-height: 120px;
     padding: 8px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
     font-family: monospace;
     resize: vertical;
     box-sizing: border-box;
     line-height: 1.5;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .desc-error {
     display: block;
     font-size: 12px;
-    color: #cf222e;
+    color: var(--text-danger);
     margin-top: 4px;
   }
   .comments {
@@ -409,7 +411,7 @@
   }
   .status {
     padding: 16px 0;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
 </style>

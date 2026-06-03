@@ -327,11 +327,11 @@
 <style>
   .status {
     padding: 24px;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
   .status.error {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .files-changed {
     display: flex;
@@ -346,7 +346,7 @@
   }
   .diff-header {
     padding: 10px 16px;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
     font-size: 12px;
     font-family: monospace;
     display: flex;
@@ -356,10 +356,10 @@
     font-size: 12px;
   }
   .diff-stats .add {
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .diff-stats .del {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .diff-filename {
     display: flex;
@@ -369,12 +369,12 @@
   .file-comment-btn {
     width: 18px;
     height: 18px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
-    background: #fff;
+    background: var(--bg-primary);
     font-size: 11px;
     font-weight: 600;
-    color: #0969da;
+    color: var(--text-link);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -382,12 +382,12 @@
     font-family: inherit;
   }
   .file-comment-btn:hover {
-    background: #ddf4ff;
+    background: var(--bg-selected);
   }
   .file-comment-input {
     padding: 8px 16px;
-    border-bottom: 1px solid #d0d7de;
-    background: #f6f8fa;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -395,11 +395,13 @@
   .file-comment-input textarea {
     width: 100%;
     padding: 6px 8px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
     font-family: inherit;
     resize: vertical;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .file-comment-actions {
     display: flex;
@@ -413,13 +415,14 @@
     cursor: pointer;
   }
   .file-comment-actions .cancel {
-    border: 1px solid #d0d7de;
-    background: #fff;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
   .file-comment-actions .submit {
-    border: 1px solid #1f883d;
-    background: #1f883d;
-    color: #fff;
+    border: 1px solid var(--btn-primary-bg);
+    background: var(--btn-primary-bg);
+    color: var(--text-white);
   }
   .file-comment-actions .submit:disabled {
     opacity: 0.5;

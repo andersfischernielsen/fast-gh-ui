@@ -77,7 +77,7 @@
     width: 100%;
     padding: 10px 16px;
     border: none;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-secondary);
     background: none;
     text-align: left;
     cursor: pointer;
@@ -87,7 +87,7 @@
     color: inherit;
   }
   .commit:hover {
-    background: #f6f8fa;
+    background: var(--bg-secondary);
   }
   .commit-meta {
     display: flex;
@@ -98,24 +98,24 @@
   .sha {
     font-family: monospace;
     font-size: 12px;
-    color: #656d76;
-    background: #f0f0f0;
+    color: var(--text-secondary);
+    background: var(--bg-code);
     padding: 1px 6px;
     border-radius: 4px;
   }
   .author {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .commit-message {
     font-size: 12px;
   }
   .status {
     padding: 16px;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
   .status.error {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

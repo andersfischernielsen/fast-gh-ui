@@ -17,13 +17,13 @@
   } = $props();
 
   function stateColor(state: string): string {
-    if (state === "open") return "#1a7f37";
-    return "#8250df";
+    if (state === "open") return "var(--state-open-text)";
+    return "var(--state-merged-text)";
   }
 
   function stateBg(state: string): string {
-    if (state === "open") return "#dafbe1";
-    return "#fbefff";
+    if (state === "open") return "var(--state-open-bg)";
+    return "var(--state-merged-bg)";
   }
 </script>
 
@@ -48,11 +48,11 @@
 <style>
   .header {
     padding: 16px 24px;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
   }
   .repo-name {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
     margin-bottom: 4px;
   }
   .title-row h1 {
@@ -61,7 +61,7 @@
     line-height: 1.4;
   }
   .number {
-    color: #656d76;
+    color: var(--text-secondary);
     font-weight: 400;
   }
   .meta-row {
@@ -70,7 +70,7 @@
     align-items: center;
     margin-top: 8px;
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .state {
     padding: 2px 8px;

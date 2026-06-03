@@ -76,15 +76,15 @@
   }
 
   function stateColor(state: string): string {
-    if (state === "open") return "#1a7f37";
-    if (state === "merged") return "#8250df";
-    return "#cf222e";
+    if (state === "open") return "var(--state-open-text)";
+    if (state === "merged") return "var(--state-merged-text)";
+    return "var(--state-closed-text)";
   }
 
   function stateBg(state: string): string {
-    if (state === "open") return "#dafbe1";
-    if (state === "merged") return "#fbefff";
-    return "#ffebe9";
+    if (state === "open") return "var(--state-open-bg)";
+    if (state === "merged") return "var(--state-merged-bg)";
+    return "var(--state-closed-bg)";
   }
 </script>
 
@@ -162,11 +162,11 @@
 <style>
   .header {
     padding: 16px 24px;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
   }
   .repo-name {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
     margin-bottom: 4px;
   }
   .title-row {
@@ -193,30 +193,30 @@
     flex-shrink: 0;
   }
   .number {
-    color: #656d76;
+    color: var(--text-secondary);
     font-weight: 400;
   }
   .edit-btn {
     padding: 5px 16px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--btn-secondary-bg);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    color: #1f2328;
+    color: var(--btn-secondary-text);
     font-family: inherit;
     white-space: nowrap;
     line-height: 1.4;
     box-sizing: border-box;
   }
   .edit-btn:hover {
-    background: #eaeef2;
+    background: var(--btn-secondary-hover);
   }
   .edit-input {
     width: 100%;
     padding: 5px 12px;
-    border: 1px solid #0969da;
+    border: 1px solid var(--text-link);
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
@@ -224,6 +224,8 @@
     outline: none;
     line-height: 1.4;
     box-sizing: border-box;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .edit-actions {
     display: flex;
@@ -232,14 +234,14 @@
   }
   .edit-error {
     font-size: 12px;
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .save-btn {
     padding: 5px 16px;
-    border: 1px solid #1f883d;
+    border: 1px solid var(--btn-primary-border);
     border-radius: 6px;
-    background: #1f883d;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -249,7 +251,7 @@
     box-sizing: border-box;
   }
   .save-btn:hover:not(:disabled) {
-    background: #1a7f37;
+    background: var(--btn-primary-hover);
   }
   .save-btn:disabled {
     opacity: 0.6;
@@ -257,9 +259,9 @@
   }
   .cancel-btn {
     padding: 5px 16px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--btn-secondary-bg);
     font-size: 12px;
     cursor: pointer;
     font-family: inherit;
@@ -268,7 +270,7 @@
     box-sizing: border-box;
   }
   .cancel-btn:hover:not(:disabled) {
-    background: #eaeef2;
+    background: var(--btn-secondary-hover);
   }
   .cancel-btn:disabled {
     opacity: 0.6;
@@ -280,7 +282,7 @@
     align-items: center;
     margin-top: 8px;
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .state {
     padding: 2px 8px;
@@ -293,10 +295,10 @@
     font-family: monospace;
   }
   .stats .add {
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .stats .del {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .review-summary {
     margin-left: auto;
@@ -306,12 +308,12 @@
     font-size: 12px;
   }
   .review-loading {
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .review-approved {
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .review-changes {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

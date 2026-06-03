@@ -56,7 +56,7 @@
   .section {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid #d0d7de;
+    border-bottom: 1px solid var(--border-primary);
   }
   .token-display {
     display: flex;
@@ -66,34 +66,37 @@
   .token-display input {
     flex: 1;
     padding: 6px 10px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
+    color: var(--text-primary);
+    background: var(--bg-primary);
   }
   .token-display button {
     padding: 6px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     cursor: pointer;
     font-size: 12px;
+    color: var(--text-primary);
   }
   .save-btn {
     padding: 6px 16px;
-    background: #1f883d;
-    color: #fff;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     border: none;
     border-radius: 6px;
     font-size: 12px;
     cursor: pointer;
   }
   .save-btn:hover {
-    background: #1a7f37;
+    background: var(--btn-primary-hover);
   }
   .logout-btn {
     padding: 6px 16px;
-    background: #cf222e;
-    color: #fff;
+    background: var(--btn-danger-bg);
+    color: var(--btn-danger-text);
     border: none;
     border-radius: 6px;
     font-size: 12px;
@@ -101,10 +104,11 @@
   }
   .back-btn {
     padding: 6px 16px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     cursor: pointer;
     font-size: 12px;
+    color: var(--text-primary);
   }
 </style>

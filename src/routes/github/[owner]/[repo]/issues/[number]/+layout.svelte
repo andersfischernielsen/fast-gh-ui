@@ -101,20 +101,20 @@
   }
   .top-bar {
     padding: 8px 24px;
-    border-bottom: 1px solid #d0d7de;
-    background: #f6f8fa;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
   .back-btn {
     padding: 4px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
-    color: #1f2328;
+    color: var(--text-primary);
     text-decoration: none;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     cursor: pointer;
     font-family: inherit;
     display: inline-flex;
@@ -122,28 +122,28 @@
     gap: 4px;
   }
   .back-btn:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
   .github-btn {
     padding: 4px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
-    color: #1f2328;
+    color: var(--text-primary);
     text-decoration: none;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     display: inline-flex;
     align-items: center;
     gap: 4px;
   }
   .github-btn:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
 .shortcut-hint {
     font-size: 9px;
-    color: #8b949e;
+    color: var(--text-tertiary);
     padding: 1px 4px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     line-height: 1;
   }
@@ -153,9 +153,9 @@
   }
   .status {
     padding: 24px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .status.error {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

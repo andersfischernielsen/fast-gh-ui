@@ -54,16 +54,16 @@
   .file-tree {
     width: 240px;
     min-width: 200px;
-    border-right: 1px solid #d0d7de;
+    border-right: 1px solid var(--border-primary);
     overflow-y: auto;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
   }
   .tree-header {
     padding: 8px 12px;
     font-size: 12px;
     font-weight: 600;
-    color: #656d76;
-    border-bottom: 1px solid #d0d7de;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-primary);
   }
   .tree-list {
     padding: 4px 0;
@@ -80,22 +80,23 @@
     font-size: 12px;
     font-family: monospace;
     cursor: pointer;
+    color: var(--text-primary);
   }
   .file-item:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
   .file-item.selected {
-    background: #ddf4ff;
+    background: var(--bg-selected);
   }
   .icon {
     width: 14px;
     text-align: center;
   }
   .icon.added {
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .icon.removed {
-    color: #cf222e;
+    color: var(--text-danger);
   }
   .name {
     flex: 1;
@@ -109,9 +110,9 @@
     font-size: 11px;
   }
   .add {
-    color: #1a7f37;
+    color: var(--text-success);
   }
   .del {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

@@ -51,11 +51,11 @@
   }
 
   function conclusionColor(conclusion: string | null): string {
-    if (conclusion === "success") return "#1a7f37";
-    if (conclusion === "failure") return "#cf222e";
+    if (conclusion === "success") return "var(--text-success)";
+    if (conclusion === "failure") return "var(--text-danger)";
     if (conclusion === "cancelled" || conclusion === "skipped")
-      return "#656d76";
-    return "#9a6700";
+      return "var(--text-secondary)";
+    return "var(--text-warning)";
   }
 </script>
 
@@ -100,10 +100,10 @@
     align-items: center;
     gap: 10px;
     padding: 10px 16px;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-secondary);
   }
   .check:hover {
-    background: #f6f8fa;
+    background: var(--bg-secondary);
   }
   .icon {
     width: 20px;
@@ -121,26 +121,26 @@
   }
   .check-status {
     font-size: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
   }
   .details-link {
     padding: 4px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     font-size: 12px;
-    color: #1f2328;
+    color: var(--text-primary);
     text-decoration: none;
-    background: #f6f8fa;
+    background: var(--bg-secondary);
   }
   .details-link:hover {
-    background: #eaeef2;
+    background: var(--bg-tertiary);
   }
   .status {
     padding: 16px;
-    color: #656d76;
+    color: var(--text-secondary);
     font-size: 12px;
   }
   .status.error {
-    color: #cf222e;
+    color: var(--text-danger);
   }
 </style>

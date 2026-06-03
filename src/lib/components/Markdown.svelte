@@ -66,13 +66,13 @@
     font-weight: 600;
   }
   .markdown :global(code) {
-    background: #f0f0f0;
+    background: var(--bg-code);
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 11px;
   }
   .markdown :global(pre) {
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     border-radius: 6px;
     overflow-x: auto;
     font-size: 12px;
@@ -91,9 +91,9 @@
     margin-bottom: 0.25rem;
   }
   .markdown :global(blockquote) {
-    border-left: 4px solid #d0d7de;
+    border-left: 4px solid var(--border-primary);
     padding-left: 12px;
-    color: #656d76;
+    color: var(--text-secondary);
     margin-bottom: 0.75rem;
   }
   .markdown :global(table) {
@@ -104,18 +104,18 @@
   .markdown :global(th),
   .markdown :global(td) {
     padding: 6px 12px;
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     text-align: left;
   }
   .markdown :global(th) {
-    background: #f6f8fa;
+    background: var(--bg-secondary);
     font-weight: 600;
   }
   .markdown :global(img) {
     max-width: 100%;
   }
   .markdown :global(a) {
-    color: #0969da;
+    color: var(--text-link);
     text-decoration: none;
   }
   .markdown :global(a:hover) {
@@ -126,11 +126,11 @@
   }
   .markdown :global(hr) {
     border: none;
-    border-top: 1px solid #d0d7de;
+    border-top: 1px solid var(--border-primary);
     margin: 1rem 0;
   }
   .markdown :global(.suggestion-block) {
-    border: 1px solid #d0d7de;
+    border: 1px solid var(--border-primary);
     border-radius: 6px;
     margin-bottom: 0.75rem;
     overflow: hidden;
@@ -139,11 +139,11 @@
   }
   .markdown :global(.suggestion-header) {
     padding: 6px 12px;
-    background: #f6f8fa;
-    border-bottom: 1px solid #d0d7de;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
     font-size: 12px;
     font-weight: 600;
-    color: #656d76;
+    color: var(--text-secondary);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
   }
@@ -151,6 +151,6 @@
     padding: 0 12px;
     line-height: 1.5;
     white-space: pre;
-    color: #1a7f37;
+    color: var(--text-success);
   }
 </style>
