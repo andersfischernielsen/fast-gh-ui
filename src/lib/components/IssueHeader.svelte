@@ -12,8 +12,8 @@
       createdAt: string;
       htmlUrl: string;
     };
-    owner: string;
-    repo: string;
+    owner: string | undefined;
+    repo: string | undefined;
   } = $props();
 
   function stateColor(state: string): string {

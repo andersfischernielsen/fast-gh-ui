@@ -24,7 +24,11 @@ const loading = $state({ value: false });
 const error = $state({ value: null as string | null });
 let loadedId = $state<string | null>(null);
 
-async function loadPR(owner: string, repo: string, number: number): Promise<void> {
+async function loadPR(
+  owner: string | undefined,
+  repo: string | undefined,
+  number: number | undefined,
+): Promise<void> {
   const id = `${owner}/${repo}#${number}`;
   if (loadedId === id) return;
   loading.value = true;

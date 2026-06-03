@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { PullRequest } from '$lib/stores/pr.svelte';
-    import PRReviewActions from './PRReviewActions.svelte';
+  import PRReviewActions from './PRReviewActions.svelte';
 
-  let { pr, owner, repo }: { pr: PullRequest; owner: string; repo: string } = $props();
+  let { pr, owner, repo }: { pr: PullRequest; owner: string | undefined; repo: string | undefined } = $props();
 
   function stateColor(state: string): string {
     if (state === 'open') return '#1a7f37';

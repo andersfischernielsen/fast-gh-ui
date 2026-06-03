@@ -64,7 +64,7 @@
         replies: [] as Array<{ id: number; body: string; user: { login: string; avatarUrl: string }; createdAt: string }>,
       }));
 
-      const replyMap = new Map<number, typeof allComments>();
+      const replyMap = new Map<number, (typeof allComments)[number]>();
       const rootComments: typeof allComments = [];
       for (const c of allComments) {
         replyMap.set(c.id, c);

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createReview } from '$lib/github/pulls';
 
-  let { owner, repo, number }: { owner: string; repo: string; number: number } = $props();
+  let { owner, repo, number }: { owner: string | undefined; repo: string | undefined; number: number | undefined } = $props();
 
   let expanded = $state(false);
   let body = $state('');

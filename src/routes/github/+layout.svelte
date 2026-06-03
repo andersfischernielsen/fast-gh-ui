@@ -3,7 +3,7 @@
   import { isValid } from '$lib/stores/token.svelte';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import favicon from '$lib/assets/favicon.svg';
+  import favicon from '$lib/assets/favicon.png';
 
   let { children } = $props();
 
