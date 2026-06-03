@@ -1,11 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
 
-  let {
-    commitsCount = -1,
-    filesCount = 0,
-  }: { commitsCount?: number; filesCount?: number } = $props();
-
   let base = $derived(
     `/github/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`,
   );
@@ -21,13 +16,13 @@
     Conversation
   </a>
   <a class="tab" class:active={active === "commits"} href="{base}/commits">
-    Commits{commitsCount >= 0 ? ` (${commitsCount})` : ""}
+    Commits
   </a>
   <a class="tab" class:active={active === "checks"} href="{base}/checks">
     Checks
   </a>
   <a class="tab" class:active={active === "changes"} href="{base}/changes">
-    Files changed ({filesCount})
+    Files changed
   </a>
 </nav>
 
