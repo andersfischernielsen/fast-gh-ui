@@ -51,7 +51,7 @@
 
 <style>
   .sidebar {
-    width: 240px;
+    width: 300px;
     min-width: 120px;
     background: #f6f8fa;
     border-right: 1px solid #d0d7de;
