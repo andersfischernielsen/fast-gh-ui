@@ -342,6 +342,7 @@
     border-top: 1px solid var(--border-primary);
     padding-bottom: 6px;
     padding-top: 6px;
+    padding-right: 6px;
   }
   .reply-header:first-child {
     margin-top: 0;
