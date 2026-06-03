@@ -1,4 +1,4 @@
-# github-frontend
+# fast-gh-ui
 
 A faster UI for GitHub notifications, PRs and Issues.
 
