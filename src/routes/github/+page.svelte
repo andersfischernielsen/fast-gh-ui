@@ -9,6 +9,7 @@
   import NotificationItem from "$lib/components/NotificationItem.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
+  import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
 
   let selectedId = $state<string | null>(null);
   let repoFilter = $state<string | null>(null);
@@ -26,6 +27,8 @@
   onMount(() => {
     loadNotifications();
   });
+
+  $effect(() => useShortcut("r", () => loadNotifications(), { shift: true }));
 
   function prHref(item: NotificationItemType): string {
     const match = item.subject.url.match(
@@ -74,7 +77,9 @@
           <option value="read">Read</option>
         </select>
         <button onclick={() => loadNotifications()} disabled={loading.value}
-          >Refresh</button
+          >Refresh <span class="shortcut-hint"
+            >{shortcutHint("R", { shift: true })}</span
+          ></button
         >
       </div>
     </div>
@@ -122,6 +127,7 @@
     align-items: center;
     padding: 12px 16px;
     border-bottom: 1px solid #d0d7de;
+    height: 50px;
   }
   .list-header h2 {
     font-size: 16px;
@@ -146,6 +152,17 @@
     background: #f6f8fa;
     font-size: 12px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .shortcut-hint {
+    font-size: 9px;
+    color: #8b949e;
+    padding: 1px 4px;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+    line-height: 1;
   }
   .list {
     flex: 1;

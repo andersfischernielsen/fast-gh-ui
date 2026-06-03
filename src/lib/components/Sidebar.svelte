@@ -23,7 +23,6 @@
 
 <aside class="sidebar">
   <div class="sidebar-header">Repositories</div>
-  <input class="filter" type="text" placeholder="Filter repos..." />
   <nav class="repo-list">
     {#each repos as repo}
       <button
@@ -61,26 +60,25 @@
     height: 100vh;
     overflow: hidden;
   }
+
   .sidebar-header {
     padding: 12px 16px;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 16px;
     color: #656d76;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    border-bottom: 1px solid #d0d7de;
+    height: 50px;
   }
-  .filter {
-    margin: 0 12px 8px;
-    padding: 5px 10px;
-    border: 1px solid #d0d7de;
-    border-radius: 6px;
-    font-size: 12px;
-  }
+
   .repo-list {
     flex: 1;
     overflow-y: auto;
     padding: 0 8px;
+    padding-top: 12px;
   }
+
   .repo-item {
     display: block;
     width: 100%;

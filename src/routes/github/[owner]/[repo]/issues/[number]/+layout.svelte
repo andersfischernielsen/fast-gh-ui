@@ -117,6 +117,9 @@
     background: #f6f8fa;
     cursor: pointer;
     font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
   .back-btn:hover {
     background: #eaeef2;
@@ -129,19 +132,20 @@
     color: #1f2328;
     text-decoration: none;
     background: #f6f8fa;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
   }
   .github-btn:hover {
     background: #eaeef2;
   }
-  .shortcut-hint {
-    font-size: 10px;
+.shortcut-hint {
+    font-size: 9px;
     color: #8b949e;
     padding: 1px 4px;
     border: 1px solid #d0d7de;
     border-radius: 4px;
-    line-height: 1.2;
-    margin-left: 4px;
-    margin-right: 2px;
+    line-height: 1;
   }
   .tab-content {
     flex: 1;

@@ -142,13 +142,13 @@
     background: #eaeef2;
   }
 
-  .shortcut-hint {
-    font-size: 10px;
+.shortcut-hint {
+    font-size: 9px;
     color: #8b949e;
     padding: 1px 4px;
     border: 1px solid #d0d7de;
     border-radius: 4px;
-    line-height: 1.2;
+    line-height: 1;
   }
 
   .github-dialog {
