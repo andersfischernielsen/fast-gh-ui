@@ -50,7 +50,7 @@
     background: #1f883d;
     color: #fff;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
   }
   button:disabled {

@@ -131,7 +131,9 @@
   <div class="meta-row">
     <span
       class="state"
-      style="background:{stateBg(pr.merged ? 'merged' : pr.state)};color:{stateColor(pr.merged ? 'merged' : pr.state)}"
+      style="background:{stateBg(
+        pr.merged ? 'merged' : pr.state,
+      )};color:{stateColor(pr.merged ? 'merged' : pr.state)}"
     >
       {pr.merged ? "merged" : pr.state}
     </span>
@@ -200,7 +202,7 @@
     border-radius: 6px;
     background: #f6f8fa;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     color: #1f2328;
     font-family: inherit;
@@ -239,7 +241,7 @@
     background: #1f883d;
     color: #fff;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     font-family: inherit;
     white-space: nowrap;

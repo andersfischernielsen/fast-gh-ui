@@ -64,11 +64,7 @@
 </script>
 
 <div class="wrapper">
-  <button
-    class="merge-btn"
-    onclick={handleMerge}
-    disabled={merging}
-  >
+  <button class="merge-btn" onclick={handleMerge} disabled={merging}>
     {merging ? "Merging..." : "Merge"}
   </button>
   {#if mergeError}
@@ -135,7 +131,7 @@
     border-radius: 6px;
     background: #f6f8fa;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     color: #1f2328;
     font-family: inherit;
@@ -151,7 +147,7 @@
     border-radius: 6px;
     background: #8250df;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     color: #fff;
     font-family: inherit;
@@ -232,7 +228,7 @@
     border: none;
     border-radius: 6px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     color: #fff;
     font-family: inherit;

@@ -347,7 +347,7 @@
     border: 1px solid #d0d7de;
     border-radius: 6px;
     font-size: 12px;
-    font-family: inherit;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     resize: vertical;
     box-sizing: border-box;
   }
@@ -361,7 +361,7 @@
     border: 1px solid #d0d7de;
     border-radius: 6px;
     font-size: 12px;
-    font-family: inherit;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     resize: vertical;
     box-sizing: border-box;
   }
@@ -378,8 +378,8 @@
     background: #1f883d;
     color: #fff;
     font-size: 12px;
-    font-weight: 500;
-    font-family: inherit;
+    font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
     cursor: pointer;
   }
   .reply-btn:disabled {

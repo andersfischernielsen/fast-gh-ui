@@ -55,6 +55,6 @@
   .tab.active {
     color: #1f2328;
     border-bottom-color: #fd8c73;
-    font-weight: 500;
+    font-weight: 600;
   }
 </style>

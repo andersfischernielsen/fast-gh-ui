@@ -15,8 +15,6 @@
     prStateKey?: string | null;
   } = $props();
 
-  let fetched = $state(false);
-
   function getTypeBadge(type: string): string {
     switch (type) {
       case "PullRequest":
@@ -52,8 +50,7 @@
   }
 
   async function handleMouseEnter() {
-    if (!prStateKey || fetched || prStates[prStateKey]) return;
-    fetched = true;
+    if (!prStateKey) return;
     const match = prStateKey.match(/^(.+)\/(.+)#(\d+)$/);
     if (!match) return;
     try {
@@ -80,7 +77,7 @@
   <span class="repo">{item.repository.fullName}</span>
   <span class="title">
     <span class="number">{prNumber}</span>
-    {item.subject.title}
+    <span class="pr-title">{item.subject.title}</span>
   </span>
   <span class="meta">
     <span class="badge">{getTypeBadge(item.subject.type)}</span>
@@ -154,6 +151,9 @@
     font-size: 12px;
     line-height: 1.4;
   }
+  .title .pr-title {
+    font-weight: 600;
+  }
   .number {
     color: #656d76;
     font-weight: 400;
@@ -175,7 +175,7 @@
     font-size: 11px;
     padding: 1px 6px;
     border-radius: 10px;
-    font-weight: 500;
+    font-weight: 600;
     text-transform: capitalize;
   }
   .pr-state.open {

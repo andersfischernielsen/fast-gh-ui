@@ -117,7 +117,7 @@
   }
   .check-name {
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
   }
   .check-status {
     font-size: 12px;

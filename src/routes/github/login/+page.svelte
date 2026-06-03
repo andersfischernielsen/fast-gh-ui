@@ -136,7 +136,7 @@
   }
   label {
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
   }
   input {
     padding: 0.625rem 0.75rem;
@@ -151,7 +151,7 @@
     border: none;
     border-radius: 6px;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
   }
   button:disabled {
