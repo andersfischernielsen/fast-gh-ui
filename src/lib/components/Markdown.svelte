@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { marked } from "marked";
+  import { Marked } from "marked";
   import DOMPurify from "dompurify";
   import { onMount } from "svelte";
   import { loadEmojiMap, replaceEmojis } from "$lib/github/emojis";
@@ -11,6 +11,33 @@
   onMount(() => {
     loadEmojiMap().then((m) => (emojiMap = m));
   });
+
+  const marked = new Marked();
+  marked.use({
+    renderer: {
+      code({ text: code, lang }) {
+        if (lang === "suggestion") {
+          const lines = code.split("\n");
+          const last = lines.length - 1;
+          const formatted = lines
+            .map((line, i) => {
+              if (i === last && line === "") return "";
+              return `<div class="suggestion-line">${escapeHtml(line)}</div>`;
+            })
+            .join("");
+          return `<div class="suggestion-block"><div class="suggestion-header">Suggested change</div>${formatted}</div>`;
+        }
+        return false;
+      },
+    },
+  });
+
+  function escapeHtml(str: string): string {
+    return str
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+  }
 
   let rendered = $derived(text ?? "");
 
@@ -99,5 +126,28 @@
     border: none;
     border-top: 1px solid #d0d7de;
     margin: 1rem 0;
+  }
+  .markdown :global(.suggestion-block) {
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    font-size: 12px;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  .markdown :global(.suggestion-header) {
+    padding: 6px 12px;
+    background: #f6f8fa;
+    border-bottom: 1px solid #d0d7de;
+    font-size: 12px;
+    font-weight: 600;
+    color: #656d76;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .markdown :global(.suggestion-line) {
+    padding: 0 12px;
+    line-height: 1.5;
+    white-space: pre;
+    color: #1a7f37;
   }
 </style>
