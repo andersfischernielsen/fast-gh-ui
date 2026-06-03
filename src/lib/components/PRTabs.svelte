@@ -43,7 +43,7 @@
     border: none;
     border-bottom: 2px solid transparent;
     background: none;
-    font-size: 14px;
+    font-size: 12px;
     cursor: pointer;
     color: #656d76;
     font-family: inherit;

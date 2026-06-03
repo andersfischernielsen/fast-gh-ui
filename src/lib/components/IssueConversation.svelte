@@ -4,7 +4,12 @@
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
-  import { listPRComments, createPRComment, updatePRComment, deletePRComment } from "$lib/github/pulls";
+  import {
+    listPRComments,
+    createPRComment,
+    updatePRComment,
+    deletePRComment,
+  } from "$lib/github/pulls";
 
   interface CommentData {
     id: number;
@@ -138,7 +143,7 @@
     margin-bottom: 16px;
   }
   .description h3 {
-    font-size: 14px;
+    font-size: 12px;
     color: #656d76;
     margin-bottom: 8px;
     text-transform: uppercase;
@@ -150,6 +155,6 @@
   .status {
     padding: 16px 0;
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
 </style>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import InlineComment from "./InlineComment.svelte";
+  import Comment from "./Comment.svelte";
 
   interface InlineCommentData {
     id: number;
@@ -316,18 +316,20 @@
           {/if}
         </div>
         {#each commentsByIndex[i] as comment (comment.id)}
-          <InlineComment
-            thread={{
-              id: comment.id,
-              body: comment.body,
-              user: comment.user,
-              createdAt: comment.createdAt,
-              replies: comment.replies,
-            }}
-            onupdate={onUpdateComment}
-            ondelete={onDeleteComment}
-            onreply={onReplyComment}
-          />
+          <div class="comment-wrapper">
+            <Comment
+              comment={{
+                id: comment.id,
+                body: comment.body,
+                user: comment.user,
+                createdAt: comment.createdAt,
+              }}
+              replies={comment.replies}
+              onupdate={onUpdateComment}
+              ondelete={onDeleteComment}
+              onreply={onReplyComment}
+            />
+          </div>
         {/each}
         {#if commentIndex === i}
           <div class="comment-input">
@@ -408,14 +410,14 @@
           {/if}
         </div>
         {#each commentsByIndex[i] as comment (comment.id)}
-          <InlineComment
-            thread={{
+          <Comment
+            comment={{
               id: comment.id,
               body: comment.body,
               user: comment.user,
               createdAt: comment.createdAt,
-              replies: comment.replies,
             }}
+            replies={comment.replies}
             onupdate={onUpdateComment}
             ondelete={onDeleteComment}
             onreply={onReplyComment}
@@ -481,6 +483,7 @@
     line-height: 20px;
     min-height: 20px;
     position: relative;
+    font-size: 11px;
   }
   .diff-row.row-header {
     background: #f1f8ff;
@@ -622,5 +625,11 @@
   .comment-actions .submit-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+
+  .comment-wrapper {
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
   }
 </style>

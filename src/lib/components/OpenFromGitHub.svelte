@@ -142,7 +142,7 @@
     background: #eaeef2;
   }
 
-.shortcut-hint {
+  .shortcut-hint {
     font-size: 9px;
     color: #8b949e;
     padding: 1px 4px;
@@ -174,7 +174,7 @@
 
   .dialog-title {
     margin: 0;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     color: #1f2328;
   }

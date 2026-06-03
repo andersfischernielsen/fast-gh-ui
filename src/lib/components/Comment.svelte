@@ -6,7 +6,7 @@
     body: string;
     user: { login: string; avatarUrl: string };
     createdAt: string;
-    htmlUrl: string;
+    htmlUrl?: string;
   }
 
   let {
@@ -23,7 +23,6 @@
     ondelete?: (commentId: number) => Promise<void>;
   } = $props();
 
-  let showReply = $state(false);
   let replyBody = $state("");
   let submitting = $state(false);
   let editing = $state(false);
@@ -73,7 +72,6 @@
     try {
       if (onreply) await onreply(comment.id, replyBody);
       replyBody = "";
-      showReply = false;
     } finally {
       submitting = false;
     }
@@ -82,18 +80,24 @@
 
 <article class="comment">
   <div class="comment-header">
-    <img
-      class="avatar"
-      src={comment.user.avatarUrl}
-      alt=""
-      width="20"
-      height="20"
-    />
-    <strong>{comment.user.login}</strong>
+    <span class="user-info">
+      <img
+        class="avatar"
+        src={comment.user.avatarUrl}
+        alt=""
+        width="20"
+        height="20"
+      />
+      <strong>{comment.user.login}</strong>
+    </span>
     <span class="header-right">
-      <a class="date" href={comment.htmlUrl} target="_blank" rel="noopener"
-        >{formatDate(comment.createdAt)}</a
-      >
+      {#if comment.htmlUrl}
+        <a class="date" href={comment.htmlUrl} target="_blank" rel="noopener"
+          >{formatDate(comment.createdAt)}</a
+        >
+      {:else}
+        <span class="date">{formatDate(comment.createdAt)}</span>
+      {/if}
       {#if onupdate || ondelete}
         <span class="actions">
           {#if onupdate}
@@ -136,18 +140,27 @@
       {#each replies as reply (reply.id)}
         <article class="reply">
           <div class="reply-header">
-            <img
-              class="avatar"
-              src={reply.user.avatarUrl}
-              alt=""
-              width="24"
-              height="24"
-            />
-            <strong>{reply.user.login}</strong>
-            <a class="date" href={reply.htmlUrl} target="_blank" rel="noopener"
-              >{formatDate(reply.createdAt)}</a
-            >
+            <span class="user-info">
+              <img
+                class="avatar"
+                src={reply.user.avatarUrl}
+                alt=""
+                width="20"
+                height="20"
+              />
+              <strong>{reply.user.login}</strong>
+            </span>
             <span class="header-right">
+              {#if reply.htmlUrl}
+                <a
+                  class="date"
+                  href={reply.htmlUrl}
+                  target="_blank"
+                  rel="noopener">{formatDate(reply.createdAt)}</a
+                >
+              {:else}
+                <span class="date">{formatDate(reply.createdAt)}</span>
+              {/if}
               <span class="actions">
                 <button
                   class="action-btn"
@@ -191,36 +204,21 @@
     </div>
   {/if}
   {#if onreply}
-    {#if showReply}
-      <div class="reply-input">
-        <textarea
-          bind:value={replyBody}
-          placeholder="Write a reply..."
-          rows={3}
-          disabled={submitting}
-        ></textarea>
-        <div class="reply-actions">
-          <button
-            class="cancel-btn"
-            onclick={() => {
-              showReply = false;
-              replyBody = "";
-            }}>Cancel</button
-          >
-          <button
-            class="reply-btn"
-            onclick={handleReply}
-            disabled={submitting || !replyBody.trim()}>Reply</button
-          >
-        </div>
-      </div>
-    {:else}
-      <div class="reply-toggle">
-        <button class="reply-link" onclick={() => (showReply = true)}
-          >Reply</button
+    <div class="reply-input">
+      <textarea
+        bind:value={replyBody}
+        placeholder="Write a reply..."
+        rows={2}
+        disabled={submitting}
+      ></textarea>
+      <div class="reply-actions">
+        <button
+          class="reply-btn"
+          onclick={handleReply}
+          disabled={submitting || !replyBody.trim()}>Reply</button
         >
       </div>
-    {/if}
+    </div>
   {/if}
 </article>
 
@@ -228,33 +226,37 @@
   .comment {
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     overflow: hidden;
   }
   .comment-header {
-    font-family: "SF Mono", Menlo, Monaco, monospace;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
     padding: 6px 10px;
     background: #f6f8fa;
     border-bottom: 1px solid #d0d7de;
     font-size: 12px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
   }
   .avatar {
     border-radius: 50%;
+    flex-shrink: 0;
   }
-  .date {
-    font-weight: 400;
-    color: #656d76;
-    font-size: 11px;
-    text-decoration: none;
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .header-right {
-    margin-left: auto;
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+  .date {
+    color: #656d76;
+    font-size: 11px;
+    text-decoration: none;
   }
   .actions {
     display: flex;
@@ -262,11 +264,12 @@
   }
   .action-btn {
     background: none;
-    border: none;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
     font-size: 11px;
     cursor: pointer;
     color: #656d76;
-    padding: 1px 4px;
+    padding: 1px 6px;
     font-family: inherit;
   }
   .action-btn:hover {
@@ -277,14 +280,14 @@
   }
   .comment-body {
     padding: 12px 16px;
-    font-size: 14px;
+    font-size: 12px;
   }
   .comment-body textarea {
     width: 100%;
     padding: 10px 12px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
@@ -298,7 +301,7 @@
   .edit-actions button {
     padding: 4px 14px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     font-family: inherit;
     cursor: pointer;
   }
@@ -329,39 +332,24 @@
   .reply-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 6px;
-    font-size: 13px;
+    font-size: 12px;
     margin-bottom: 4px;
   }
   .reply-body {
-    padding-left: 30px;
-    font-size: 14px;
+    padding-left: 26px;
+    font-size: 12px;
   }
   .reply-body textarea {
     width: 100%;
     padding: 6px 8px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
-  }
-  .reply-toggle {
-    border-top: 1px solid #d0d7de;
-    padding: 6px 16px;
-  }
-  .reply-link {
-    background: none;
-    border: none;
-    color: #0969da;
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    padding: 0;
-  }
-  .reply-link:hover {
-    text-decoration: underline;
   }
   .reply-input {
     border-top: 1px solid #d0d7de;
@@ -372,7 +360,7 @@
     padding: 8px 10px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
@@ -383,29 +371,24 @@
     gap: 8px;
     margin-top: 8px;
   }
-  .reply-actions button {
-    padding: 5px 14px;
+  .reply-btn {
+    padding: 5px 12px;
     border-radius: 6px;
-    font-size: 13px;
+    border: 1px solid #1f883d;
+    background: #1f883d;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-  }
-  .cancel-btn {
-    background: #f6f8fa;
-    border: 1px solid #d0d7de;
-    color: #1f2328;
-  }
-  .cancel-btn:hover {
-    background: #eaeef2;
-  }
-  .reply-btn {
-    background: #1f883d;
-    border: 1px solid #1f883d;
-    color: #fff;
-    font-weight: 500;
   }
   .reply-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  .comment-body :global(.markdown),
+  .reply-body :global(.markdown) {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
   }
 </style>

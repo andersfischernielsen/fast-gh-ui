@@ -144,7 +144,7 @@
   .commit-meta {
     display: flex;
     gap: 8px;
-    font-size: 13px;
+    font-size: 12px;
     color: #656d76;
   }
   .author {
@@ -188,7 +188,7 @@
     text-align: left;
     cursor: pointer;
     font-family: inherit;
-    font-size: 13px;
+    font-size: 12px;
   }
   .file-item:hover {
     background: #eaeef2;
@@ -235,13 +235,13 @@
     background: #f6f8fa;
     border-bottom: 1px solid #d0d7de;
     font-family: monospace;
-    font-size: 13px;
+    font-size: 12px;
     color: #656d76;
   }
   .status {
     padding: 16px;
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
   .status.error {
     color: #cf222e;

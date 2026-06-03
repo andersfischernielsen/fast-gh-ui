@@ -86,7 +86,7 @@
     border: none;
     background: none;
     text-align: left;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     border-radius: 6px;
     font-family: inherit;

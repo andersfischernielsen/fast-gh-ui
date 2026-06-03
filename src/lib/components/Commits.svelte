@@ -104,16 +104,16 @@
     border-radius: 4px;
   }
   .author {
-    font-size: 13px;
+    font-size: 12px;
     color: #656d76;
   }
   .commit-message {
-    font-size: 14px;
+    font-size: 12px;
   }
   .status {
     padding: 16px;
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
   .status.error {
     color: #cf222e;

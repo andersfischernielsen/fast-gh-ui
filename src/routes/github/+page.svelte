@@ -171,7 +171,7 @@
   .status {
     padding: 16px;
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
   .status.error {
     color: #cf222e;
@@ -184,6 +184,6 @@
   }
   .placeholder {
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
 </style>

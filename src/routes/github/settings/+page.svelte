@@ -68,7 +68,7 @@
     padding: 6px 10px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
   }
   .token-display button {
     padding: 6px 12px;
@@ -76,7 +76,7 @@
     border-radius: 6px;
     background: #f6f8fa;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
   }
   .save-btn {
     padding: 6px 16px;
@@ -84,7 +84,7 @@
     color: #fff;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     cursor: pointer;
   }
   .save-btn:hover {
@@ -96,7 +96,7 @@
     color: #fff;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     cursor: pointer;
   }
   .back-btn {
@@ -105,6 +105,6 @@
     border-radius: 6px;
     background: #f6f8fa;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
   }
 </style>

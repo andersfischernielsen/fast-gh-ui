@@ -38,7 +38,7 @@
     padding: 10px 12px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 12px;
     font-family: inherit;
     resize: vertical;
   }
@@ -49,7 +49,7 @@
     border-radius: 6px;
     background: #1f883d;
     color: #fff;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
   }

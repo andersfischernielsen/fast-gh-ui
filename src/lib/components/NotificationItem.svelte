@@ -151,7 +151,7 @@
     color: #656d76;
   }
   .title {
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.4;
   }
   .number {

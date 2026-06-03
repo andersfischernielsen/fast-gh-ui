@@ -174,13 +174,13 @@
   .help h3 {
     padding: 8px 14px;
     background: #f6f8fa;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     border-bottom: 1px solid #d0d7de;
   }
   .help-content {
     padding: 14px;
-    font-size: 13px;
+    font-size: 12px;
     color: #1f2328;
   }
   .help-content p {

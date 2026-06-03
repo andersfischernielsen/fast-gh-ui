@@ -54,7 +54,10 @@
 
 <style>
   .markdown :global(p) {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .markdown :global(p:last-child) {
+    margin-bottom: 0;
   }
   .markdown :global(h1),
   .markdown :global(h2),
@@ -66,11 +69,10 @@
     background: #f0f0f0;
     padding: 2px 6px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 11px;
   }
   .markdown :global(pre) {
     background: #f6f8fa;
-    padding: 12px 16px;
     border-radius: 6px;
     overflow-x: auto;
     font-size: 12px;
@@ -97,7 +99,7 @@
   .markdown :global(table) {
     border-collapse: collapse;
     margin-bottom: 0.75rem;
-    font-size: 13px;
+    font-size: 12px;
   }
   .markdown :global(th),
   .markdown :global(td) {
@@ -142,7 +144,8 @@
     font-size: 12px;
     font-weight: 600;
     color: #656d76;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
   }
   .markdown :global(.suggestion-line) {
     padding: 0 12px;

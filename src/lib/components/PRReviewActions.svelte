@@ -101,7 +101,7 @@
     border: 1px solid #d0d7de;
     border-radius: 6px;
     background: #f6f8fa;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     color: #1f2328;
@@ -111,7 +111,7 @@
     background: #eaeef2;
   }
   .success {
-    font-size: 13px;
+    font-size: 12px;
     color: #1a7f37;
   }
   .overlay {
@@ -136,7 +136,7 @@
     gap: 8px;
   }
   .pane-header {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
   }
   textarea {
@@ -145,13 +145,13 @@
     padding: 8px 12px;
     border: 1px solid #d0d7de;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     font-family: inherit;
     resize: vertical;
     box-sizing: border-box;
   }
   .error-msg {
-    font-size: 13px;
+    font-size: 12px;
     color: #cf222e;
   }
   .pane-footer {
@@ -164,7 +164,7 @@
     border: 1px solid #d0d7de;
     border-radius: 6px;
     background: #f6f8fa;
-    font-size: 13px;
+    font-size: 12px;
     cursor: pointer;
     font-family: inherit;
   }
@@ -176,7 +176,7 @@
     padding: 5px 16px;
     border: none;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     color: #fff;

@@ -328,7 +328,7 @@
   .status {
     padding: 24px;
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
   .status.error {
     color: #cf222e;
@@ -347,7 +347,7 @@
   .diff-header {
     padding: 10px 16px;
     border-bottom: 1px solid #d0d7de;
-    font-size: 13px;
+    font-size: 12px;
     font-family: monospace;
     display: flex;
     justify-content: space-between;

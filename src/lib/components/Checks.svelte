@@ -116,7 +116,7 @@
     flex-direction: column;
   }
   .check-name {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 500;
   }
   .check-status {
@@ -138,7 +138,7 @@
   .status {
     padding: 16px;
     color: #656d76;
-    font-size: 14px;
+    font-size: 12px;
   }
   .status.error {
     color: #cf222e;

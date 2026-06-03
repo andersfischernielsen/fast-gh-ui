@@ -51,7 +51,7 @@
     border-bottom: 1px solid #d0d7de;
   }
   .repo-name {
-    font-size: 13px;
+    font-size: 12px;
     color: #656d76;
     margin-bottom: 4px;
   }
@@ -69,7 +69,7 @@
     gap: 12px;
     align-items: center;
     margin-top: 8px;
-    font-size: 13px;
+    font-size: 12px;
     color: #656d76;
   }
   .state {
