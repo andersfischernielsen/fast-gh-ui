@@ -101,9 +101,6 @@
       </div>
     {/if}
   </div>
-  <div class="detail-panel">
-    <p class="placeholder">Select a notification to view details</p>
-  </div>
 </div>
 
 <style>
@@ -113,7 +110,7 @@
     overflow: hidden;
   }
   .list-panel {
-    width: 380px;
+    width: 100%;
     min-width: 300px;
     border-right: 1px solid #d0d7de;
     display: flex;
@@ -173,15 +170,5 @@
   }
   .status.error {
     color: #cf222e;
-  }
-  .detail-panel {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .placeholder {
-    color: #656d76;
-    font-size: 12px;
   }
 </style>
