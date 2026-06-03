@@ -12,6 +12,8 @@ async function listPRComments(
   pullNumber: number,
   page?: number,
 ) {
+  if (!owner || !repo) return [];
+
   const octokit = createClient();
   const response = await octokit.rest.issues.listComments({
     owner,
@@ -29,6 +31,8 @@ async function createPRComment(
   pullNumber: number,
   body: string,
 ) {
+  if (!owner || !repo) return undefined;
+
   const octokit = createClient();
   const response = await octokit.rest.issues.createComment({
     owner,
@@ -45,6 +49,8 @@ async function listPRCommits(
   pullNumber: number,
   page?: number,
 ) {
+  if (!owner || !repo) return [];
+
   const octokit = createClient();
   const response = await octokit.rest.pulls.listCommits({
     owner,
@@ -62,6 +68,8 @@ async function listPRFiles(
   pullNumber: number | undefined,
   page?: number,
 ) {
+  if (!owner || !repo || !pullNumber) return [];
+
   const octokit = createClient();
   const response = await octokit.rest.pulls.listFiles({
     owner,
@@ -79,6 +87,8 @@ async function listInlineComments(
   pullNumber: number | undefined,
   page?: number,
 ) {
+  if (!owner || !repo || !pullNumber) return [];
+
   const octokit = createClient();
   const response = await octokit.rest.pulls.listReviewComments({
     owner,
@@ -97,6 +107,8 @@ async function createReview(
   event: "APPROVE" | "REQUEST_CHANGES",
   body?: string,
 ) {
+  if (!owner || !repo || !pullNumber) return undefined;
+
   const octokit = createClient();
   const response = await octokit.rest.pulls.createReview({
     owner,
@@ -125,6 +137,8 @@ async function createInlineComment(
   startLine?: number,
   inReplyTo?: number,
 ) {
+  if (!owner || !repo || !pullNumber) return undefined;
+
   const octokit = createClient();
   const response = await octokit.rest.pulls.createReviewComment({
     owner,
@@ -146,6 +160,8 @@ async function updateInlineComment(
   commentId: number | undefined,
   body: string,
 ) {
+  if (!owner || !repo || !commentId) return undefined;
+
   const octokit = createClient();
   const response = await octokit.rest.pulls.updateReviewComment({
     owner,
@@ -161,6 +177,8 @@ async function deleteInlineComment(
   repo: string | undefined,
   commentId: number,
 ) {
+  if (!owner || !repo) return;
+
   const octokit = createClient();
   await octokit.rest.pulls.deleteReviewComment({
     owner,
@@ -174,12 +192,16 @@ async function fetchIssue(
   repo: string | undefined,
   issueNumber: number | undefined,
 ) {
+  if (!owner || !repo || !issueNumber) return undefined;
+
   const octokit = createClient();
   const response = await octokit.rest.issues.get({ owner, repo, issue_number: issueNumber });
   return response.data;
 }
 
 async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
+  if (!owner || !repo) return undefined;
+
   const octokit = createClient();
   const response = await octokit.rest.checks.listForRef({
     owner,

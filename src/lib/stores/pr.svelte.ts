@@ -29,6 +29,7 @@ async function loadPR(
   repo: string | undefined,
   number: number | undefined,
 ): Promise<void> {
+  if (!owner || !repo || !number) return;
   const id = `${owner}/${repo}#${number}`;
   if (loadedId === id) return;
   loading.value = true;
