@@ -1,7 +1,7 @@
 <script lang="ts">
   let { onsubmit }: { onsubmit: (body: string) => Promise<void> } = $props();
 
-  let body = $state('');
+  let body = $state("");
   let submitting = $state(false);
 
   async function handleSubmit(e: SubmitEvent) {
@@ -10,7 +10,7 @@
     submitting = true;
     try {
       await onsubmit(body);
-      body = '';
+      body = "";
     } finally {
       submitting = false;
     }
@@ -18,7 +18,12 @@
 </script>
 
 <form class="input" onsubmit={handleSubmit}>
-  <textarea bind:value={body} placeholder="Write a comment..." rows={3} disabled={submitting}></textarea>
+  <textarea
+    bind:value={body}
+    placeholder="Write a comment..."
+    rows={3}
+    disabled={submitting}
+  ></textarea>
   <button type="submit" disabled={submitting || !body.trim()}>Comment</button>
 </form>
 
@@ -48,5 +53,8 @@
     font-weight: 500;
     cursor: pointer;
   }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 </style>

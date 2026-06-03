@@ -1,10 +1,15 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import Markdown from './Markdown.svelte';
-  import Comment from './Comment.svelte';
-  import CommentInput from './CommentInput.svelte';
-  import { listPRComments, createPRComment, listInlineComments, createInlineComment } from '$lib/github/pulls';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import Markdown from "./Markdown.svelte";
+  import Comment from "./Comment.svelte";
+  import CommentInput from "./CommentInput.svelte";
+  import {
+    listPRComments,
+    createPRComment,
+    listInlineComments,
+    createInlineComment,
+  } from "$lib/github/pulls";
 
   interface CommentData {
     id: number;
@@ -41,8 +46,11 @@
   function toCommentData(raw: Record<string, unknown>): CommentData {
     return {
       id: raw.id as number,
-      body: (raw.body as string) ?? '',
-      user: { login: (raw.user as { login?: string })?.login ?? '', avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? '' },
+      body: (raw.body as string) ?? "",
+      user: {
+        login: (raw.user as { login?: string })?.login ?? "",
+        avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? "",
+      },
       createdAt: raw.created_at as string,
       updatedAt: raw.updated_at as string,
       htmlUrl: raw.html_url as string,
@@ -56,10 +64,14 @@
         listInlineComments(owner, repo, number),
       ]);
 
-      const issueItems: ThreadedComment[] = (issueComments as Record<string, unknown>[]).map(toCommentData).map((c) => ({
-        ...c,
-        replies: [],
-      }));
+      const issueItems: ThreadedComment[] = (
+        issueComments as Record<string, unknown>[]
+      )
+        .map(toCommentData)
+        .map((c) => ({
+          ...c,
+          replies: [],
+        }));
 
       const reviewItems = reviewComments as Record<string, unknown>[];
 
@@ -84,14 +96,15 @@
           ...toCommentData(rc),
           replies: childReplies.map(toCommentData),
           isReview: true,
-          commitId: (rc.commit_id as string) ?? '',
-          path: (rc.path as string) ?? '',
+          commitId: (rc.commit_id as string) ?? "",
+          path: (rc.path as string) ?? "",
           line: ((rc.line ?? rc.original_line ?? rc.position) as number) ?? 1,
         };
       });
 
       threadedComments = [...issueItems, ...reviewThreads].sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
       );
     } finally {
       loading = false;
@@ -100,25 +113,52 @@
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
-    threadedComments = [...threadedComments, {
-      ...toCommentData(raw as Record<string, unknown>),
-      replies: [],
-    }];
+    threadedComments = [
+      ...threadedComments,
+      {
+        ...toCommentData(raw as Record<string, unknown>),
+        replies: [],
+      },
+    ];
   }
 
   async function replyToComment(parentId: number, replyBody: string) {
     const parent = threadedComments.find((tc) => tc.id === parentId);
     if (!parent) return;
 
-    let raw: { id: number; body: string; user: { login: string; avatar_url: string }; created_at: string; updated_at: string; html_url: string };
+    let raw: {
+      id: number;
+      body: string;
+      user: { login: string; avatar_url: string };
+      created_at: string;
+      updated_at: string;
+      html_url: string;
+    };
 
     if (parent.isReview && parent.commitId && parent.path) {
-      raw = await createInlineComment(owner, repo, number, replyBody, parent.commitId, parent.path, parent.line ?? 1, undefined, parentId) as unknown as typeof raw;
+      raw = (await createInlineComment(
+        owner,
+        repo,
+        number,
+        replyBody,
+        parent.commitId,
+        parent.path,
+        parent.line ?? 1,
+        undefined,
+        parentId,
+      )) as unknown as typeof raw;
     } else {
-      raw = await createPRComment(owner, repo, number, replyBody) as unknown as typeof raw;
+      raw = (await createPRComment(
+        owner,
+        repo,
+        number,
+        replyBody,
+      )) as unknown as typeof raw;
     }
 
-    const reply: CommentData = toCommentData(raw as unknown as Record<string, unknown>);
+    const reply: CommentData = toCommentData(
+      raw as unknown as Record<string, unknown>,
+    );
     threadedComments = threadedComments.map((tc) =>
       tc.id === parentId ? { ...tc, replies: [...tc.replies, reply] } : tc,
     );
@@ -137,11 +177,7 @@
   {:else}
     <div class="comments">
       {#each threadedComments as c (c.id)}
-        <Comment
-          comment={c}
-          replies={c.replies}
-          onreply={replyToComment}
-        />
+        <Comment comment={c} replies={c.replies} onreply={replyToComment} />
       {/each}
       {#if threadedComments.length === 0}
         <p class="status">No comments yet</p>
@@ -152,14 +188,28 @@
 </div>
 
 <style>
-  .conversation { padding: 24px; }
+  .conversation {
+    padding: 24px;
+  }
   .description {
     border: 1px solid #d0d7de;
     border-radius: 6px;
     padding: 12px 16px;
     margin-bottom: 16px;
   }
-  .description h3 { font-size: 14px; color: #656d76; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .comments { margin-bottom: 16px; }
-  .status { padding: 16px 0; color: #656d76; font-size: 14px; }
+  .description h3 {
+    font-size: 14px;
+    color: #656d76;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .comments {
+    margin-bottom: 16px;
+  }
+  .status {
+    padding: 16px 0;
+    color: #656d76;
+    font-size: 14px;
+  }
 </style>

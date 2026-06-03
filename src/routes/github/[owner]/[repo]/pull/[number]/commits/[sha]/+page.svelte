@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import { fetchCommit } from '$lib/github/pulls';
-  import DiffViewer from '$lib/components/DiffViewer.svelte';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import { fetchCommit } from "$lib/github/pulls";
+  import DiffViewer from "$lib/components/DiffViewer.svelte";
 
   interface CommitFile {
     filename: string;
@@ -34,20 +34,24 @@
   onMount(async () => {
     try {
       const raw = await fetchCommit(owner, repo, sha);
-      const authorLogin = (raw.author as { login?: string })?.login
-        ?? (raw.commit as { author?: { name?: string } })?.author?.name
-        ?? 'unknown';
+      const authorLogin =
+        (raw.author as { login?: string })?.login ??
+        (raw.commit as { author?: { name?: string } })?.author?.name ??
+        "unknown";
       commitInfo = {
         sha: raw.sha as string,
-        message: ((raw.commit as { message?: string })?.message ?? '').split('\n')[0],
+        message: ((raw.commit as { message?: string })?.message ?? "").split(
+          "\n",
+        )[0],
         author: {
           login: authorLogin,
-          avatarUrl: (raw.author as { avatar_url?: string })?.avatar_url ?? '',
+          avatarUrl: (raw.author as { avatar_url?: string })?.avatar_url ?? "",
         },
-        date: (raw.commit as { author?: { date?: string } })?.author?.date ?? '',
+        date:
+          (raw.commit as { author?: { date?: string } })?.author?.date ?? "",
       };
       const rawFiles = (raw.files as Array<Record<string, unknown>>) || [];
-      files = rawFiles.map(f => ({
+      files = rawFiles.map((f) => ({
         filename: f.filename as string,
         status: f.status as string,
         additions: f.additions as number,
@@ -88,13 +92,18 @@
           <button
             class="file-item"
             class:active={selectedFile?.filename === file.filename}
-            onclick={() => selectedFile = file}
+            onclick={() => (selectedFile = file)}
           >
             <span class="file-name">{file.filename}</span>
             <span class="file-stats">
-              {#if file.status === 'added'}<span class="added-badge">added</span>{/if}
-              {#if file.status === 'removed'}<span class="removed-badge">removed</span>{/if}
-              {#if file.status === 'renamed'}<span class="renamed-badge">renamed</span>{/if}
+              {#if file.status === "added"}<span class="added-badge">added</span
+                >{/if}
+              {#if file.status === "removed"}<span class="removed-badge"
+                  >removed</span
+                >{/if}
+              {#if file.status === "renamed"}<span class="renamed-badge"
+                  >renamed</span
+                >{/if}
               <span class="adds">+{file.additions}</span>
               <span class="dels">-{file.deletions}</span>
             </span>
@@ -104,7 +113,10 @@
       <div class="diff-view">
         {#if selectedFile?.patch}
           <div class="diff-header">{selectedFile.filename}</div>
-          <DiffViewer patch={selectedFile.patch} currentFile={selectedFile.filename} />
+          <DiffViewer
+            patch={selectedFile.patch}
+            currentFile={selectedFile.filename}
+          />
         {:else}
           <p class="no-diff">No diff available for {selectedFile?.filename}</p>
         {/if}
@@ -114,20 +126,30 @@
 {/if}
 
 <style>
-  .commit-detail { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+  .commit-detail {
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
   .commit-header {
     padding: 12px 16px;
     border-bottom: 1px solid #d0d7de;
     background: #f6f8fa;
   }
-  .commit-header h2 { font-size: 16px; margin: 0 0 4px 0; }
+  .commit-header h2 {
+    font-size: 16px;
+    margin: 0 0 4px 0;
+  }
   .commit-meta {
     display: flex;
     gap: 8px;
     font-size: 13px;
     color: #656d76;
   }
-  .author { font-weight: 600; }
+  .author {
+    font-weight: 600;
+  }
   .sha {
     font-family: monospace;
     font-size: 12px;
@@ -168,8 +190,12 @@
     font-family: inherit;
     font-size: 13px;
   }
-  .file-item:hover { background: #eaeef2; }
-  .file-item.active { background: #d0d7de; }
+  .file-item:hover {
+    background: #eaeef2;
+  }
+  .file-item.active {
+    background: #d0d7de;
+  }
   .file-name {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -182,11 +208,24 @@
     font-size: 11px;
     white-space: nowrap;
   }
-  .added-badge { color: #1a7f37; font-weight: 600; }
-  .removed-badge { color: #cf222e; font-weight: 600; }
-  .renamed-badge { color: #0969da; font-weight: 600; }
-  .adds { color: #1a7f37; }
-  .dels { color: #cf222e; }
+  .added-badge {
+    color: #1a7f37;
+    font-weight: 600;
+  }
+  .removed-badge {
+    color: #cf222e;
+    font-weight: 600;
+  }
+  .renamed-badge {
+    color: #0969da;
+    font-weight: 600;
+  }
+  .adds {
+    color: #1a7f37;
+  }
+  .dels {
+    color: #cf222e;
+  }
   .diff-view {
     flex: 1;
     overflow-y: auto;
@@ -199,7 +238,16 @@
     font-size: 13px;
     color: #656d76;
   }
-  .status { padding: 16px; color: #656d76; font-size: 14px; }
-  .status.error { color: #cf222e; }
-  .no-diff { padding: 16px; color: #656d76; }
+  .status {
+    padding: 16px;
+    color: #656d76;
+    font-size: 14px;
+  }
+  .status.error {
+    color: #cf222e;
+  }
+  .no-diff {
+    padding: 16px;
+    color: #656d76;
+  }
 </style>

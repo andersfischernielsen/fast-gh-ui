@@ -1,26 +1,36 @@
 <script lang="ts">
-  import { createReview } from '$lib/github/pulls';
+  import { createReview } from "$lib/github/pulls";
 
-  let { owner, repo, number }: { owner: string | undefined; repo: string | undefined; number: number | undefined } = $props();
+  let {
+    owner,
+    repo,
+    number,
+  }: {
+    owner: string | undefined;
+    repo: string | undefined;
+    number: number | undefined;
+  } = $props();
 
   let expanded = $state(false);
-  let body = $state('');
+  let body = $state("");
   let submitting = $state(false);
   let success = $state<string | null>(null);
   let error = $state<string | null>(null);
 
-  async function handleReview(event: 'APPROVE' | 'REQUEST_CHANGES') {
+  async function handleReview(event: "APPROVE" | "REQUEST_CHANGES") {
     submitting = true;
     error = null;
     success = null;
     try {
       await createReview(owner, repo, number, event, body.trim() || undefined);
-      success = event === 'APPROVE' ? 'Approved!' : 'Changes requested.';
-      body = '';
+      success = event === "APPROVE" ? "Approved!" : "Changes requested.";
+      body = "";
       expanded = false;
-      setTimeout(() => { success = null; }, 2000);
+      setTimeout(() => {
+        success = null;
+      }, 2000);
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to submit review.';
+      error = e instanceof Error ? e.message : "Failed to submit review.";
     } finally {
       submitting = false;
     }
@@ -28,13 +38,13 @@
 
   function cancel() {
     expanded = false;
-    body = '';
+    body = "";
     error = null;
   }
 </script>
 
 <div class="wrapper">
-  <button class="review-btn" onclick={() => expanded = !expanded}>
+  <button class="review-btn" onclick={() => (expanded = !expanded)}>
     Review ▾
   </button>
   {#if success}
@@ -43,19 +53,34 @@
 
   {#if expanded}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="overlay" onclick={cancel} onkeydown={(e) => { if (e.key === 'Escape') cancel(); }}></div>
+    <div
+      class="overlay"
+      onclick={cancel}
+      onkeydown={(e) => {
+        if (e.key === "Escape") cancel();
+      }}
+    ></div>
     <div class="pane">
       <div class="pane-header">Review this pull request</div>
-      <textarea bind:value={body} placeholder="Leave a comment (optional)..."></textarea>
+      <textarea bind:value={body} placeholder="Leave a comment (optional)..."
+      ></textarea>
       {#if error}
         <span class="error-msg">{error}</span>
       {/if}
       <div class="pane-footer">
         <button class="cancel-btn" onclick={cancel}>Cancel</button>
-        <button class="approve-btn" onclick={() => handleReview('APPROVE')} disabled={submitting}>
+        <button
+          class="approve-btn"
+          onclick={() => handleReview("APPROVE")}
+          disabled={submitting}
+        >
           Approve
         </button>
-        <button class="request-changes-btn" onclick={() => handleReview('REQUEST_CHANGES')} disabled={submitting}>
+        <button
+          class="request-changes-btn"
+          onclick={() => handleReview("REQUEST_CHANGES")}
+          disabled={submitting}
+        >
           Request changes
         </button>
       </div>
@@ -146,7 +171,8 @@
   .cancel-btn:hover {
     background: #eaeef2;
   }
-  .approve-btn, .request-changes-btn {
+  .approve-btn,
+  .request-changes-btn {
     padding: 5px 16px;
     border: none;
     border-radius: 6px;
@@ -168,7 +194,8 @@
   .request-changes-btn:hover:not(:disabled) {
     background: #a40e26;
   }
-  .approve-btn:disabled, .request-changes-btn:disabled {
+  .approve-btn:disabled,
+  .request-changes-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }

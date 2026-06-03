@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { page } from '$app/stores';
-  import { onMount } from 'svelte';
-  import { setContext } from 'svelte';
-  import IssueHeader from '$lib/components/IssueHeader.svelte';
-  import { fetchIssue } from '$lib/github/pulls';
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { setContext } from "svelte";
+  import IssueHeader from "$lib/components/IssueHeader.svelte";
+  import { fetchIssue } from "$lib/github/pulls";
+  import { shortcutHint } from "$lib/utils/shortcut.svelte";
 
   interface IssueData {
     number: number;
@@ -26,7 +28,11 @@
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
 
-  setContext('issue', { get value() { return issueData; } });
+  setContext("issue", {
+    get value() {
+      return issueData;
+    },
+  });
 
   onMount(async () => {
     try {
@@ -36,7 +42,7 @@
         title: raw.title as string,
         state: raw.state as string,
         body: (raw.body as string) ?? null,
-        user: { login: (raw.user as { login?: string })?.login ?? '' },
+        user: { login: (raw.user as { login?: string })?.login ?? "" },
         createdAt: raw.created_at as string,
         updatedAt: raw.updated_at as string,
         htmlUrl: raw.html_url as string,
@@ -47,6 +53,14 @@
       issueLoading = false;
     }
   });
+
+  $effect(() =>
+    useShortcut("g", () => {
+      const btn = document.querySelector<HTMLAnchorElement>(".github-btn");
+      btn?.click();
+    }),
+  );
+  $effect(() => useShortcut("h", () => goto("/github"), { shift: true }));
 </script>
 
 <div class="page">
@@ -56,8 +70,18 @@
     <p class="status error">{issueError}</p>
   {:else if issueData}
     <div class="top-bar">
-      <a class="back-btn" href="/github">← Notifications</a>
-      <a class="github-btn" href={issueData.htmlUrl} target="_blank" rel="noopener">Open on GitHub ↗</a>
+      <a class="back-btn" href="/github"
+        >← Notifications <span class="shortcut-hint"
+          >{shortcutHint("H", { shift: true })}</span
+        ></a
+      >
+      <a
+        class="github-btn"
+        href={issueData.htmlUrl}
+        target="_blank"
+        rel="noopener"
+        >Open on GitHub <span class="shortcut-hint">{shortcutHint()}</span> ↗</a
+      >
     </div>
     <IssueHeader issue={issueData} {owner} {repo} />
     <div class="tab-content">
@@ -67,7 +91,12 @@
 </div>
 
 <style>
-  .page { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  .page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
   .top-bar {
     padding: 8px 24px;
     border-bottom: 1px solid #d0d7de;
@@ -87,7 +116,9 @@
     cursor: pointer;
     font-family: inherit;
   }
-  .back-btn:hover { background: #eaeef2; }
+  .back-btn:hover {
+    background: #eaeef2;
+  }
   .github-btn {
     padding: 4px 12px;
     border: 1px solid #d0d7de;
@@ -97,8 +128,28 @@
     text-decoration: none;
     background: #f6f8fa;
   }
-  .github-btn:hover { background: #eaeef2; }
-  .tab-content { flex: 1; overflow-y: auto; }
-  .status { padding: 24px; color: #656d76; }
-  .status.error { color: #cf222e; }
+  .github-btn:hover {
+    background: #eaeef2;
+  }
+  .shortcut-hint {
+    font-size: 10px;
+    color: #8b949e;
+    padding: 1px 4px;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+    line-height: 1.2;
+    margin-left: 4px;
+    margin-right: 2px;
+  }
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .status {
+    padding: 24px;
+    color: #656d76;
+  }
+  .status.error {
+    color: #cf222e;
+  }
 </style>

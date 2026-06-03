@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Markdown from './Markdown.svelte';
+  import Markdown from "./Markdown.svelte";
 
   interface CommentThread {
     id: number;
@@ -23,8 +23,8 @@
 
   let editing = $state(false);
   let editingReplyId = $state<number | null>(null);
-  let editBody = $state('');
-  let replyBody = $state('');
+  let editBody = $state("");
+  let replyBody = $state("");
   let submitting = $state(false);
 
   async function handleEdit() {
@@ -41,7 +41,8 @@
 
   async function handleDelete() {
     if (submitting) return;
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    if (!window.confirm("Are you sure you want to delete this comment?"))
+      return;
     submitting = true;
     try {
       if (ondelete) await ondelete(thread.id);
@@ -55,7 +56,7 @@
     submitting = true;
     try {
       if (onreply) await onreply(thread.id, replyBody);
-      replyBody = '';
+      replyBody = "";
     } finally {
       submitting = false;
     }
@@ -72,10 +73,19 @@
           {#if onupdate || ondelete}
             <span class="actions">
               {#if onupdate}
-                <button class="action-btn" onclick={() => { editing = true; editingReplyId = null; editBody = thread.body; }}>Edit</button>
+                <button
+                  class="action-btn"
+                  onclick={() => {
+                    editing = true;
+                    editingReplyId = null;
+                    editBody = thread.body;
+                  }}>Edit</button
+                >
               {/if}
               {#if ondelete}
-                <button class="action-btn danger" onclick={handleDelete}>Delete</button>
+                <button class="action-btn danger" onclick={handleDelete}
+                  >Delete</button
+                >
               {/if}
             </span>
           {/if}
@@ -83,10 +93,17 @@
       </div>
       <div class="bubble-body">
         {#if editing && editingReplyId === null}
-          <textarea bind:value={editBody} rows={3} disabled={submitting}></textarea>
+          <textarea bind:value={editBody} rows={3} disabled={submitting}
+          ></textarea>
           <div class="edit-actions">
-            <button class="cancel" onclick={() => editing = false}>Cancel</button>
-            <button class="submit" onclick={handleEdit} disabled={submitting || !editBody.trim()}>Save</button>
+            <button class="cancel" onclick={() => (editing = false)}
+              >Cancel</button
+            >
+            <button
+              class="submit"
+              onclick={handleEdit}
+              disabled={submitting || !editBody.trim()}>Save</button
+            >
           </div>
         {:else}
           <Markdown text={thread.body} />
@@ -99,21 +116,51 @@
             <span class="header-right">
               <span class="date">{reply.createdAt}</span>
               <span class="actions">
-                <button class="action-btn" onclick={() => { editing = true; editingReplyId = reply.id; editBody = reply.body; }}>Edit</button>
-                <button class="action-btn danger" onclick={async () => {
-    if (submitting) return;
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
-    submitting = true;
-    try { if (ondelete) await ondelete(reply.id); } finally { submitting = false; }
-  }}>Delete</button>
+                <button
+                  class="action-btn"
+                  onclick={() => {
+                    editing = true;
+                    editingReplyId = reply.id;
+                    editBody = reply.body;
+                  }}>Edit</button
+                >
+                <button
+                  class="action-btn danger"
+                  onclick={async () => {
+                    if (submitting) return;
+                    if (
+                      !window.confirm(
+                        "Are you sure you want to delete this comment?",
+                      )
+                    )
+                      return;
+                    submitting = true;
+                    try {
+                      if (ondelete) await ondelete(reply.id);
+                    } finally {
+                      submitting = false;
+                    }
+                  }}>Delete</button
+                >
               </span>
             </span>
           </div>
           {#if editing && editingReplyId === reply.id}
-            <textarea bind:value={editBody} rows={3} disabled={submitting}></textarea>
+            <textarea bind:value={editBody} rows={3} disabled={submitting}
+            ></textarea>
             <div class="edit-actions">
-              <button class="cancel" onclick={() => { editing = false; editingReplyId = null; }}>Cancel</button>
-              <button class="submit" onclick={handleEdit} disabled={submitting || !editBody.trim()}>Save</button>
+              <button
+                class="cancel"
+                onclick={() => {
+                  editing = false;
+                  editingReplyId = null;
+                }}>Cancel</button
+              >
+              <button
+                class="submit"
+                onclick={handleEdit}
+                disabled={submitting || !editBody.trim()}>Save</button
+              >
             </div>
           {:else}
             <Markdown text={reply.body} />
@@ -128,7 +175,11 @@
             rows={2}
             disabled={submitting}
           ></textarea>
-          <button class="reply-btn" onclick={handleReply} disabled={submitting || !replyBody.trim()}>Reply</button>
+          <button
+            class="reply-btn"
+            onclick={handleReply}
+            disabled={submitting || !replyBody.trim()}>Reply</button
+          >
         </div>
       {/if}
     </div>
@@ -136,7 +187,9 @@
 </div>
 
 <style>
-  .inline-comment { padding: 4px }
+  .inline-comment {
+    padding: 4px;
+  }
   .root-bubble {
     border: 1px solid #d0d7de;
     border-radius: 6px;
@@ -150,7 +203,10 @@
     display: flex;
     justify-content: space-between;
   }
-  .bubble-body { padding: 6px 10px; font-size: 13px; }
+  .bubble-body {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
   .reply-body {
     border-top: 1px solid #f0f0f0;
   }
@@ -166,8 +222,14 @@
     align-items: center;
     gap: 8px;
   }
-  .date { color: #656d76; font-size: 11px; }
-  .actions { display: flex; gap: 4px; }
+  .date {
+    color: #656d76;
+    font-size: 11px;
+  }
+  .actions {
+    display: flex;
+    gap: 4px;
+  }
   .action-btn {
     background: none;
     border: none;
@@ -176,10 +238,15 @@
     color: #656d76;
     padding: 1px 4px;
   }
-  .action-btn:hover { color: #1f2328; }
-  .action-btn.danger:hover { color: #cf222e; }
+  .action-btn:hover {
+    color: #1f2328;
+  }
+  .action-btn.danger:hover {
+    color: #cf222e;
+  }
   .bubble-body :global(.markdown) {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
   }
   .bubble-body textarea {
     width: 100%;
@@ -202,7 +269,10 @@
     font-size: 13px;
     cursor: pointer;
   }
-  .edit-actions .cancel { border: 1px solid #d0d7de; background: #fff; }
+  .edit-actions .cancel {
+    border: 1px solid #d0d7de;
+    background: #fff;
+  }
   .edit-actions .submit {
     border: 1px solid #1f883d;
     background: #1f883d;
@@ -236,5 +306,8 @@
     font-weight: 500;
     cursor: pointer;
   }
-  .reply-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .reply-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 </style>

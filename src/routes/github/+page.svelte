@@ -1,21 +1,26 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { notifications, loading, error, loadNotifications } from '$lib/stores/notifications.svelte';
-  import NotificationItem from '$lib/components/NotificationItem.svelte';
-  import Sidebar from '$lib/components/Sidebar.svelte';
-  import type { NotificationItem as NotificationItemType } from '$lib/stores/notifications.svelte';
+  import { onMount } from "svelte";
+  import {
+    notifications,
+    loading,
+    error,
+    loadNotifications,
+  } from "$lib/stores/notifications.svelte";
+  import NotificationItem from "$lib/components/NotificationItem.svelte";
+  import Sidebar from "$lib/components/Sidebar.svelte";
+  import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
 
   let selectedId = $state<string | null>(null);
   let repoFilter = $state<string | null>(null);
-  let unreadFilter = $state<'all' | 'unread' | 'read'>('all');
+  let unreadFilter = $state<"all" | "unread" | "read">("all");
 
   let filtered = $derived(
-    notifications.value.filter(n => {
+    notifications.value.filter((n) => {
       if (repoFilter && n.repository.fullName !== repoFilter) return false;
-      if (unreadFilter === 'unread' && !n.unread) return false;
-      if (unreadFilter === 'read' && n.unread) return false;
+      if (unreadFilter === "unread" && !n.unread) return false;
+      if (unreadFilter === "read" && n.unread) return false;
       return true;
-    })
+    }),
   );
 
   onMount(() => {
@@ -23,19 +28,25 @@
   });
 
   function prHref(item: NotificationItemType): string {
-    const match = item.subject.url.match(/repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/);
+    const match = item.subject.url.match(
+      /repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/,
+    );
     if (match) {
       return `/github/${match[1]}/${match[2]}/pull/${match[3]}`;
     }
-    const issueMatch = item.subject.url.match(/repos\/([^/]+)\/([^/]+)\/issues\/(\d+)/);
+    const issueMatch = item.subject.url.match(
+      /repos\/([^/]+)\/([^/]+)\/issues\/(\d+)/,
+    );
     if (issueMatch) {
       return `/github/${issueMatch[1]}/${issueMatch[2]}/issues/${issueMatch[3]}`;
     }
-    return '#';
+    return "#";
   }
 
   function prStateKey(item: NotificationItemType): string | null {
-    const match = item.subject.url.match(/repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/);
+    const match = item.subject.url.match(
+      /repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/,
+    );
     if (match) {
       return `${match[1]}/${match[2]}#${match[3]}`;
     }
@@ -44,17 +55,27 @@
 </script>
 
 <div class="app-shell">
-  <Sidebar onfilterchange={(repo) => repoFilter = repo} />
+  <Sidebar onfilterchange={(repo) => (repoFilter = repo)} />
   <div class="list-panel">
     <div class="list-header">
       <h2>Notifications</h2>
       <div class="header-actions">
-        <select class="unread-filter" value={unreadFilter} onchange={(e) => unreadFilter = (e.target as HTMLSelectElement).value as 'all' | 'unread' | 'read'}>
+        <select
+          class="unread-filter"
+          value={unreadFilter}
+          onchange={(e) =>
+            (unreadFilter = (e.target as HTMLSelectElement).value as
+              | "all"
+              | "unread"
+              | "read")}
+        >
           <option value="all">All</option>
           <option value="unread">Unread</option>
           <option value="read">Read</option>
         </select>
-        <button onclick={() => loadNotifications()} disabled={loading.value}>Refresh</button>
+        <button onclick={() => loadNotifications()} disabled={loading.value}
+          >Refresh</button
+        >
       </div>
     </div>
     {#if loading.value}
@@ -66,7 +87,12 @@
     {:else}
       <div class="list">
         {#each filtered as item (item.id)}
-          <NotificationItem {item} selected={selectedId === item.id} href={prHref(item)} prStateKey={prStateKey(item)} />
+          <NotificationItem
+            {item}
+            selected={selectedId === item.id}
+            href={prHref(item)}
+            prStateKey={prStateKey(item)}
+          />
         {/each}
       </div>
     {/if}
@@ -97,7 +123,9 @@
     padding: 12px 16px;
     border-bottom: 1px solid #d0d7de;
   }
-  .list-header h2 { font-size: 16px; }
+  .list-header h2 {
+    font-size: 16px;
+  }
   .header-actions {
     display: flex;
     gap: 6px;
@@ -123,13 +151,22 @@
     flex: 1;
     overflow-y: auto;
   }
-  .status { padding: 16px; color: #656d76; font-size: 14px; }
-  .status.error { color: #cf222e; }
+  .status {
+    padding: 16px;
+    color: #656d76;
+    font-size: 14px;
+  }
+  .status.error {
+    color: #cf222e;
+  }
   .detail-panel {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
   }
-  .placeholder { color: #656d76; font-size: 14px; }
+  .placeholder {
+    color: #656d76;
+    font-size: 14px;
+  }
 </style>

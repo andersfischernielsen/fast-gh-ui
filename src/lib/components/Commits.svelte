@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import { listPRCommits } from '$lib/github/pulls';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import { listPRCommits } from "$lib/github/pulls";
 
   interface PRCommit {
     sha: string;
@@ -24,11 +24,16 @@
       commits = raw.map((c: Record<string, unknown>) => ({
         sha: c.sha as string,
         author: {
-          login: (c.author as { login?: string })?.login ?? (c.commit as { author?: { name?: string } })?.author?.name ?? 'unknown',
-          avatarUrl: (c.author as { avatar_url?: string })?.avatar_url ?? '',
+          login:
+            (c.author as { login?: string })?.login ??
+            (c.commit as { author?: { name?: string } })?.author?.name ??
+            "unknown",
+          avatarUrl: (c.author as { avatar_url?: string })?.avatar_url ?? "",
         },
-        message: ((c.commit as { message?: string })?.message ?? '').split('\n')[0],
-        date: (c.commit as { author?: { date?: string } })?.author?.date ?? '',
+        message: ((c.commit as { message?: string })?.message ?? "").split(
+          "\n",
+        )[0],
+        date: (c.commit as { author?: { date?: string } })?.author?.date ?? "",
       }));
     } catch (e) {
       error = String(e);
@@ -49,7 +54,10 @@
 {:else}
   <div class="commits">
     {#each commits as commit (commit.sha)}
-      <a class="commit" href="/github/{owner}/{repo}/pull/{number}/commits/{commit.sha}">
+      <a
+        class="commit"
+        href="/github/{owner}/{repo}/pull/{number}/commits/{commit.sha}"
+      >
         <div class="commit-meta">
           <span class="sha">{shortSha(commit.sha)}</span>
           <span class="author">{commit.author.login}</span>
@@ -78,7 +86,9 @@
     text-decoration: none;
     color: inherit;
   }
-  .commit:hover { background: #f6f8fa; }
+  .commit:hover {
+    background: #f6f8fa;
+  }
   .commit-meta {
     display: flex;
     gap: 8px;
@@ -93,8 +103,19 @@
     padding: 1px 6px;
     border-radius: 4px;
   }
-  .author { font-size: 13px; color: #656d76; }
-  .commit-message { font-size: 14px; }
-  .status { padding: 16px; color: #656d76; font-size: 14px; }
-  .status.error { color: #cf222e; }
+  .author {
+    font-size: 13px;
+    color: #656d76;
+  }
+  .commit-message {
+    font-size: 14px;
+  }
+  .status {
+    padding: 16px;
+    color: #656d76;
+    font-size: 14px;
+  }
+  .status.error {
+    color: #cf222e;
+  }
 </style>

@@ -1,18 +1,23 @@
 <script lang="ts">
-  import { notifications } from '$lib/stores/notifications.svelte';
-  import { clearToken } from '$lib/stores/token.svelte';
-  import { goto } from '$app/navigation';
+  import { notifications } from "$lib/stores/notifications.svelte";
+  import { clearToken } from "$lib/stores/token.svelte";
+  import { goto } from "$app/navigation";
+  import OpenFromGitHub from "./OpenFromGitHub.svelte";
 
-  let { onfilterchange }: {
+  let {
+    onfilterchange,
+  }: {
     onfilterchange?: (repo: string | null) => void;
   } = $props();
 
-  let repos = $derived([...new Set(notifications.value.map(n => n.repository.fullName))].sort());
+  let repos = $derived(
+    [...new Set(notifications.value.map((n) => n.repository.fullName))].sort(),
+  );
   let selectedRepo = $state<string | null>(null);
 
   function logout() {
     clearToken();
-    goto('/github/login');
+    goto("/github/login");
   }
 </script>
 
@@ -34,8 +39,13 @@
       </button>
     {/each}
   </nav>
+  <div class="sidebar-github-link">
+    <OpenFromGitHub />
+  </div>
   <div class="sidebar-footer">
-    <button class="nav-btn" onclick={() => goto('/github/settings')}>Settings</button>
+    <button class="nav-btn" onclick={() => goto("/github/settings")}
+      >Settings</button
+    >
     <button class="logout-btn" onclick={logout}>Logout</button>
   </div>
 </aside>
@@ -83,14 +93,22 @@
     border-radius: 6px;
     font-family: inherit;
   }
-  .repo-item:hover { background: #eaeef2; }
-  .repo-item.active { background: #d0d7de; }
+  .repo-item:hover {
+    background: #eaeef2;
+  }
+  .repo-item.active {
+    background: #d0d7de;
+  }
   .sidebar-footer {
     border-top: 1px solid #d0d7de;
     padding: 8px 12px;
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+  .sidebar-github-link {
+    border-top: 1px solid #d0d7de;
+    padding: 8px 12px;
   }
   .sidebar-footer button {
     padding: 6px 8px;
@@ -102,6 +120,10 @@
     border-radius: 6px;
     font-family: inherit;
   }
-  .sidebar-footer button:hover { background: #eaeef2; }
-  .logout-btn { color: #cf222e; }
+  .sidebar-footer button:hover {
+    background: #eaeef2;
+  }
+  .logout-btn {
+    color: #cf222e;
+  }
 </style>

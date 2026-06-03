@@ -6,13 +6,20 @@
     deletions: number;
   }
 
-  let { files, selectedFile, onselect }:
-    { files: PRFile[]; selectedFile: string | null; onselect: (filename: string) => void } = $props();
+  let {
+    files,
+    selectedFile,
+    onselect,
+  }: {
+    files: PRFile[];
+    selectedFile: string | null;
+    onselect: (filename: string) => void;
+  } = $props();
 
   function fileIcon(status: string): string {
-    if (status === 'added') return '+';
-    if (status === 'removed') return '−';
-    return '•';
+    if (status === "added") return "+";
+    if (status === "removed") return "−";
+    return "•";
   }
 </script>
 
@@ -27,7 +34,12 @@
         class:selected={selectedFile === file.filename}
         onclick={() => onselect(file.filename)}
       >
-        <span class="icon" class:added={file.status === 'added'} class:removed={file.status === 'removed'}>{fileIcon(file.status)}</span>
+        <span
+          class="icon"
+          class:added={file.status === "added"}
+          class:removed={file.status === "removed"}
+          >{fileIcon(file.status)}</span
+        >
         <span class="name">{file.filename}</span>
         <span class="counts">
           <span class="add">+{file.additions}</span>
@@ -53,7 +65,9 @@
     color: #656d76;
     border-bottom: 1px solid #d0d7de;
   }
-  .tree-list { padding: 4px 0; }
+  .tree-list {
+    padding: 4px 0;
+  }
   .file-item {
     display: flex;
     align-items: center;
@@ -67,13 +81,37 @@
     font-family: monospace;
     cursor: pointer;
   }
-  .file-item:hover { background: #eaeef2; }
-  .file-item.selected { background: #ddf4ff; }
-  .icon { width: 14px; text-align: center; }
-  .icon.added { color: #1a7f37; }
-  .icon.removed { color: #cf222e; }
-  .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .counts { display: flex; gap: 6px; font-size: 11px; }
-  .add { color: #1a7f37; }
-  .del { color: #cf222e; }
+  .file-item:hover {
+    background: #eaeef2;
+  }
+  .file-item.selected {
+    background: #ddf4ff;
+  }
+  .icon {
+    width: 14px;
+    text-align: center;
+  }
+  .icon.added {
+    color: #1a7f37;
+  }
+  .icon.removed {
+    color: #cf222e;
+  }
+  .name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .counts {
+    display: flex;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .add {
+    color: #1a7f37;
+  }
+  .del {
+    color: #cf222e;
+  }
 </style>

@@ -17,13 +17,13 @@
   } = $props();
 
   function stateColor(state: string): string {
-    if (state === 'open') return '#1a7f37';
-    return '#8250df';
+    if (state === "open") return "#1a7f37";
+    return "#8250df";
   }
 
   function stateBg(state: string): string {
-    if (state === 'open') return '#dafbe1';
-    return '#fbefff';
+    if (state === "open") return "#dafbe1";
+    return "#fbefff";
   }
 </script>
 
@@ -39,7 +39,8 @@
     <span
       class="state"
       style="background:{stateBg(issue.state)};color:{stateColor(issue.state)}"
-    >{issue.state}</span>
+      >{issue.state}</span
+    >
     <span>{issue.user.login}</span>
   </div>
 </header>
@@ -59,7 +60,10 @@
     font-weight: 600;
     line-height: 1.4;
   }
-  .number { color: #656d76; font-weight: 400; }
+  .number {
+    color: #656d76;
+    font-weight: 400;
+  }
   .meta-row {
     display: flex;
     gap: 12px;

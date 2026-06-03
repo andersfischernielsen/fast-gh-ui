@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/stores';
-  import { listChecks } from '$lib/github/pulls';
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
+  import { listChecks } from "$lib/github/pulls";
 
   interface CheckRun {
     id: number;
@@ -11,7 +11,7 @@
     detailsUrl: string | null;
   }
 
-  let { headSha = '' }: { headSha?: string } = $props();
+  let { headSha = "" }: { headSha?: string } = $props();
 
   let checkRuns = $state<CheckRun[]>([]);
   let loading = $state(true);
@@ -22,12 +22,15 @@
 
   onMount(async () => {
     try {
-      if (!headSha) { loading = false; return; }
+      if (!headSha) {
+        loading = false;
+        return;
+      }
       const raw = await listChecks(owner, repo, headSha);
       checkRuns = raw.check_runs.map((r: Record<string, unknown>) => ({
         id: r.id as number,
-        name: (r.name as string) ?? '',
-        status: (r.status as string) ?? 'unknown',
+        name: (r.name as string) ?? "",
+        status: (r.status as string) ?? "unknown",
         conclusion: (r.conclusion as string | null) ?? null,
         detailsUrl: (r.details_url as string | null) ?? null,
       }));
@@ -39,19 +42,20 @@
   });
 
   function conclusionIcon(conclusion: string | null): string {
-    if (conclusion === 'success') return '✓';
-    if (conclusion === 'failure') return '✗';
-    if (conclusion === 'neutral') return '—';
-    if (conclusion === 'cancelled') return '⊘';
-    if (conclusion === 'skipped') return '⊘';
-    return '';
+    if (conclusion === "success") return "✓";
+    if (conclusion === "failure") return "✗";
+    if (conclusion === "neutral") return "—";
+    if (conclusion === "cancelled") return "⊘";
+    if (conclusion === "skipped") return "⊘";
+    return "";
   }
 
   function conclusionColor(conclusion: string | null): string {
-    if (conclusion === 'success') return '#1a7f37';
-    if (conclusion === 'failure') return '#cf222e';
-    if (conclusion === 'cancelled' || conclusion === 'skipped') return '#656d76';
-    return '#9a6700';
+    if (conclusion === "success") return "#1a7f37";
+    if (conclusion === "failure") return "#cf222e";
+    if (conclusion === "cancelled" || conclusion === "skipped")
+      return "#656d76";
+    return "#9a6700";
   }
 </script>
 
@@ -66,13 +70,23 @@
     {:else}
       {#each checkRuns as check (check.id)}
         <div class="check">
-          <span class="icon" style="color:{conclusionColor(check.conclusion)}">{conclusionIcon(check.conclusion)}</span>
+          <span class="icon" style="color:{conclusionColor(check.conclusion)}"
+            >{conclusionIcon(check.conclusion)}</span
+          >
           <div class="check-info">
             <span class="check-name">{check.name}</span>
-            <span class="check-status">{check.status} {check.conclusion ? '· ' + check.conclusion : ''}</span>
+            <span class="check-status"
+              >{check.status}
+              {check.conclusion ? "· " + check.conclusion : ""}</span
+            >
           </div>
           {#if check.detailsUrl}
-            <a class="details-link" href={check.detailsUrl} target="_blank" rel="noopener">Details ↗</a>
+            <a
+              class="details-link"
+              href={check.detailsUrl}
+              target="_blank"
+              rel="noopener">Details ↗</a
+            >
           {/if}
         </div>
       {/each}
@@ -88,11 +102,27 @@
     padding: 10px 16px;
     border-bottom: 1px solid #f0f0f0;
   }
-  .check:hover { background: #f6f8fa; }
-  .icon { width: 20px; font-size: 16px; font-weight: 600; }
-  .check-info { flex: 1; display: flex; flex-direction: column; }
-  .check-name { font-size: 14px; font-weight: 500; }
-  .check-status { font-size: 12px; color: #656d76; }
+  .check:hover {
+    background: #f6f8fa;
+  }
+  .icon {
+    width: 20px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .check-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .check-name {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .check-status {
+    font-size: 12px;
+    color: #656d76;
+  }
   .details-link {
     padding: 4px 12px;
     border: 1px solid #d0d7de;
@@ -102,7 +132,15 @@
     text-decoration: none;
     background: #f6f8fa;
   }
-  .details-link:hover { background: #eaeef2; }
-  .status { padding: 16px; color: #656d76; font-size: 14px; }
-  .status.error { color: #cf222e; }
+  .details-link:hover {
+    background: #eaeef2;
+  }
+  .status {
+    padding: 16px;
+    color: #656d76;
+    font-size: 14px;
+  }
+  .status.error {
+    color: #cf222e;
+  }
 </style>
