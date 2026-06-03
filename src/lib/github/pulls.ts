@@ -10,19 +10,17 @@ async function listPRComments(
   owner: string | undefined,
   repo: string | undefined,
   pullNumber: number,
-  page?: number,
 ) {
   if (!owner || !repo) return [];
 
   const octokit = createClient();
-  const response = await octokit.rest.issues.listComments({
+  const response = await octokit.paginate(octokit.rest.issues.listComments, {
     owner,
     repo,
     issue_number: pullNumber,
     per_page: 100,
-    page,
   });
-  return response.data;
+  return response;
 }
 
 async function createPRComment(
@@ -80,57 +78,51 @@ async function listPRCommits(
   owner: string | undefined,
   repo: string | undefined,
   pullNumber: number,
-  page?: number,
 ) {
   if (!owner || !repo) return [];
 
   const octokit = createClient();
-  const response = await octokit.rest.pulls.listCommits({
+  const response = await octokit.paginate(octokit.rest.pulls.listCommits, {
     owner,
     repo,
     pull_number: pullNumber,
     per_page: 100,
-    page,
   });
-  return response.data;
+  return response;
 }
 
 async function listPRFiles(
   owner: string | undefined,
   repo: string | undefined,
   pullNumber: number | undefined,
-  page?: number,
 ) {
   if (!owner || !repo || !pullNumber) return [];
 
   const octokit = createClient();
-  const response = await octokit.rest.pulls.listFiles({
+  const response = await octokit.paginate(octokit.rest.pulls.listFiles, {
     owner,
     repo,
     pull_number: pullNumber,
     per_page: 100,
-    page,
   });
-  return response.data;
+  return response;
 }
 
 async function listInlineComments(
   owner: string | undefined,
   repo: string | undefined,
   pullNumber: number | undefined,
-  page?: number,
 ) {
   if (!owner || !repo || !pullNumber) return [];
 
   const octokit = createClient();
-  const response = await octokit.rest.pulls.listReviewComments({
+  const response = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
     owner,
     repo,
     pull_number: pullNumber,
     per_page: 100,
-    page,
   });
-  return response.data;
+  return response;
 }
 
 async function createReview(
@@ -274,13 +266,13 @@ async function listReviews(
   if (!owner || !repo || !pullNumber) return [];
 
   const octokit = createClient();
-  const response = await octokit.rest.pulls.listReviews({
+  const response = await octokit.paginate(octokit.rest.pulls.listReviews, {
     owner,
     repo,
     pull_number: pullNumber,
     per_page: 100,
   });
-  return response.data;
+  return response;
 }
 
 async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
