@@ -1,4 +1,4 @@
-name: Check
+name: Build
 
 on:
   - push
@@ -8,8 +8,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Check
+  Build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
