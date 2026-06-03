@@ -4,7 +4,7 @@
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
-  import { listPRComments, createPRComment } from "$lib/github/pulls";
+  import { listPRComments, createPRComment, updatePRComment, deletePRComment } from "$lib/github/pulls";
 
   interface CommentData {
     id: number;
@@ -76,6 +76,27 @@
       tc.id === parentId ? { ...tc, replies: [...tc.replies, reply] } : tc,
     );
   }
+
+  async function onUpdateComment(commentId: number, body: string) {
+    await updatePRComment(owner, repo, commentId, body);
+    threadedComments = threadedComments.map((tc) => {
+      if (tc.id === commentId) return { ...tc, body };
+      tc.replies = tc.replies.map((r) =>
+        r.id === commentId ? { ...r, body } : r,
+      );
+      return tc;
+    });
+  }
+
+  async function onDeleteComment(commentId: number) {
+    await deletePRComment(owner, repo, commentId);
+    threadedComments = threadedComments
+      .map((tc) => {
+        tc.replies = tc.replies.filter((r) => r.id !== commentId);
+        return tc;
+      })
+      .filter((tc) => tc.id !== commentId);
+  }
 </script>
 
 <div class="conversation">
@@ -90,7 +111,13 @@
   {:else}
     <div class="comments">
       {#each threadedComments as c (c.id)}
-        <Comment comment={c} replies={c.replies} onreply={replyToComment} />
+        <Comment
+          comment={c}
+          replies={c.replies}
+          onreply={replyToComment}
+          onupdate={onUpdateComment}
+          ondelete={onDeleteComment}
+        />
       {/each}
       {#if threadedComments.length === 0}
         <p class="status">No comments yet</p>

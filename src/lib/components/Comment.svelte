@@ -13,15 +13,22 @@
     comment,
     replies = [],
     onreply,
+    onupdate,
+    ondelete,
   }: {
     comment: CommentData;
     replies?: CommentData[];
     onreply?: (parentId: number, body: string) => Promise<void>;
+    onupdate?: (commentId: number, body: string) => Promise<void>;
+    ondelete?: (commentId: number) => Promise<void>;
   } = $props();
 
   let showReply = $state(false);
   let replyBody = $state("");
   let submitting = $state(false);
+  let editing = $state(false);
+  let editingReplyId = $state<number | null>(null);
+  let editBody = $state("");
 
   function formatDate(dateStr: string): string {
     const d = new Date(dateStr);
@@ -34,6 +41,30 @@
       " " +
       d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
     );
+  }
+
+  async function handleEdit() {
+    if (!editBody.trim() || submitting) return;
+    submitting = true;
+    try {
+      if (onupdate) await onupdate(editingReplyId ?? comment.id, editBody);
+      editing = false;
+      editingReplyId = null;
+    } finally {
+      submitting = false;
+    }
+  }
+
+  async function handleDelete(id: number) {
+    if (submitting) return;
+    if (!window.confirm("Are you sure you want to delete this comment?"))
+      return;
+    submitting = true;
+    try {
+      if (ondelete) await ondelete(id);
+    } finally {
+      submitting = false;
+    }
   }
 
   async function handleReply() {
@@ -62,9 +93,45 @@
     <a class="date" href={comment.htmlUrl} target="_blank" rel="noopener"
       >{formatDate(comment.createdAt)}</a
     >
+    <span class="header-right">
+      {#if onupdate || ondelete}
+        <span class="actions">
+          {#if onupdate}
+            <button
+              class="action-btn"
+              onclick={() => {
+                editing = true;
+                editingReplyId = null;
+                editBody = comment.body;
+              }}>Edit</button
+            >
+          {/if}
+          {#if ondelete}
+            <button class="action-btn danger" onclick={() => handleDelete(comment.id)}
+              >Delete</button
+            >
+          {/if}
+        </span>
+      {/if}
+    </span>
   </div>
   <div class="comment-body">
-    <Markdown text={comment.body} />
+    {#if editing && editingReplyId === null}
+      <textarea bind:value={editBody} rows={3} disabled={submitting}
+      ></textarea>
+      <div class="edit-actions">
+        <button class="cancel" onclick={() => (editing = false)}
+          >Cancel</button
+        >
+        <button
+          class="submit"
+          onclick={handleEdit}
+          disabled={submitting || !editBody.trim()}>Save</button
+        >
+      </div>
+    {:else}
+      <Markdown text={comment.body} />
+    {/if}
   </div>
   {#if replies.length > 0}
     <div class="replies">
@@ -82,9 +149,44 @@
             <a class="date" href={reply.htmlUrl} target="_blank" rel="noopener"
               >{formatDate(reply.createdAt)}</a
             >
+            <span class="header-right">
+              <span class="actions">
+                <button
+                  class="action-btn"
+                  onclick={() => {
+                    editing = true;
+                    editingReplyId = reply.id;
+                    editBody = reply.body;
+                  }}>Edit</button
+                >
+                <button
+                  class="action-btn danger"
+                  onclick={() => handleDelete(reply.id)}>Delete</button
+                >
+              </span>
+            </span>
           </div>
           <div class="reply-body">
-            <Markdown text={reply.body} />
+            {#if editing && editingReplyId === reply.id}
+              <textarea bind:value={editBody} rows={3} disabled={submitting}
+              ></textarea>
+              <div class="edit-actions">
+                <button
+                  class="cancel"
+                  onclick={() => {
+                    editing = false;
+                    editingReplyId = null;
+                  }}>Cancel</button
+                >
+                <button
+                  class="submit"
+                  onclick={handleEdit}
+                  disabled={submitting || !editBody.trim()}>Save</button
+                >
+              </div>
+            {:else}
+              <Markdown text={reply.body} />
+            {/if}
           </div>
         </article>
       {/each}
@@ -148,9 +250,70 @@
     color: #656d76;
     font-size: 12px;
   }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .actions {
+    display: flex;
+    gap: 4px;
+  }
+  .action-btn {
+    background: none;
+    border: none;
+    font-size: 11px;
+    cursor: pointer;
+    color: #656d76;
+    padding: 1px 4px;
+    font-family: inherit;
+  }
+  .action-btn:hover {
+    color: #1f2328;
+  }
+  .action-btn.danger:hover {
+    color: #cf222e;
+  }
   .comment-body {
     padding: 12px 16px;
     font-size: 14px;
+  }
+  .comment-body textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .edit-actions button {
+    padding: 4px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .edit-actions .cancel {
+    border: 1px solid #d0d7de;
+    background: #fff;
+  }
+  .edit-actions .submit {
+    border: 1px solid #1f883d;
+    background: #1f883d;
+    color: #fff;
+  }
+  .edit-actions .submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .replies {
     border-top: 1px solid #d0d7de;
@@ -173,6 +336,16 @@
   .reply-body {
     padding-left: 30px;
     font-size: 14px;
+  }
+  .reply-body textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    box-sizing: border-box;
   }
   .reply-toggle {
     border-top: 1px solid #d0d7de;

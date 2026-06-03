@@ -67,7 +67,10 @@
   <div class="thread">
     <div class="comment-bubble root-bubble">
       <div class="bubble-header">
-        <strong>{thread.user.login}</strong>
+        <span class="user-info">
+          <img class="avatar" src={thread.user.avatarUrl} alt="" width="20" height="20" />
+          <strong>{thread.user.login}</strong>
+        </span>
         <span class="header-right">
           <span class="date">{thread.createdAt}</span>
           {#if onupdate || ondelete}
@@ -112,7 +115,10 @@
       {#each thread.replies as reply (reply.id)}
         <div class="bubble-body reply-body">
           <div class="reply-header">
-            <strong>{reply.user.login}</strong>
+            <span class="user-info">
+              <img class="avatar" src={reply.user.avatarUrl} alt="" width="20" height="20" />
+              <strong>{reply.user.login}</strong>
+            </span>
             <span class="header-right">
               <span class="date">{reply.createdAt}</span>
               <span class="actions">
@@ -202,6 +208,16 @@
     font-size: 12px;
     display: flex;
     justify-content: space-between;
+    align-items: center;
+  }
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .avatar {
+    border-radius: 50%;
+    flex-shrink: 0;
   }
   .bubble-body {
     padding: 6px 10px;
@@ -216,6 +232,7 @@
     align-items: center;
     margin-bottom: 4px;
     font-size: 12px;
+    gap: 6px;
   }
   .header-right {
     display: flex;

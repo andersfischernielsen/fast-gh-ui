@@ -43,6 +43,39 @@ async function createPRComment(
   return response.data;
 }
 
+async function updatePRComment(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number | undefined,
+  body: string,
+) {
+  if (!owner || !repo || !commentId) return undefined;
+
+  const octokit = createClient();
+  const response = await octokit.rest.issues.updateComment({
+    owner,
+    repo,
+    comment_id: commentId,
+    body,
+  });
+  return response.data;
+}
+
+async function deletePRComment(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+) {
+  if (!owner || !repo) return;
+
+  const octokit = createClient();
+  await octokit.rest.issues.deleteComment({
+    owner,
+    repo,
+    comment_id: commentId,
+  });
+}
+
 async function listPRCommits(
   owner: string | undefined,
   repo: string | undefined,
@@ -218,6 +251,8 @@ export {
   createReview,
   listPRComments,
   createPRComment,
+  updatePRComment,
+  deletePRComment,
   listPRCommits,
   listPRFiles,
   listInlineComments,

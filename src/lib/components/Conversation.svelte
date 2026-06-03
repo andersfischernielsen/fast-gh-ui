@@ -7,8 +7,12 @@
   import {
     listPRComments,
     createPRComment,
+    updatePRComment,
+    deletePRComment,
     listInlineComments,
     createInlineComment,
+    updateInlineComment,
+    deleteInlineComment,
   } from "$lib/github/pulls";
 
   interface CommentData {
@@ -163,6 +167,55 @@
       tc.id === parentId ? { ...tc, replies: [...tc.replies, reply] } : tc,
     );
   }
+
+  async function onUpdateComment(commentId: number, body: string) {
+    let useInline = false;
+    const target = threadedComments.find((tc) => tc.id === commentId);
+    if (target?.isReview) {
+      useInline = true;
+    } else if (!target) {
+      const parent = threadedComments.find((tc) =>
+        tc.replies.some((r) => r.id === commentId),
+      );
+      if (parent?.isReview) useInline = true;
+    }
+    if (useInline) {
+      await updateInlineComment(owner, repo, commentId, body);
+    } else {
+      await updatePRComment(owner, repo, commentId, body);
+    }
+    threadedComments = threadedComments.map((tc) => {
+      if (tc.id === commentId) return { ...tc, body };
+      tc.replies = tc.replies.map((r) =>
+        r.id === commentId ? { ...r, body } : r,
+      );
+      return tc;
+    });
+  }
+
+  async function onDeleteComment(commentId: number) {
+    let useInline = false;
+    const target = threadedComments.find((tc) => tc.id === commentId);
+    if (target?.isReview) {
+      useInline = true;
+    } else if (!target) {
+      const parent = threadedComments.find((tc) =>
+        tc.replies.some((r) => r.id === commentId),
+      );
+      if (parent?.isReview) useInline = true;
+    }
+    if (useInline) {
+      await deleteInlineComment(owner, repo, commentId);
+    } else {
+      await deletePRComment(owner, repo, commentId);
+    }
+    threadedComments = threadedComments
+      .map((tc) => {
+        tc.replies = tc.replies.filter((r) => r.id !== commentId);
+        return tc;
+      })
+      .filter((tc) => tc.id !== commentId);
+  }
 </script>
 
 <div class="conversation">
@@ -177,7 +230,13 @@
   {:else}
     <div class="comments">
       {#each threadedComments as c (c.id)}
-        <Comment comment={c} replies={c.replies} onreply={replyToComment} />
+        <Comment
+          comment={c}
+          replies={c.replies}
+          onreply={replyToComment}
+          onupdate={onUpdateComment}
+          ondelete={onDeleteComment}
+        />
       {/each}
       {#if threadedComments.length === 0}
         <p class="status">No comments yet</p>
