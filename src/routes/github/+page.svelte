@@ -61,7 +61,6 @@
   <Sidebar onfilterchange={(repo) => (repoFilter = repo)} />
   <div class="list-panel">
     <div class="list-header">
-      <h2>Notifications</h2>
       <div class="header-actions">
         <select
           class="unread-filter"
@@ -129,13 +128,12 @@
     border-bottom: 1px solid #d0d7de;
     height: 50px;
   }
-  .list-header h2 {
-    font-size: 16px;
-  }
+
   .header-actions {
     display: flex;
     gap: 6px;
-    align-items: center;
+    margin-left: auto;
+    align-items: flex-end;
   }
   .unread-filter {
     padding: 3px 6px;

@@ -22,7 +22,7 @@
 </script>
 
 <aside class="sidebar">
-  <div class="sidebar-header">Repositories</div>
+  <div class="sidebar-header"></div>
   <nav class="repo-list">
     {#each repos as repo}
       <button

@@ -102,7 +102,6 @@
 <dialog bind:this={dialog} class="github-dialog" onclose={closeDialog}>
   <form class="dialog-content" onsubmit={(e) => e.preventDefault()}>
     <h2 class="dialog-title">Open from GitHub</h2>
-    <p class="dialog-description">Paste a GitHub URL to open it in this app</p>
     <input
       type="text"
       class="dialog-input"
@@ -177,12 +176,6 @@
     font-size: 12px;
     font-weight: 600;
     color: #1f2328;
-  }
-
-  .dialog-description {
-    margin: 0;
-    font-size: 12px;
-    color: #656d76;
   }
 
   .dialog-input {
