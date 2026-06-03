@@ -131,9 +131,10 @@
   <div class="meta-row">
     <span
       class="state"
-      style="background:{stateBg(pr.state)};color:{stateColor(pr.state)}"
-      >{pr.state}</span
+      style="background:{stateBg(pr.merged ? 'merged' : pr.state)};color:{stateColor(pr.merged ? 'merged' : pr.state)}"
     >
+      {pr.merged ? "merged" : pr.state}
+    </span>
     <span>{pr.user.login}</span>
     <span>{pr.head.ref} → {pr.base.ref}</span>
     <span class="stats"
