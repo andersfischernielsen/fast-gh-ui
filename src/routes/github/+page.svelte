@@ -139,6 +139,7 @@
     font-size: 12px;
     background: #f6f8fa;
     font-family: inherit;
+    height: 25px;
   }
   .list-header button {
     padding: 4px 12px;
