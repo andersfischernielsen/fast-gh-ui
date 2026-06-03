@@ -13,7 +13,9 @@
     createInlineComment,
     updateInlineComment,
     deleteInlineComment,
+    updatePullRequest,
   } from "$lib/github/pulls";
+  import { pr } from "$lib/stores/pr.svelte";
 
   interface CommentData {
     id: number;
@@ -42,6 +44,11 @@
 
   let threadedComments = $state<ThreadedComment[]>([]);
   let loading = $state(true);
+
+  let editingDesc = $state(false);
+  let editDescBody = $state("");
+  let savingDesc = $state(false);
+  let descError = $state<string | null>(null);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -216,13 +223,67 @@
       })
       .filter((tc) => tc.id !== commentId);
   }
+
+  function startEditDescription() {
+    editDescBody = body ?? "";
+    editingDesc = true;
+    descError = null;
+  }
+
+  function cancelEditDescription() {
+    editingDesc = false;
+    descError = null;
+  }
+
+  async function saveDescription() {
+    savingDesc = true;
+    descError = null;
+    try {
+      const result = await updatePullRequest(owner, repo, number, {
+        body: editDescBody,
+      });
+      if (result && pr.value) {
+        pr.value.body = result.body ?? null;
+      }
+      editingDesc = false;
+    } catch (e) {
+      descError = e instanceof Error ? e.message : "Failed to update description.";
+    } finally {
+      savingDesc = false;
+    }
+  }
 </script>
 
 <div class="conversation">
   {#if body}
     <div class="description">
-      <h3>Description</h3>
-      <Markdown text={body} />
+      <div class="desc-header">
+        <h3>Description</h3>
+        {#if editingDesc}
+          <div class="desc-edit-actions">
+            <button class="desc-save-btn" onclick={saveDescription} disabled={savingDesc}>
+              {savingDesc ? "Saving..." : "Save"}
+            </button>
+            <button class="desc-cancel-btn" onclick={cancelEditDescription} disabled={savingDesc}>
+              Cancel
+            </button>
+          </div>
+        {:else}
+          <button class="desc-edit-btn" onclick={startEditDescription}>Edit</button>
+        {/if}
+      </div>
+      {#if editingDesc}
+        <textarea
+          class="desc-textarea"
+          bind:value={editDescBody}
+          disabled={savingDesc}
+        ></textarea>
+        {#if descError}
+          <span class="desc-error">{descError}</span>
+        {/if}
+      {:else}
+        <Markdown text={body} />
+      {/if}
     </div>
   {/if}
   {#if loading}
@@ -256,12 +317,92 @@
     padding: 12px 16px;
     margin-bottom: 16px;
   }
-  .description h3 {
+  .desc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .desc-header h3 {
     font-size: 12px;
     color: #656d76;
-    margin-bottom: 8px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    margin: 0;
+  }
+  .desc-edit-btn {
+    padding: 2px 8px;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 11px;
+    color: #656d76;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  .desc-edit-btn:hover {
+    background: #f6f8fa;
+    color: #1f2328;
+  }
+  .desc-edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .desc-save-btn {
+    padding: 2px 8px;
+    border: 1px solid #1f883d;
+    border-radius: 4px;
+    background: #1f883d;
+    color: #fff;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  .desc-save-btn:hover:not(:disabled) {
+    background: #1a7f37;
+  }
+  .desc-save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .desc-cancel-btn {
+    padding: 2px 8px;
+    border: 1px solid #d0d7de;
+    border-radius: 4px;
+    background: #f6f8fa;
+    font-size: 11px;
+    color: #1f2328;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+  .desc-cancel-btn:hover:not(:disabled) {
+    background: #eaeef2;
+  }
+  .desc-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .desc-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: monospace;
+    resize: vertical;
+    box-sizing: border-box;
+    line-height: 1.5;
+  }
+  .desc-error {
+    display: block;
+    font-size: 12px;
+    color: #cf222e;
+    margin-top: 4px;
   }
   .comments {
     margin-bottom: 16px;

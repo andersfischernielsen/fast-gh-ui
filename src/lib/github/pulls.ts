@@ -232,6 +232,57 @@ async function fetchIssue(
   return response.data;
 }
 
+async function mergePullRequest(
+  owner: string | undefined,
+  repo: string | undefined,
+  pullNumber: number | undefined,
+) {
+  if (!owner || !repo || !pullNumber) return undefined;
+
+  const octokit = createClient();
+  const response = await octokit.rest.pulls.merge({
+    owner,
+    repo,
+    pull_number: pullNumber,
+  });
+  return response.data;
+}
+
+async function updatePullRequest(
+  owner: string | undefined,
+  repo: string | undefined,
+  pullNumber: number | undefined,
+  data: { title?: string; body?: string },
+) {
+  if (!owner || !repo || !pullNumber) return undefined;
+
+  const octokit = createClient();
+  const response = await octokit.rest.pulls.update({
+    owner,
+    repo,
+    pull_number: pullNumber,
+    ...data,
+  });
+  return response.data;
+}
+
+async function listReviews(
+  owner: string | undefined,
+  repo: string | undefined,
+  pullNumber: number | undefined,
+) {
+  if (!owner || !repo || !pullNumber) return [];
+
+  const octokit = createClient();
+  const response = await octokit.rest.pulls.listReviews({
+    owner,
+    repo,
+    pull_number: pullNumber,
+    per_page: 100,
+  });
+  return response.data;
+}
+
 async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
   if (!owner || !repo) return undefined;
 
@@ -248,6 +299,8 @@ async function listChecks(owner: string | undefined, repo: string | undefined, r
 export {
   fetchPullRequest,
   fetchIssue,
+  mergePullRequest,
+  updatePullRequest,
   createReview,
   listPRComments,
   createPRComment,
@@ -260,5 +313,6 @@ export {
   updateInlineComment,
   deleteInlineComment,
   listChecks,
+  listReviews,
   fetchCommit,
 };

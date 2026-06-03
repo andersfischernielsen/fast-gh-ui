@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createReview } from "$lib/github/pulls";
+  import { createReview, mergePullRequest } from "$lib/github/pulls";
 
   let {
     owner,
@@ -16,6 +16,9 @@
   let submitting = $state(false);
   let success = $state<string | null>(null);
   let error = $state<string | null>(null);
+  let mergeSuccess = $state<string | null>(null);
+  let mergeError = $state<string | null>(null);
+  let merging = $state(false);
 
   async function handleReview(event: "APPROVE" | "REQUEST_CHANGES") {
     submitting = true;
@@ -41,9 +44,39 @@
     body = "";
     error = null;
   }
+
+  async function handleMerge() {
+    merging = true;
+    mergeError = null;
+    mergeSuccess = null;
+    try {
+      await mergePullRequest(owner, repo, number);
+      mergeSuccess = "Merged!";
+      setTimeout(() => {
+        mergeSuccess = null;
+      }, 2000);
+    } catch (e) {
+      mergeError = e instanceof Error ? e.message : "Failed to merge.";
+    } finally {
+      merging = false;
+    }
+  }
 </script>
 
 <div class="wrapper">
+  <button
+    class="merge-btn"
+    onclick={handleMerge}
+    disabled={merging}
+  >
+    {merging ? "Merging..." : "Merge"}
+  </button>
+  {#if mergeError}
+    <span class="error-msg">{mergeError}</span>
+  {/if}
+  {#if mergeSuccess}
+    <span class="success">{mergeSuccess}</span>
+  {/if}
   <button class="review-btn" onclick={() => (expanded = !expanded)}>
     Review ▾
   </button>
@@ -106,9 +139,31 @@
     cursor: pointer;
     color: #1f2328;
     font-family: inherit;
+    line-height: 1.4;
+    box-sizing: border-box;
   }
   .review-btn:hover {
     background: #eaeef2;
+  }
+  .merge-btn {
+    padding: 5px 16px;
+    border: 1px solid #8250df;
+    border-radius: 6px;
+    background: #8250df;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    color: #fff;
+    font-family: inherit;
+    line-height: 1.4;
+    box-sizing: border-box;
+  }
+  .merge-btn:hover:not(:disabled) {
+    background: #6e40c9;
+  }
+  .merge-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
   .success {
     font-size: 12px;
