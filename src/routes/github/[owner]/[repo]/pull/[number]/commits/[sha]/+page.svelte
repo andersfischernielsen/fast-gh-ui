@@ -25,6 +25,7 @@
   let commitInfo = $state<CommitInfo | null>(null);
   let files = $state<CommitFile[]>([]);
   let selectedFile = $state<CommitFile | null>(null);
+  let showFiles = $state(false);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -85,30 +86,38 @@
         <span class="sha">{shortSha(commitInfo.sha)}</span>
       </div>
     </div>
+    <button class="files-trigger" onclick={() => (showFiles = !showFiles)}>
+      Files {showFiles ? "▾" : "▸"}
+    </button>
     <div class="file-diff-layout">
-      <div class="file-list">
-        <h3>Files changed ({files.length})</h3>
-        {#each files as file (file.filename)}
-          <button
-            class="file-item"
-            class:active={selectedFile?.filename === file.filename}
-            onclick={() => (selectedFile = file)}
-          >
-            <span class="file-name">{file.filename}</span>
-            <span class="file-stats">
-              {#if file.status === "added"}<span class="added-badge">added</span
-                >{/if}
-              {#if file.status === "removed"}<span class="removed-badge"
-                  >removed</span
-                >{/if}
-              {#if file.status === "renamed"}<span class="renamed-badge"
-                  >renamed</span
-                >{/if}
-              <span class="adds">+{file.additions}</span>
-              <span class="dels">-{file.deletions}</span>
-            </span>
-          </button>
-        {/each}
+      <div class="files-wrapper" class:files-open={showFiles}>
+        {#if showFiles}
+          <div class="files-overlay" role="button" tabindex="0" onclick={() => (showFiles = false)} onkeydown={(e) => e.key === 'Enter' && (showFiles = false)}></div>
+        {/if}
+        <div class="file-list">
+          <h3>Files changed ({files.length})</h3>
+          {#each files as file (file.filename)}
+            <button
+              class="file-item"
+              class:active={selectedFile?.filename === file.filename}
+              onclick={() => { selectedFile = file; showFiles = false; }}
+            >
+              <span class="file-name">{file.filename}</span>
+              <span class="file-stats">
+                {#if file.status === "added"}<span class="added-badge">added</span
+                  >{/if}
+                {#if file.status === "removed"}<span class="removed-badge"
+                    >removed</span
+                  >{/if}
+                {#if file.status === "renamed"}<span class="renamed-badge"
+                    >renamed</span
+                  >{/if}
+                <span class="adds">+{file.additions}</span>
+                <span class="dels">-{file.deletions}</span>
+              </span>
+            </button>
+          {/each}
+        </div>
       </div>
       <div class="diff-view">
         {#if selectedFile?.patch}
@@ -161,6 +170,58 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+  }
+  .files-trigger {
+    display: none;
+  }
+  .files-wrapper {
+    display: contents;
+  }
+  .files-overlay {
+    display: none;
+  }
+  @media (max-width: 768px) {
+    .files-trigger {
+      display: block;
+      padding: 12px 12px;
+      border: none;
+      border-bottom: 1px solid var(--border-primary);
+      background: var(--bg-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-primary);
+      font-family: inherit;
+      text-align: left;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .files-trigger:hover {
+      background: var(--bg-tertiary);
+    }
+    .file-diff-layout {
+      position: relative;
+    }
+    .files-wrapper {
+      display: block;
+      position: relative;
+    }
+    .files-wrapper:not(.files-open) > .file-list {
+      display: none;
+    }
+    .files-wrapper.files-open > .file-list {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      z-index: 20;
+      box-shadow: 4px 0 8px var(--shadow-dialog);
+    }
+    .files-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 19;
+    }
   }
   .file-list {
     width: 280px;

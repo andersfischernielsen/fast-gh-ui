@@ -258,6 +258,11 @@
     font-size: 11px;
     text-decoration: none;
   }
+  @media (max-width: 768px) {
+    .date {
+      display: none;
+    }
+  }
   .actions {
     display: flex;
     gap: 4px;
