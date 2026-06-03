@@ -95,7 +95,7 @@
           <div class="files-overlay" role="button" tabindex="0" onclick={() => (showFiles = false)} onkeydown={(e) => e.key === 'Enter' && (showFiles = false)}></div>
         {/if}
         <div class="file-list">
-          <h3>Files changed ({files.length})</h3>
+          <h3>{files.length} files</h3>
           {#each files as file (file.filename)}
             <button
               class="file-item"
@@ -231,12 +231,12 @@
     background: var(--bg-secondary);
   }
   .file-list h3 {
-    padding: 10px 12px;
+    padding: 8px 12px;
     font-size: 12px;
     font-weight: 600;
     color: var(--text-secondary);
-    text-transform: uppercase;
     margin: 0;
+    border-bottom: 1px solid var(--border-primary);
   }
   .file-item {
     display: flex;
