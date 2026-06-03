@@ -80,7 +80,9 @@
         href={issueData.htmlUrl}
         target="_blank"
         rel="noopener"
-        >Open on GitHub <span class="shortcut-hint">{shortcutHint()}</span> ↗</a
+        >Open on GitHub ↗ <span class="shortcut-hint"
+          >{shortcutHint("G", { shift: true })}</span
+        ></a
       >
     </div>
     <IssueHeader issue={issueData} {owner} {repo} />

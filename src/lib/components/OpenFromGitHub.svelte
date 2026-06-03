@@ -8,33 +8,51 @@
 
   const GITHUB_HOST_PATTERNS = ["github.com", "www.github.com"];
 
-  function parseGitHubUrl(input: string): string | null {
+  type ParseResult =
+    | { ok: true; route: string }
+    | { ok: false; reason: string };
+
+  function parseGitHubUrl(input: string): ParseResult {
     let url: URL;
     try {
       url = new URL(input.startsWith("http") ? input : `https://${input}`);
     } catch {
-      return null;
+      return { ok: false, reason: "That doesn't look like a valid URL" };
     }
 
-    if (!GITHUB_HOST_PATTERNS.includes(url.host)) return null;
+    if (!GITHUB_HOST_PATTERNS.includes(url.host)) {
+      return {
+        ok: false,
+        reason: "Only github.com URLs are supported",
+      };
+    }
 
     const path = url.pathname.replace(/\/$/, "");
     const match = path.match(
       /^\/([^/]+)\/([^/]+)\/(issues|pull)\/(\d+)(?:\/commits\/([a-f0-9]+))?$/,
     );
-    if (!match) return null;
+    if (!match) {
+      return {
+        ok: false,
+        reason:
+          "Expected: github.com/owner/repo/issues/123, /pull/123, or /pull/123/commits/abc123",
+      };
+    }
 
     const [, owner, repo, type, number, sha] = match;
     if (type === "issues") {
-      return `/github/${owner}/${repo}/issues/${number}`;
+      return { ok: true, route: `/github/${owner}/${repo}/issues/${number}` };
     }
     if (type === "pull") {
       if (sha) {
-        return `/github/${owner}/${repo}/pull/${number}/commits/${sha}`;
+        return {
+          ok: true,
+          route: `/github/${owner}/${repo}/pull/${number}/commits/${sha}`,
+        };
       }
-      return `/github/${owner}/${repo}/pull/${number}`;
+      return { ok: true, route: `/github/${owner}/${repo}/pull/${number}` };
     }
-    return null;
+    return { ok: false, reason: "Unexpected error" };
   }
 
   $effect(() => useShortcut("g", openDialog));
@@ -58,19 +76,19 @@
       return;
     }
 
-    const route = parseGitHubUrl(trimmed);
-    if (!route) {
-      error =
-        "Unsupported GitHub URL. Supported: /issues, /pull, /pull/*/commits/*";
+    const result = parseGitHubUrl(trimmed);
+    if (!result.ok) {
+      error = result.reason;
       return;
     }
 
     closeDialog();
-    goto(route);
+    goto(result.route);
   }
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleOpen();
     }
   }
@@ -82,7 +100,7 @@
 </button>
 
 <dialog bind:this={dialog} class="github-dialog" onclose={closeDialog}>
-  <form method="dialog" class="dialog-content">
+  <form class="dialog-content" onsubmit={(e) => e.preventDefault()}>
     <h2 class="dialog-title">Open from GitHub</h2>
     <p class="dialog-description">Paste a GitHub URL to open it in this app</p>
     <input

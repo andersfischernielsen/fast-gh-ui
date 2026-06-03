@@ -43,7 +43,9 @@
         href={pr.value.htmlUrl}
         target="_blank"
         rel="noopener"
-        >Open on GitHub <span class="shortcut-hint">{shortcutHint("G")}</span> ↗</a
+        >Open on GitHub ↗<span class="shortcut-hint"
+          >{shortcutHint("G", { shift: true })}</span
+        ></a
       >
     </div>
     <PRHeader pr={pr.value} {owner} {repo} />
@@ -102,8 +104,7 @@
     border: 1px solid #d0d7de;
     border-radius: 4px;
     line-height: 1.2;
-    margin-left: 4px;
-    margin-right: 2px;
+    margin-left: 16px;
   }
   .tab-content {
     flex: 1;
