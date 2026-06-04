@@ -5,7 +5,7 @@
   import { setContext } from "svelte";
   import IssueHeader from "$lib/components/IssueHeader.svelte";
   import { fetchIssue } from "$lib/github/pulls";
-  import { shortcutHint } from "$lib/utils/shortcut.svelte";
+  import { shortcutHint, useShortcut } from "$lib/utils/shortcut.svelte";
 
   interface IssueData {
     number: number;
@@ -38,14 +38,14 @@
     try {
       const raw = await fetchIssue(owner, repo, number);
       issueData = {
-        number: raw.number as number,
-        title: raw.title as string,
-        state: raw.state as string,
-        body: (raw.body as string) ?? null,
-        user: { login: (raw.user as { login?: string })?.login ?? "" },
-        createdAt: raw.created_at as string,
-        updatedAt: raw.updated_at as string,
-        htmlUrl: raw.html_url as string,
+        number: raw?.number as number,
+        title: raw?.title as string,
+        state: raw?.state as string,
+        body: (raw?.body as string) ?? null,
+        user: { login: (raw?.user as { login?: string })?.login ?? "" },
+        createdAt: raw?.created_at as string,
+        updatedAt: raw?.updated_at as string,
+        htmlUrl: raw?.html_url as string,
       };
     } catch (e) {
       issueError = String(e);
@@ -139,7 +139,7 @@
   .github-btn:hover {
     background: var(--bg-tertiary);
   }
-.shortcut-hint {
+  .shortcut-hint {
     font-size: 9px;
     color: var(--text-tertiary);
     padding: 1px 4px;

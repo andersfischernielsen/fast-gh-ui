@@ -27,13 +27,14 @@
         return;
       }
       const raw = await listChecks(owner, repo, headSha);
-      checkRuns = raw.check_runs.map((r: Record<string, unknown>) => ({
-        id: r.id as number,
-        name: (r.name as string) ?? "",
-        status: (r.status as string) ?? "unknown",
-        conclusion: (r.conclusion as string | null) ?? null,
-        detailsUrl: (r.details_url as string | null) ?? null,
-      }));
+      checkRuns =
+        raw?.check_runs.map((r: Record<string, unknown>) => ({
+          id: r.id as number,
+          name: (r.name as string) ?? "",
+          status: (r.status as string) ?? "unknown",
+          conclusion: (r.conclusion as string | null) ?? null,
+          detailsUrl: (r.details_url as string | null) ?? null,
+        })) ?? [];
     } catch (e) {
       error = String(e);
     } finally {

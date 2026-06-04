@@ -92,7 +92,13 @@
     <div class="file-diff-layout">
       <div class="files-wrapper" class:files-open={showFiles}>
         {#if showFiles}
-          <div class="files-overlay" role="button" tabindex="0" onclick={() => (showFiles = false)} onkeydown={(e) => e.key === 'Enter' && (showFiles = false)}></div>
+          <div
+            class="files-overlay"
+            role="button"
+            tabindex="0"
+            onclick={() => (showFiles = false)}
+            onkeydown={(e) => e.key === "Enter" && (showFiles = false)}
+          ></div>
         {/if}
         <div class="file-list">
           <h3>{files.length} files</h3>
@@ -100,11 +106,15 @@
             <button
               class="file-item"
               class:active={selectedFile?.filename === file.filename}
-              onclick={() => { selectedFile = file; showFiles = false; }}
+              onclick={() => {
+                selectedFile = file;
+                showFiles = false;
+              }}
             >
               <span class="file-name">{file.filename}</span>
               <span class="file-stats">
-                {#if file.status === "added"}<span class="added-badge">added</span
+                {#if file.status === "added"}<span class="added-badge"
+                    >added</span
                   >{/if}
                 {#if file.status === "removed"}<span class="removed-badge"
                     >removed</span

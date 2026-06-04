@@ -139,7 +139,7 @@
     </span>
     <span>{pr.user.login}</span>
     <span class="branch-ref">{pr.head.ref} → {pr.base.ref}</span>
-<span class="review-summary">
+    <span class="review-summary">
       {#if reviewsLoading}
         <span class="review-loading">...</span>
       {:else}

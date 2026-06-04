@@ -19,7 +19,10 @@ export function useShortcut(
   return () => document.removeEventListener("keydown", onKeydown);
 }
 
-export function shortcutHint(key: string, options?: { shift?: boolean }): string {
+export function shortcutHint(
+  key: string,
+  options?: { shift?: boolean },
+): string {
   const mod = navigator.platform.includes("Mac") ? "⌘" : "^";
   const shiftKey = navigator.platform.includes("Mac") ? "⇧" : "Shift+";
   return `${options?.shift ? shiftKey : ""}${mod}${key}`;

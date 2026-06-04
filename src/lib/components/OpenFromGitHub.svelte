@@ -180,7 +180,7 @@
     color: var(--text-primary);
   }
 
-.dialog-input {
+  .dialog-input {
     padding: 5px 10px;
     border: 1px solid var(--border-primary);
     border-radius: 6px;

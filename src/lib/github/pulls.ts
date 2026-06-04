@@ -1,8 +1,16 @@
 import { createClient } from "./client";
 
-async function fetchPullRequest(owner: string, repo: string, pullNumber: number) {
+async function fetchPullRequest(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+) {
   const octokit = createClient();
-  const response = await octokit.rest.pulls.get({ owner, repo, pull_number: pullNumber });
+  const response = await octokit.rest.pulls.get({
+    owner,
+    repo,
+    pull_number: pullNumber,
+  });
   return response.data;
 }
 
@@ -116,12 +124,15 @@ async function listInlineComments(
   if (!owner || !repo || !pullNumber) return [];
 
   const octokit = createClient();
-  const response = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
-    owner,
-    repo,
-    pull_number: pullNumber,
-    per_page: 100,
-  });
+  const response = await octokit.paginate(
+    octokit.rest.pulls.listReviewComments,
+    {
+      owner,
+      repo,
+      pull_number: pullNumber,
+      per_page: 100,
+    },
+  );
   return response;
 }
 
@@ -147,7 +158,11 @@ async function createReview(
 
 async function fetchCommit(owner: string, repo: string, sha: string) {
   const octokit = createClient();
-  const response = await octokit.rest.repos.getCommit({ owner, repo, ref: sha });
+  const response = await octokit.rest.repos.getCommit({
+    owner,
+    repo,
+    ref: sha,
+  });
   return response.data;
 }
 
@@ -220,7 +235,11 @@ async function fetchIssue(
   if (!owner || !repo || !issueNumber) return undefined;
 
   const octokit = createClient();
-  const response = await octokit.rest.issues.get({ owner, repo, issue_number: issueNumber });
+  const response = await octokit.rest.issues.get({
+    owner,
+    repo,
+    issue_number: issueNumber,
+  });
   return response.data;
 }
 
@@ -275,7 +294,11 @@ async function listReviews(
   return response;
 }
 
-async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
+async function listChecks(
+  owner: string | undefined,
+  repo: string | undefined,
+  ref: string,
+) {
   if (!owner || !repo) return undefined;
 
   const octokit = createClient();

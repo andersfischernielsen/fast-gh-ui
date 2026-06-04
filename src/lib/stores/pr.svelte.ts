@@ -44,7 +44,10 @@ async function loadPR(
       htmlUrl: raw.html_url,
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
-      user: { login: raw.user?.login ?? "", avatarUrl: raw.user?.avatar_url ?? "" },
+      user: {
+        login: raw.user?.login ?? "",
+        avatarUrl: raw.user?.avatar_url ?? "",
+      },
       head: { ref: raw.head.ref, sha: raw.head.sha },
       base: { ref: raw.base.ref, sha: raw.base.sha },
       merged: raw.merged ?? false,

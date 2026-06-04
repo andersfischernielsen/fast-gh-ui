@@ -247,7 +247,8 @@
       }
       editingDesc = false;
     } catch (e) {
-      descError = e instanceof Error ? e.message : "Failed to update description.";
+      descError =
+        e instanceof Error ? e.message : "Failed to update description.";
     } finally {
       savingDesc = false;
     }
@@ -261,15 +262,25 @@
         <h3>Description</h3>
         {#if editingDesc}
           <div class="desc-edit-actions">
-            <button class="desc-save-btn" onclick={saveDescription} disabled={savingDesc}>
+            <button
+              class="desc-save-btn"
+              onclick={saveDescription}
+              disabled={savingDesc}
+            >
               {savingDesc ? "Saving..." : "Save"}
             </button>
-            <button class="desc-cancel-btn" onclick={cancelEditDescription} disabled={savingDesc}>
+            <button
+              class="desc-cancel-btn"
+              onclick={cancelEditDescription}
+              disabled={savingDesc}
+            >
               Cancel
             </button>
           </div>
         {:else}
-          <button class="desc-edit-btn" onclick={startEditDescription}>Edit</button>
+          <button class="desc-edit-btn" onclick={startEditDescription}
+            >Edit</button
+          >
         {/if}
       </div>
       {#if editingDesc}

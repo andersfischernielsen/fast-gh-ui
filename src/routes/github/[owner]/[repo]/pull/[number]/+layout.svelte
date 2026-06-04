@@ -49,7 +49,7 @@
       >
     </div>
     <PRHeader pr={pr.value} {owner} {repo} />
-    <PRTabs commitsCount={-1} filesCount={pr.value.changedFiles} />
+    <PRTabs />
     <div class="tab-content">
       {@render children()}
     </div>
@@ -103,7 +103,7 @@
   .github-btn:hover {
     background: var(--bg-tertiary);
   }
-.shortcut-hint {
+  .shortcut-hint {
     font-size: 9px;
     color: var(--text-tertiary);
     padding: 1px 4px;

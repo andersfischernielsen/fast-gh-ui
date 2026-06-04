@@ -219,7 +219,13 @@
     <div class="files-changed">
       <div class="tree-wrapper" class:tree-open={showTree}>
         {#if showTree}
-          <div class="tree-overlay" role="button" tabindex="0" onclick={() => (showTree = false)} onkeydown={(e) => e.key === 'Enter' && (showTree = false)}></div>
+          <div
+            class="tree-overlay"
+            role="button"
+            tabindex="0"
+            onclick={() => (showTree = false)}
+            onkeydown={(e) => e.key === "Enter" && (showTree = false)}
+          ></div>
         {/if}
         <FileTree
           {files}

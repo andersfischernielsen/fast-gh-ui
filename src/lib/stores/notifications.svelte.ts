@@ -1,4 +1,7 @@
-import { fetchNotifications, markThreadAsRead } from "$lib/github/notifications";
+import {
+  fetchNotifications,
+  markThreadAsRead,
+} from "$lib/github/notifications";
 
 interface NotificationItem {
   id: string;
@@ -32,7 +35,12 @@ function mapNotification(raw: {
   reason: string;
   updated_at: string;
   last_read_at: string | null;
-  subject: { title: string; url: string; type: string; latest_comment_url: string | null };
+  subject: {
+    title: string;
+    url: string;
+    type: string;
+    latest_comment_url: string | null;
+  };
   repository: {
     id: number;
     name: string;
@@ -97,5 +105,13 @@ async function markAsRead(threadId: string): Promise<void> {
   }
 }
 
-export { notifications, loading, error, prStates, loadNotifications, setPRState, markAsRead };
+export {
+  notifications,
+  loading,
+  error,
+  prStates,
+  loadNotifications,
+  setPRState,
+  markAsRead,
+};
 export type { NotificationItem };
