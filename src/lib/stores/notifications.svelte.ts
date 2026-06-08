@@ -1,7 +1,4 @@
-import {
-  fetchNotifications,
-  markThreadAsRead,
-} from "$lib/github/notifications";
+import { fetchNotifications, markThreadAsRead } from "$lib/github/notifications";
 
 interface NotificationItem {
   id: string;
@@ -105,13 +102,5 @@ async function markAsRead(threadId: string): Promise<void> {
   }
 }
 
-export {
-  notifications,
-  loading,
-  error,
-  prStates,
-  loadNotifications,
-  setPRState,
-  markAsRead,
-};
+export { notifications, loading, error, prStates, loadNotifications, setPRState, markAsRead };
 export type { NotificationItem };

@@ -1,7 +1,6 @@
 const TOKEN_KEY = "github-frontend-token";
 
-let stored =
-  typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+let stored = typeof localStorage !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
 
 const token = $state<{ value: string | null }>({ value: stored });
 
