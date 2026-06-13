@@ -21,7 +21,9 @@ export const actions: Actions = {
       const octokit = new Octokit({ auth: token });
       await octokit.rest.users.getAuthenticated();
     } catch {
-      return fail(401, { error: "Invalid token. Check your personal access token." });
+      return fail(401, {
+        error: "Invalid token. Check your personal access token.",
+      });
     }
 
     setTokenCookie(cookies, token);

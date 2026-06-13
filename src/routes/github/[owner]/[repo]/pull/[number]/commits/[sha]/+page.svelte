@@ -25,9 +25,14 @@
           <div class="file-item">
             <span class="file-name">{file.filename}</span>
             <span class="file-stats">
-              {#if file.status === "added"}<span class="added-badge">added</span>{/if}
-              {#if file.status === "removed"}<span class="removed-badge">removed</span>{/if}
-              {#if file.status === "renamed"}<span class="renamed-badge">renamed</span>{/if}
+              {#if file.status === "added"}<span class="added-badge">added</span
+                >{/if}
+              {#if file.status === "removed"}<span class="removed-badge"
+                  >removed</span
+                >{/if}
+              {#if file.status === "renamed"}<span class="renamed-badge"
+                  >renamed</span
+                >{/if}
               <span class="adds">+{file.additions}</span>
               <span class="dels">-{file.deletions}</span>
             </span>
@@ -37,9 +42,14 @@
       <div class="diff-view">
         {#if commit.files[0]?.patch}
           <div class="diff-header">{commit.files[0].filename}</div>
-          <DiffViewer patch={commit.files[0].patch} currentFile={commit.files[0].filename} />
+          <DiffViewer
+            patch={commit.files[0].patch}
+            currentFile={commit.files[0].filename}
+          />
         {:else}
-          <p class="no-diff">No diff available for {commit.files[0]?.filename}</p>
+          <p class="no-diff">
+            No diff available for {commit.files[0]?.filename}
+          </p>
         {/if}
       </div>
     </div>
@@ -120,11 +130,24 @@
     font-size: 11px;
     white-space: nowrap;
   }
-  .added-badge { color: var(--text-success); font-weight: 600; }
-  .removed-badge { color: var(--text-danger); font-weight: 600; }
-  .renamed-badge { color: var(--text-link); font-weight: 600; }
-  .adds { color: var(--text-success); }
-  .dels { color: var(--text-danger); }
+  .added-badge {
+    color: var(--text-success);
+    font-weight: 600;
+  }
+  .removed-badge {
+    color: var(--text-danger);
+    font-weight: 600;
+  }
+  .renamed-badge {
+    color: var(--text-link);
+    font-weight: 600;
+  }
+  .adds {
+    color: var(--text-success);
+  }
+  .dels {
+    color: var(--text-danger);
+  }
   .diff-view {
     flex: 1;
     overflow-y: auto;
@@ -142,7 +165,9 @@
     color: var(--text-secondary);
     font-size: 12px;
   }
-  .status.error { color: var(--text-danger); }
+  .status.error {
+    color: var(--text-danger);
+  }
   .no-diff {
     padding: 16px;
     color: var(--text-secondary);

@@ -77,7 +77,10 @@
     }
   });
 
-  async function submitAction(actionName: string, data: Record<string, string>) {
+  async function submitAction(
+    actionName: string,
+    data: Record<string, string>,
+  ) {
     const fd = new FormData();
     for (const [k, v] of Object.entries(data)) fd.set(k, v);
     const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
@@ -86,8 +89,18 @@
     if (result.type === "success") await invalidateAll();
   }
 
-  async function onCreateComment(startLine: number, endLine: number, file: string, body: string) {
-    const data: Record<string, string> = { body, path: file, line: String(endLine), commitId: headSha };
+  async function onCreateComment(
+    startLine: number,
+    endLine: number,
+    file: string,
+    body: string,
+  ) {
+    const data: Record<string, string> = {
+      body,
+      path: file,
+      line: String(endLine),
+      commitId: headSha,
+    };
     if (startLine !== endLine) data.startLine = String(startLine);
     await submitAction("createInlineComment", data);
   }
@@ -97,12 +110,19 @@
     const path = parent?.path ?? "";
     const line = parent?.originalLine ?? parent?.line ?? 1;
     await submitAction("createInlineComment", {
-      body, path, line: String(line), commitId: headSha, inReplyTo: String(commentId),
+      body,
+      path,
+      line: String(line),
+      commitId: headSha,
+      inReplyTo: String(commentId),
     });
   }
 
   async function onUpdateComment(commentId: number, body: string) {
-    await submitAction("updateInlineComment", { commentId: String(commentId), body });
+    await submitAction("updateInlineComment", {
+      commentId: String(commentId),
+      body,
+    });
   }
 
   async function onDeleteComment(commentId: number) {
@@ -129,7 +149,7 @@
           ></div>
         {/if}
         <FileTree
-          files={files}
+          {files}
           {selectedFile}
           onselect={(f: string) => {
             selectedFile = f;
@@ -224,7 +244,6 @@
     </div>
   </div>
 {/if}
-
 
 <style>
   .status {

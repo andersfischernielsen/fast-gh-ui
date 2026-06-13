@@ -21,14 +21,14 @@
   {:then [pr, reviews]}
     <div class="top-bar">
       <a class="back-btn" href="/github"
-        >← Notifications <span class="shortcut-hint">{shortcutHint("H", { shift: true })}</span></a
+        >← Notifications <span class="shortcut-hint"
+          >{shortcutHint("H", { shift: true })}</span
+        ></a
       >
-      <a
-        class="github-btn"
-        href={pr.htmlUrl}
-        target="_blank"
-        rel="noopener"
-        >Open on GitHub ↗<span class="shortcut-hint">{shortcutHint("G", { shift: true })}</span></a
+      <a class="github-btn" href={pr.htmlUrl} target="_blank" rel="noopener"
+        >Open on GitHub ↗<span class="shortcut-hint"
+          >{shortcutHint("G", { shift: true })}</span
+        ></a
       >
     </div>
     <PRHeader {pr} owner={data.owner} repo={data.repo} {reviews} />

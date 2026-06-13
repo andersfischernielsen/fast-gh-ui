@@ -1,6 +1,9 @@
 import { error } from "@sveltejs/kit";
 import { githubErrorMessage } from "$lib/server/auth";
-import { fetchNotifications, markThreadAsRead } from "$lib/server/github/notifications";
+import {
+  fetchNotifications,
+  markThreadAsRead,
+} from "$lib/server/github/notifications";
 import type { NotificationItem } from "$lib/types/notification";
 import type { PageServerLoad, Actions } from "./$types";
 

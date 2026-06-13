@@ -20,14 +20,18 @@
   {:then issueData}
     <div class="top-bar">
       <a class="back-btn" href="/github"
-        >← Notifications <span class="shortcut-hint">{shortcutHint("H", { shift: true })}</span></a
+        >← Notifications <span class="shortcut-hint"
+          >{shortcutHint("H", { shift: true })}</span
+        ></a
       >
       <a
         class="github-btn"
         href={issueData.htmlUrl}
         target="_blank"
         rel="noopener"
-        >Open on GitHub ↗ <span class="shortcut-hint">{shortcutHint("G", { shift: true })}</span></a
+        >Open on GitHub ↗ <span class="shortcut-hint"
+          >{shortcutHint("G", { shift: true })}</span
+        ></a
       >
     </div>
     <IssueHeader issue={issueData} owner={data.owner} repo={data.repo} />

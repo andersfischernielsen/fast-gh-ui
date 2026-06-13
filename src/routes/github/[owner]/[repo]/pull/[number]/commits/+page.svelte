@@ -7,9 +7,9 @@
   <p class="status">Loading commits...</p>
 {:then commits}
   <Commits {commits} />
-  {:catch e}
-    <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
-  {/await}
+{:catch e}
+  <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
+{/await}
 
 <style>
   .status {

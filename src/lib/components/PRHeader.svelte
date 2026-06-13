@@ -92,7 +92,8 @@
               type="button"
               class="cancel-btn"
               onclick={cancelEditing}
-              disabled={saving}>
+              disabled={saving}
+            >
               Cancel
             </button>
           </div>

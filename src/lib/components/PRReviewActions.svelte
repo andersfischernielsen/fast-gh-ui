@@ -22,7 +22,10 @@
     reviewBody = "";
   }
 
-  async function submitAction(actionName: string, data: Record<string, string>) {
+  async function submitAction(
+    actionName: string,
+    data: Record<string, string>,
+  ) {
     const fd = new FormData();
     for (const [k, v] of Object.entries(data)) fd.set(k, v);
     const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
@@ -77,7 +80,8 @@
         disabled={submitting}
       ></textarea>
       <div class="pane-footer">
-        <button type="button" class="cancel-btn" onclick={cancel}>Cancel</button>
+        <button type="button" class="cancel-btn" onclick={cancel}>Cancel</button
+        >
         <button
           type="button"
           class="approve-btn"
