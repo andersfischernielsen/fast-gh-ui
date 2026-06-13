@@ -75,14 +75,9 @@ export const actions: Actions = {
     const commitId = getFormValue(data, "commitId");
     const path = getFormValue(data, "path");
     const line = Number(data.get("line"));
-    const startLine = data.get("startLine")
-      ? Number(data.get("startLine"))
-      : undefined;
-    const inReplyTo = data.get("inReplyTo")
-      ? Number(data.get("inReplyTo"))
-      : undefined;
-    if (!body || !commitId || !path || !line)
-      return fail(400, { error: "Invalid input" });
+    const startLine = data.get("startLine") ? Number(data.get("startLine")) : undefined;
+    const inReplyTo = data.get("inReplyTo") ? Number(data.get("inReplyTo")) : undefined;
+    if (!body || !commitId || !path || !line) return fail(400, { error: "Invalid input" });
     await createInlineComment(
       token,
       params.owner,
@@ -103,13 +98,7 @@ export const actions: Actions = {
     const commentId = Number(data.get("commentId"));
     const body = getFormValue(data, "body");
     if (!commentId || !body) return fail(400, { error: "Invalid input" });
-    await updateInlineComment(
-      token,
-      params.owner,
-      params.repo,
-      commentId,
-      body,
-    );
+    await updateInlineComment(token, params.owner, params.repo, commentId, body);
     return {};
   },
   deleteInlineComment: async ({ request, locals, params }) => {
@@ -138,12 +127,7 @@ export const actions: Actions = {
   },
   merge: async ({ locals, params }) => {
     const token = locals.token!;
-    await mergePullRequest(
-      token,
-      params.owner,
-      params.repo,
-      Number(params.number),
-    );
+    await mergePullRequest(token, params.owner, params.repo, Number(params.number));
     return {};
   },
 };
