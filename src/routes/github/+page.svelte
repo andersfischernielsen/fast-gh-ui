@@ -1,34 +1,21 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import {
-    notifications,
-    loading,
-    error,
-    loadNotifications,
-  } from "$lib/stores/notifications.svelte";
   import NotificationItem from "$lib/components/NotificationItem.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
-  import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+  import type { NotificationItem as NotificationItemType } from "$lib/types/notification";
+  import { invalidateAll } from "$app/navigation";
+
+  let { data } = $props();
 
   let selectedId = $state<string | null>(null);
   let repoFilter = $state<string | null>(null);
   let unreadFilter = $state<"all" | "unread" | "read">("all");
 
-  let filtered = $derived(
-    notifications.value.filter((n) => {
-      if (repoFilter && n.repository.fullName !== repoFilter) return false;
-      if (unreadFilter === "unread" && !n.unread) return false;
-      if (unreadFilter === "read" && n.unread) return false;
-      return true;
-    }),
-  );
+  function refresh() {
+    invalidateAll();
+  }
 
-  onMount(() => {
-    loadNotifications();
-  });
-
-  $effect(() => useShortcut("r", () => loadNotifications(), { shift: true }));
+  $effect(() => useShortcut("r", refresh, { shift: true }));
 
   function prHref(item: NotificationItemType): string {
     const match = item.subject.url.match(
@@ -57,51 +44,62 @@
   }
 </script>
 
-<div class="app-shell">
-  <Sidebar onfilterchange={(repo) => (repoFilter = repo)} />
-  <div class="list-panel">
-    <div class="list-header">
-      <div class="header-actions">
-        <select
-          class="unread-filter"
-          value={unreadFilter}
-          onchange={(e) =>
-            (unreadFilter = (e.target as HTMLSelectElement).value as
-              | "all"
-              | "unread"
-              | "read")}
-        >
-          <option value="all">All</option>
-          <option value="unread">Unread</option>
-          <option value="read">Read</option>
-        </select>
-        <button onclick={() => loadNotifications()} disabled={loading.value}
-          >Refresh <span class="shortcut-hint"
-            >{shortcutHint("R", { shift: true })}</span
-          ></button
-        >
+{#await data.notifications}
+  <p class="status">Loading...</p>
+{:then items}
+  {@const filtered = items.filter((n) => {
+    if (repoFilter && n.repository.fullName !== repoFilter) return false;
+    if (unreadFilter === "unread" && !n.unread) return false;
+    if (unreadFilter === "read" && n.unread) return false;
+    return true;
+  })}
+  <div class="app-shell">
+    <Sidebar
+      onfilterchange={(repo) => (repoFilter = repo)}
+      notifications={items}
+    />
+    <div class="list-panel">
+      <div class="list-header">
+        <div class="header-actions">
+          <select
+            class="unread-filter"
+            value={unreadFilter}
+            onchange={(e) =>
+              (unreadFilter = (e.target as HTMLSelectElement).value as
+                | "all"
+                | "unread"
+                | "read")}
+          >
+            <option value="all">All</option>
+            <option value="unread">Unread</option>
+            <option value="read">Read</option>
+          </select>
+          <button onclick={refresh}
+            >Refresh <span class="shortcut-hint"
+              >{shortcutHint("R", { shift: true })}</span
+            ></button
+          >
+        </div>
       </div>
+      {#if filtered.length === 0}
+        <p class="status">No notifications</p>
+      {:else}
+        <div class="list">
+          {#each filtered as item (item.id)}
+            <NotificationItem
+              {item}
+              selected={selectedId === item.id}
+              href={prHref(item)}
+              prStateKey={prStateKey(item)}
+            />
+          {/each}
+        </div>
+      {/if}
     </div>
-    {#if loading.value}
-      <p class="status">Loading...</p>
-    {:else if error.value}
-      <p class="status error">{error.value}</p>
-    {:else if filtered.length === 0}
-      <p class="status">No notifications</p>
-    {:else}
-      <div class="list">
-        {#each filtered as item (item.id)}
-          <NotificationItem
-            {item}
-            selected={selectedId === item.id}
-            href={prHref(item)}
-            prStateKey={prStateKey(item)}
-          />
-        {/each}
-      </div>
-    {/if}
   </div>
-</div>
+{:catch e}
+  <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
+{/await}
 
 <style>
   .app-shell {

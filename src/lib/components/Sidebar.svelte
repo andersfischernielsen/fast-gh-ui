@@ -1,24 +1,20 @@
 <script lang="ts">
-  import { notifications } from "$lib/stores/notifications.svelte";
-  import { clearToken } from "$lib/stores/token.svelte";
-  import { goto } from "$app/navigation";
+  import type { NotificationItem } from "$lib/types/notification";
+  import { enhance } from "$app/forms";
   import OpenFromGitHub from "./OpenFromGitHub.svelte";
 
   let {
     onfilterchange,
+    notifications,
   }: {
     onfilterchange?: (repo: string | null) => void;
+    notifications: NotificationItem[];
   } = $props();
 
   let repos = $derived(
-    [...new Set(notifications.value.map((n) => n.repository.fullName))].sort(),
+    [...new Set(notifications.map((n) => n.repository.fullName))].sort(),
   );
   let selectedRepo = $state<string | null>(null);
-
-  function logout() {
-    clearToken();
-    goto("/github/login");
-  }
 </script>
 
 <aside class="sidebar">
@@ -42,10 +38,10 @@
     <OpenFromGitHub />
   </div>
   <div class="sidebar-footer">
-    <button class="nav-btn" onclick={() => goto("/github/settings")}
-      >Settings</button
-    >
-    <button class="logout-btn" onclick={logout}>Logout</button>
+    <a class="nav-btn" href="/github/settings">Settings</a>
+    <form method="POST" action="/github/settings?/logout" use:enhance>
+      <button type="submit" class="logout-btn">Logout</button>
+    </form>
   </div>
 </aside>
 
@@ -109,7 +105,8 @@
     border-top: 1px solid var(--border-primary);
     padding: 8px 12px;
   }
-  .sidebar-footer button {
+  .sidebar-footer :is(a, button) {
+    display: block;
     padding: 6px 8px;
     border: none;
     background: none;
@@ -119,8 +116,9 @@
     border-radius: 6px;
     font-family: inherit;
     color: var(--text-primary);
+    text-decoration: none;
   }
-  .sidebar-footer button:hover {
+  .sidebar-footer :is(a, button):hover {
     background: var(--bg-tertiary);
   }
   .logout-btn {

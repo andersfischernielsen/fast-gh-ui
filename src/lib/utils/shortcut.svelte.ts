@@ -20,7 +20,9 @@ export function useShortcut(
 }
 
 export function shortcutHint(key: string, options?: { shift?: boolean }): string {
-  const mod = navigator.platform.includes("Mac") ? "⌘" : "^";
-  const shiftKey = navigator.platform.includes("Mac") ? "⇧" : "Shift+";
+  const isMac =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent ?? "");
+  const mod = isMac ? "⌘" : "^";
+  const shiftKey = isMac ? "⇧" : "Shift+";
   return `${options?.shift ? shiftKey : ""}${mod}${key}`;
 }

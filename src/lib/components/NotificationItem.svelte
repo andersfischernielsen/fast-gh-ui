@@ -1,7 +1,6 @@
 <script lang="ts">
-  import type { NotificationItem } from "$lib/stores/notifications.svelte";
-  import { markAsRead, prStates } from "$lib/stores/notifications.svelte";
-  import { fetchPullRequest } from "$lib/github/pulls";
+  import { enhance } from "$app/forms";
+  import type { NotificationItem } from "$lib/types/notification";
 
   let {
     item,
@@ -45,35 +44,10 @@
     return `${Math.floor(hours / 24)}d`;
   }
 
-  function handleClick() {
-    if (item.unread) markAsRead(item.id);
-  }
-
-  async function handleMouseEnter() {
-    if (!prStateKey) return;
-    const match = prStateKey.match(/^(.+)\/(.+)#(\d+)$/);
-    if (!match) return;
-    try {
-      const pr = await fetchPullRequest(match[1], match[2], parseInt(match[3]));
-      prStates[prStateKey] =
-        pr.state === "closed" && pr.merged ? "merged" : pr.state;
-    } catch {
-      // ignore
-    }
-  }
-
   let prNumber = $derived(parsePRNumber(item.subject.url));
-  let state = $derived(prStateKey ? prStates[prStateKey] : null);
 </script>
 
-<a
-  class="item"
-  class:selected
-  class:unread={item.unread}
-  {href}
-  onclick={handleClick}
-  onmouseenter={handleMouseEnter}
->
+<a class="item" class:selected class:unread={item.unread} {href}>
   <span class="repo">{item.repository.fullName}</span>
   <span class="title">
     <span class="number">{prNumber}</span>
@@ -81,27 +55,30 @@
   </span>
   <span class="meta">
     <span class="badge">{getTypeBadge(item.subject.type)}</span>
-    {#if state}
-      <span
-        class="pr-state"
-        class:open={state === "open"}
-        class:merged={state === "merged"}
-        class:closed={state === "closed"}>{state}</span
-      >
-    {/if}
     <span class="time">{formatTime(item.updatedAt)}</span>
   </span>
   {#if item.unread}
-    <button
-      class="toggle-btn"
-      onclick={(e: MouseEvent) => {
-        e.stopPropagation();
-        e.preventDefault();
-        markAsRead(item.id);
+    <form
+      method="POST"
+      action="?/markRead"
+      use:enhance={() => {
+        return async ({ update }) => {
+          await update({ invalidateAll: false });
+        };
       }}
+      class="mark-read-form"
     >
-      Mark read
-    </button>
+      <input type="hidden" name="threadId" value={item.id} />
+      <button
+        type="submit"
+        class="toggle-btn"
+        onclick={(e) => {
+          e.stopPropagation();
+        }}
+      >
+        Mark read
+      </button>
+    </form>
   {/if}
 </a>
 
@@ -171,33 +148,16 @@
     background: var(--bg-selected);
     color: var(--text-link);
   }
-  .pr-state {
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 10px;
-    font-weight: 600;
-    text-transform: capitalize;
-  }
-  .pr-state.open {
-    background: var(--state-open-bg);
-    color: var(--text-success);
-  }
-  .pr-state.merged {
-    background: var(--state-merged-bg);
-    color: var(--state-merged-text);
-  }
-  .pr-state.closed {
-    background: var(--state-closed-bg);
-    color: var(--text-danger);
-  }
   .time {
     font-size: 12px;
     color: var(--text-secondary);
   }
-  .toggle-btn {
+  .mark-read-form {
     position: absolute;
     top: 6px;
     right: 8px;
+  }
+  .toggle-btn {
     padding: 2px 8px;
     border: 1px solid var(--border-primary);
     border-radius: 4px;
