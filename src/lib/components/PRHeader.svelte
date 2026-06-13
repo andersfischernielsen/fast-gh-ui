@@ -109,9 +109,7 @@
       {#if !editing}
         <button class="edit-btn" onclick={startEditing}>Edit</button>
       {/if}
-      {#if pr.state === "open"}
-        <PRReviewActions />
-      {/if}
+      <PRReviewActions canMerge={pr.state === "open" && !pr.merged} />
     </div>
   </div>
   <div class="meta-row">
