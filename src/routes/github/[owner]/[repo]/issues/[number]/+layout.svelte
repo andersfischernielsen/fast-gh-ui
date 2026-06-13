@@ -5,8 +5,9 @@
 
   let { children, data } = $props();
 
-  let pageTitle = $state(`#${data.number} — Loading...`);
+  let pageTitle = $state("");
   $effect(() => {
+    pageTitle = `#${data.number} — Loading...`;
     data.issue.then((issue) => {
       pageTitle = `${issue.title} #${issue.number}`;
     });
