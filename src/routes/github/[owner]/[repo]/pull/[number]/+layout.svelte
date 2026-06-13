@@ -6,6 +6,13 @@
 
   let { children, data } = $props();
 
+  let pageTitle = $state(`#${data.number} — Loading...`);
+  $effect(() => {
+    data.pr.then((pr) => {
+      pageTitle = `${pr.title} #${pr.number}`;
+    });
+  });
+
   $effect(() =>
     useShortcut("g", () => {
       const btn = document.querySelector<HTMLAnchorElement>(".github-btn");
@@ -14,6 +21,10 @@
   );
   $effect(() => useShortcut("h", () => goto("/github"), { shift: true }));
 </script>
+
+<svelte:head>
+  <title>{pageTitle}</title>
+</svelte:head>
 
 <div class="page">
   {#await Promise.all([data.pr, data.reviews])}

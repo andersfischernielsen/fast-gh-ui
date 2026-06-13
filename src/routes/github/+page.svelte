@@ -51,6 +51,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Notifications</title>
+</svelte:head>
+
 {#await data.notifications}
   <p class="status">Loading...</p>
 {:then items}
