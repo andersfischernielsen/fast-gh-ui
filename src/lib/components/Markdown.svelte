@@ -1,16 +1,5 @@
-<script lang="ts">
+<script module lang="ts">
   import { Marked } from "marked";
-  import DOMPurify from "dompurify";
-  import { onMount } from "svelte";
-  import { loadEmojiMap, replaceEmojis } from "$lib/github/emojis";
-
-  let { text = "" }: { text?: string | null } = $props();
-
-  let emojiMap = $state<Record<string, string> | null>(null);
-
-  onMount(() => {
-    loadEmojiMap().then((m) => (emojiMap = m));
-  });
 
   const marked = new Marked();
   marked.use({
@@ -38,6 +27,19 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;");
   }
+</script>
+
+<script lang="ts">
+  import DOMPurify from "dompurify";
+  import { replaceEmojis } from "$lib/github/emojis";
+
+  let {
+    text = "",
+    emojiMap = null,
+  }: {
+    text?: string | null;
+    emojiMap?: Record<string, string> | null;
+  } = $props();
 
   let rendered = $derived(text ?? "");
 

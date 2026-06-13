@@ -1,7 +1,7 @@
-import { createClient } from "./client";
+import { createGitHubClient } from "$lib/server/auth";
 
-async function fetchPullRequest(owner: string, repo: string, pullNumber: number) {
-  const octokit = createClient();
+async function fetchPullRequest(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.pulls.get({
     owner,
     repo,
@@ -10,14 +10,8 @@ async function fetchPullRequest(owner: string, repo: string, pullNumber: number)
   return response.data;
 }
 
-async function listPRComments(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number,
-) {
-  if (!owner || !repo) return [];
-
-  const octokit = createClient();
+async function listPRComments(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.paginate(octokit.rest.issues.listComments, {
     owner,
     repo,
@@ -28,14 +22,13 @@ async function listPRComments(
 }
 
 async function createPRComment(
-  owner: string | undefined,
-  repo: string | undefined,
+  token: string,
+  owner: string,
+  repo: string,
   pullNumber: number,
   body: string,
 ) {
-  if (!owner || !repo) return undefined;
-
-  const octokit = createClient();
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.issues.createComment({
     owner,
     repo,
@@ -46,14 +39,13 @@ async function createPRComment(
 }
 
 async function updatePRComment(
-  owner: string | undefined,
-  repo: string | undefined,
-  commentId: number | undefined,
+  token: string,
+  owner: string,
+  repo: string,
+  commentId: number,
   body: string,
 ) {
-  if (!owner || !repo || !commentId) return undefined;
-
-  const octokit = createClient();
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.issues.updateComment({
     owner,
     repo,
@@ -63,14 +55,8 @@ async function updatePRComment(
   return response.data;
 }
 
-async function deletePRComment(
-  owner: string | undefined,
-  repo: string | undefined,
-  commentId: number,
-) {
-  if (!owner || !repo) return;
-
-  const octokit = createClient();
+async function deletePRComment(token: string, owner: string, repo: string, commentId: number) {
+  const octokit = createGitHubClient(token);
   await octokit.rest.issues.deleteComment({
     owner,
     repo,
@@ -78,14 +64,8 @@ async function deletePRComment(
   });
 }
 
-async function listPRCommits(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number,
-) {
-  if (!owner || !repo) return [];
-
-  const octokit = createClient();
+async function listPRCommits(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.paginate(octokit.rest.pulls.listCommits, {
     owner,
     repo,
@@ -95,14 +75,8 @@ async function listPRCommits(
   return response;
 }
 
-async function listPRFiles(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
-) {
-  if (!owner || !repo || !pullNumber) return [];
-
-  const octokit = createClient();
+async function listPRFiles(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.paginate(octokit.rest.pulls.listFiles, {
     owner,
     repo,
@@ -112,14 +86,8 @@ async function listPRFiles(
   return response;
 }
 
-async function listInlineComments(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
-) {
-  if (!owner || !repo || !pullNumber) return [];
-
-  const octokit = createClient();
+async function listInlineComments(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
     owner,
     repo,
@@ -130,15 +98,14 @@ async function listInlineComments(
 }
 
 async function createReview(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
+  token: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
   event: "APPROVE" | "REQUEST_CHANGES",
   body?: string,
 ) {
-  if (!owner || !repo || !pullNumber) return undefined;
-
-  const octokit = createClient();
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.pulls.createReview({
     owner,
     repo,
@@ -149,8 +116,8 @@ async function createReview(
   return response.data;
 }
 
-async function fetchCommit(owner: string, repo: string, sha: string) {
-  const octokit = createClient();
+async function fetchCommit(token: string, owner: string, repo: string, sha: string) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.repos.getCommit({
     owner,
     repo,
@@ -160,9 +127,10 @@ async function fetchCommit(owner: string, repo: string, sha: string) {
 }
 
 async function createInlineComment(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
+  token: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
   body: string,
   commitId: string,
   path: string,
@@ -170,9 +138,7 @@ async function createInlineComment(
   startLine?: number,
   inReplyTo?: number,
 ) {
-  if (!owner || !repo || !pullNumber) return undefined;
-
-  const octokit = createClient();
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.pulls.createReviewComment({
     owner,
     repo,
@@ -188,14 +154,13 @@ async function createInlineComment(
 }
 
 async function updateInlineComment(
-  owner: string | undefined,
-  repo: string | undefined,
-  commentId: number | undefined,
+  token: string,
+  owner: string,
+  repo: string,
+  commentId: number,
   body: string,
 ) {
-  if (!owner || !repo || !commentId) return undefined;
-
-  const octokit = createClient();
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.pulls.updateReviewComment({
     owner,
     repo,
@@ -205,14 +170,8 @@ async function updateInlineComment(
   return response.data;
 }
 
-async function deleteInlineComment(
-  owner: string | undefined,
-  repo: string | undefined,
-  commentId: number,
-) {
-  if (!owner || !repo) return;
-
-  const octokit = createClient();
+async function deleteInlineComment(token: string, owner: string, repo: string, commentId: number) {
+  const octokit = createGitHubClient(token);
   await octokit.rest.pulls.deleteReviewComment({
     owner,
     repo,
@@ -220,14 +179,8 @@ async function deleteInlineComment(
   });
 }
 
-async function fetchIssue(
-  owner: string | undefined,
-  repo: string | undefined,
-  issueNumber: number | undefined,
-) {
-  if (!owner || !repo || !issueNumber) return undefined;
-
-  const octokit = createClient();
+async function fetchIssue(token: string, owner: string, repo: string, issueNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.issues.get({
     owner,
     repo,
@@ -236,14 +189,8 @@ async function fetchIssue(
   return response.data;
 }
 
-async function mergePullRequest(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
-) {
-  if (!owner || !repo || !pullNumber) return undefined;
-
-  const octokit = createClient();
+async function mergePullRequest(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.pulls.merge({
     owner,
     repo,
@@ -253,14 +200,13 @@ async function mergePullRequest(
 }
 
 async function updatePullRequest(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
+  token: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
   data: { title?: string; body?: string },
 ) {
-  if (!owner || !repo || !pullNumber) return undefined;
-
-  const octokit = createClient();
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.pulls.update({
     owner,
     repo,
@@ -270,14 +216,8 @@ async function updatePullRequest(
   return response.data;
 }
 
-async function listReviews(
-  owner: string | undefined,
-  repo: string | undefined,
-  pullNumber: number | undefined,
-) {
-  if (!owner || !repo || !pullNumber) return [];
-
-  const octokit = createClient();
+async function listReviews(token: string, owner: string, repo: string, pullNumber: number) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.paginate(octokit.rest.pulls.listReviews, {
     owner,
     repo,
@@ -287,10 +227,8 @@ async function listReviews(
   return response;
 }
 
-async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
-  if (!owner || !repo) return undefined;
-
-  const octokit = createClient();
+async function listChecks(token: string, owner: string, repo: string, ref: string) {
+  const octokit = createGitHubClient(token);
   const response = await octokit.rest.checks.listForRef({
     owner,
     repo,

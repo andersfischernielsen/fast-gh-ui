@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { listPRCommits } from "$lib/github/pulls";
+  import { page } from "$app/state";
+  import type { PRCommitData } from "$lib/types/commit";
 
   interface PRCommit {
     sha: string;
@@ -10,66 +9,50 @@
     date: string;
   }
 
-  let commits = $state<PRCommit[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
+  let {
+    commits,
+  }: {
+    commits: PRCommitData[];
+  } = $props();
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(Number(page.params.number));
 
-  onMount(async () => {
-    try {
-      const raw = await listPRCommits(owner, repo, number);
-      commits = raw.map((c: Record<string, unknown>) => ({
-        sha: c.sha as string,
-        author: {
-          login:
-            (c.author as { login?: string })?.login ??
-            (c.commit as { author?: { name?: string } })?.author?.name ??
-            "unknown",
-          avatarUrl: (c.author as { avatar_url?: string })?.avatar_url ?? "",
-        },
-        message: ((c.commit as { message?: string })?.message ?? "").split(
-          "\n",
-        )[0],
-        date: (c.commit as { author?: { date?: string } })?.author?.date ?? "",
-      }));
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
-    }
-  });
+  let items = $derived<PRCommit[]>(
+    commits.map((c) => ({
+      sha: c.sha,
+      author: {
+        login: c.author?.login ?? c.commit.author.name ?? "unknown",
+        avatarUrl: c.author?.avatarUrl ?? "",
+      },
+      message: c.commit.message.split("\n")[0],
+      date: c.commit.author.date,
+    })),
+  );
 
   function shortSha(sha: string): string {
     return sha.substring(0, 7);
   }
 </script>
 
-{#if loading}
-  <p class="status">Loading commits...</p>
-{:else if error}
-  <p class="status error">{error}</p>
-{:else}
-  <div class="commits">
-    {#each commits as commit (commit.sha)}
-      <a
-        class="commit"
-        href="/github/{owner}/{repo}/pull/{number}/commits/{commit.sha}"
-      >
-        <div class="commit-meta">
-          <span class="sha">{shortSha(commit.sha)}</span>
-          <span class="author">{commit.author.login}</span>
-        </div>
-        <div class="commit-message">{commit.message}</div>
-      </a>
-    {/each}
-    {#if commits.length === 0}
-      <p class="status">No commits</p>
-    {/if}
-  </div>
-{/if}
+<div class="commits">
+  {#each items as commit (commit.sha)}
+    <a
+      class="commit"
+      href="/github/{owner}/{repo}/pull/{number}/commits/{commit.sha}"
+    >
+      <div class="commit-meta">
+        <span class="sha">{shortSha(commit.sha)}</span>
+        <span class="author">{commit.author.login}</span>
+      </div>
+      <div class="commit-message">{commit.message}</div>
+    </a>
+  {/each}
+  {#if items.length === 0}
+    <p class="status">No commits</p>
+  {/if}
+</div>
 
 <style>
   .commit {
@@ -114,8 +97,5 @@
     padding: 16px;
     color: var(--text-secondary);
     font-size: 12px;
-  }
-  .status.error {
-    color: var(--text-danger);
   }
 </style>

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
 
   let base = $derived(
-    `/github/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`,
+    `/github/${page.params.owner}/${page.params.repo}/pull/${page.params.number}`,
   );
-  let active = $derived($page.route.id?.split("/").pop() ?? "conversation");
+  let active = $derived(page.route.id?.split("/").pop() ?? "conversation");
 </script>
 
 <nav class="tabs">

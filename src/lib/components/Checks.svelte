@@ -1,46 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { listChecks } from "$lib/github/pulls";
+  import type { CheckRunData } from "$lib/types/checkRun";
 
-  interface CheckRun {
-    id: number;
-    name: string;
-    status: string;
-    conclusion: string | null;
-    detailsUrl: string | null;
-  }
+  let {
+    checks,
+  }: {
+    checks?: { check_runs?: CheckRunData[] };
+  } = $props();
 
-  let { headSha = "" }: { headSha?: string } = $props();
-
-  let checkRuns = $state<CheckRun[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
-
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-
-  onMount(async () => {
-    try {
-      if (!headSha) {
-        loading = false;
-        return;
-      }
-      const raw = await listChecks(owner, repo, headSha);
-      checkRuns =
-        raw?.check_runs.map((r: Record<string, unknown>) => ({
-          id: r.id as number,
-          name: (r.name as string) ?? "",
-          status: (r.status as string) ?? "unknown",
-          conclusion: (r.conclusion as string | null) ?? null,
-          detailsUrl: (r.details_url as string | null) ?? null,
-        })) ?? [];
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
-    }
-  });
+  let checkRuns = $derived<CheckRunData[]>(checks?.check_runs ?? []);
 
   function conclusionIcon(conclusion: string | null): string {
     if (conclusion === "success") return "✓";
@@ -60,40 +27,34 @@
   }
 </script>
 
-{#if loading}
-  <p class="status">Loading checks...</p>
-{:else if error}
-  <p class="status error">{error}</p>
-{:else}
-  <div class="checks-panel">
-    {#if checkRuns.length === 0}
-      <p class="status">No checks configured</p>
-    {:else}
-      {#each checkRuns as check (check.id)}
-        <div class="check">
-          <span class="icon" style="color:{conclusionColor(check.conclusion)}"
-            >{conclusionIcon(check.conclusion)}</span
+<div class="checks-panel">
+  {#if checkRuns.length === 0}
+    <p class="status">No checks configured</p>
+  {:else}
+    {#each checkRuns as check (check.id)}
+      <div class="check">
+        <span class="icon" style="color:{conclusionColor(check.conclusion)}"
+          >{conclusionIcon(check.conclusion)}</span
+        >
+        <div class="check-info">
+          <span class="check-name">{check.name}</span>
+          <span class="check-status"
+            >{check.status}
+            {check.conclusion ? "· " + check.conclusion : ""}</span
           >
-          <div class="check-info">
-            <span class="check-name">{check.name}</span>
-            <span class="check-status"
-              >{check.status}
-              {check.conclusion ? "· " + check.conclusion : ""}</span
-            >
-          </div>
-          {#if check.detailsUrl}
-            <a
-              class="details-link"
-              href={check.detailsUrl}
-              target="_blank"
-              rel="noopener">Details ↗</a
-            >
-          {/if}
         </div>
-      {/each}
-    {/if}
-  </div>
-{/if}
+        {#if check.detailsUrl}
+          <a
+            class="details-link"
+            href={check.detailsUrl}
+            target="_blank"
+            rel="noopener">Details ↗</a
+          >
+        {/if}
+      </div>
+    {/each}
+  {/if}
+</div>
 
 <style>
   .check {
@@ -140,8 +101,5 @@
     padding: 16px;
     color: var(--text-secondary);
     font-size: 12px;
-  }
-  .status.error {
-    color: var(--text-danger);
   }
 </style>

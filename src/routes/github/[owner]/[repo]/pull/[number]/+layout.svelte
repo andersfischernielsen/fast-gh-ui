@@ -1,21 +1,10 @@
 <script lang="ts">
-  import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
-  import { pr, loading, error, loadPR } from "$lib/stores/pr.svelte";
   import PRHeader from "$lib/components/PRHeader.svelte";
   import PRTabs from "$lib/components/PRTabs.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
 
-  let { children } = $props();
-
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
-
-  onMount(() => {
-    loadPR(owner, repo, number);
-  });
+  let { children, data } = $props();
 
   $effect(() =>
     useShortcut("g", () => {
@@ -27,33 +16,29 @@
 </script>
 
 <div class="page">
-  {#if loading.value}
+  {#await Promise.all([data.pr, data.reviews])}
     <p class="status">Loading PR...</p>
-  {:else if error.value}
-    <p class="status error">{error.value}</p>
-  {:else if pr.value}
+  {:then [pr, reviews]}
     <div class="top-bar">
       <a class="back-btn" href="/github"
-        >← Notifications <span class="shortcut-hint"
-          >{shortcutHint("H", { shift: true })}</span
-        ></a
+        >← Notifications <span class="shortcut-hint">{shortcutHint("H", { shift: true })}</span></a
       >
       <a
         class="github-btn"
-        href={pr.value.htmlUrl}
+        href={pr.htmlUrl}
         target="_blank"
         rel="noopener"
-        >Open on GitHub ↗<span class="shortcut-hint"
-          >{shortcutHint("G", { shift: true })}</span
-        ></a
+        >Open on GitHub ↗<span class="shortcut-hint">{shortcutHint("G", { shift: true })}</span></a
       >
     </div>
-    <PRHeader pr={pr.value} {owner} {repo} />
+    <PRHeader {pr} owner={data.owner} repo={data.repo} {reviews} />
     <PRTabs />
     <div class="tab-content">
       {@render children()}
     </div>
-  {/if}
+  {:catch e}
+    <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
+  {/await}
 </div>
 
 <style>
@@ -116,7 +101,7 @@
     overflow-y: auto;
   }
   .status {
-    padding: 24px;
+    padding: 16px;
     color: var(--text-secondary);
   }
   .status.error {

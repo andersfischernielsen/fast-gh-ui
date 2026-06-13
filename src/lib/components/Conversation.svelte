@@ -1,36 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
+  import { applyAction, deserialize } from "$app/forms";
+  import { invalidateAll } from "$app/navigation";
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
-  import {
-    listPRComments,
-    createPRComment,
-    updatePRComment,
-    deletePRComment,
-    listInlineComments,
-    createInlineComment,
-    updateInlineComment,
-    deleteInlineComment,
-    updatePullRequest,
-  } from "$lib/github/pulls";
-  import { pr } from "$lib/stores/pr.svelte";
-
-  interface CommentData {
-    id: number;
-    body: string;
-    user: { login: string; avatarUrl: string };
-    createdAt: string;
-    updatedAt: string;
-    htmlUrl: string;
-  }
-
-  interface ReviewCommentData extends CommentData {
-    commitId: string;
-    path: string;
-    line: number;
-  }
+  import type { CommentData, ReviewCommentData } from "$lib/types/comment";
 
   interface ThreadedComment extends CommentData {
     replies: CommentData[];
@@ -40,218 +14,109 @@
     line?: number;
   }
 
-  let { body }: { body: string | null } = $props();
-
-  let threadedComments = $state<ThreadedComment[]>([]);
-  let loading = $state(true);
+  let {
+    body,
+    comments,
+    reviewComments,
+  }: {
+    body: string | null;
+    comments: CommentData[];
+    reviewComments: ReviewCommentData[];
+  } = $props();
 
   let editingDesc = $state(false);
   let editDescBody = $state("");
   let savingDesc = $state(false);
-  let descError = $state<string | null>(null);
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
+  let reviewData = $derived.by(() => {
+    const replyMap = new Map<number, ReviewCommentData[]>();
+    const rootReviews: ReviewCommentData[] = [];
+    const ids = new Set<number>();
 
-  function toCommentData(raw: Record<string, unknown>): CommentData {
-    return {
-      id: raw.id as number,
-      body: (raw.body as string) ?? "",
-      user: {
-        login: (raw.user as { login?: string })?.login ?? "",
-        avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? "",
-      },
-      createdAt: raw.created_at as string,
-      updatedAt: raw.updated_at as string,
-      htmlUrl: raw.html_url as string,
-    };
-  }
-
-  onMount(async () => {
-    try {
-      const [issueComments, reviewComments] = await Promise.all([
-        listPRComments(owner, repo, number),
-        listInlineComments(owner, repo, number),
-      ]);
-
-      const issueItems: ThreadedComment[] = (
-        issueComments as Record<string, unknown>[]
-      )
-        .map(toCommentData)
-        .map((c) => ({
-          ...c,
-          replies: [],
-        }));
-
-      const reviewItems = reviewComments as Record<string, unknown>[];
-
-      const replyMap = new Map<number, Record<string, unknown>[]>();
-      const rootReviews: Record<string, unknown>[] = [];
-
-      for (const rc of reviewItems) {
-        const inReplyTo = rc.in_reply_to_id as number | undefined;
-        if (inReplyTo) {
-          const list = replyMap.get(inReplyTo) ?? [];
-          list.push(rc);
-          replyMap.set(inReplyTo, list);
-        } else {
-          rootReviews.push(rc);
-        }
+    for (const rc of reviewComments) {
+      ids.add(rc.id);
+      if (rc.inReplyToId) {
+        const list = replyMap.get(rc.inReplyToId) ?? [];
+        list.push(rc);
+        replyMap.set(rc.inReplyToId, list);
+      } else {
+        rootReviews.push(rc);
       }
-
-      const reviewThreads: ThreadedComment[] = rootReviews.map((rc) => {
-        const id = rc.id as number;
-        const childReplies = replyMap.get(id) ?? [];
-        return {
-          ...toCommentData(rc),
-          replies: childReplies.map(toCommentData),
-          isReview: true,
-          commitId: (rc.commit_id as string) ?? "",
-          path: (rc.path as string) ?? "",
-          line: ((rc.line ?? rc.original_line ?? rc.position) as number) ?? 1,
-        };
-      });
-
-      threadedComments = [...issueItems, ...reviewThreads].sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
-    } finally {
-      loading = false;
     }
+
+    const roots: ThreadedComment[] = rootReviews.map((rc) => {
+      const childReplies = replyMap.get(rc.id) ?? [];
+      for (const cr of childReplies) ids.add(cr.id);
+      return {
+        ...rc,
+        replies: childReplies,
+        isReview: true,
+        commitId: rc.commitId,
+        path: rc.path,
+        line: rc.line,
+      };
+    });
+
+    return { roots, ids };
   });
 
-  async function postComment(commentBody: string) {
-    const raw = await createPRComment(owner, repo, number, commentBody);
-    threadedComments = [
-      ...threadedComments,
-      {
-        ...toCommentData(raw as Record<string, unknown>),
-        replies: [],
-      },
-    ];
+  let threadedComments = $derived<ThreadedComment[]>(
+    [
+      ...comments.map((c) => ({ ...c, replies: [] })),
+      ...reviewData.roots,
+    ].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    ),
+  );
+
+  let reviewIds = $derived(reviewData.ids);
+
+  async function submitAction(actionName: string, data: Record<string, string>) {
+    const fd = new FormData();
+    for (const [k, v] of Object.entries(data)) fd.set(k, v);
+    const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
+    const result = deserialize(await res.text());
+    applyAction(result);
+    if (result.type === "success") await invalidateAll();
   }
 
-  async function replyToComment(parentId: number, replyBody: string) {
+  async function onreply(parentId: number, replyBody: string) {
     const parent = threadedComments.find((tc) => tc.id === parentId);
-    if (!parent) return;
-
-    let raw: {
-      id: number;
-      body: string;
-      user: { login: string; avatar_url: string };
-      created_at: string;
-      updated_at: string;
-      html_url: string;
-    };
-
-    if (parent.isReview && parent.commitId && parent.path) {
-      raw = (await createInlineComment(
-        owner,
-        repo,
-        number,
-        replyBody,
-        parent.commitId,
-        parent.path,
-        parent.line ?? 1,
-        undefined,
-        parentId,
-      )) as unknown as typeof raw;
+    if (parent?.isReview && parent.commitId && parent.path) {
+      await submitAction("reply", {
+        body: replyBody,
+        commitId: parent.commitId,
+        path: parent.path,
+        line: String(parent.line ?? 1),
+        inReplyTo: String(parentId),
+      });
     } else {
-      raw = (await createPRComment(
-        owner,
-        repo,
-        number,
-        replyBody,
-      )) as unknown as typeof raw;
+      await submitAction("comment", { body: replyBody });
     }
-
-    const reply: CommentData = toCommentData(
-      raw as unknown as Record<string, unknown>,
-    );
-    threadedComments = threadedComments.map((tc) =>
-      tc.id === parentId ? { ...tc, replies: [...tc.replies, reply] } : tc,
-    );
   }
 
   async function onUpdateComment(commentId: number, body: string) {
-    let useInline = false;
-    const target = threadedComments.find((tc) => tc.id === commentId);
-    if (target?.isReview) {
-      useInline = true;
-    } else if (!target) {
-      const parent = threadedComments.find((tc) =>
-        tc.replies.some((r) => r.id === commentId),
-      );
-      if (parent?.isReview) useInline = true;
-    }
-    if (useInline) {
-      await updateInlineComment(owner, repo, commentId, body);
-    } else {
-      await updatePRComment(owner, repo, commentId, body);
-    }
-    threadedComments = threadedComments.map((tc) => {
-      if (tc.id === commentId) return { ...tc, body };
-      tc.replies = tc.replies.map((r) =>
-        r.id === commentId ? { ...r, body } : r,
-      );
-      return tc;
+    await submitAction("updateComment", {
+      commentId: String(commentId),
+      body,
+      isReview: reviewIds.has(commentId) ? "true" : "false",
     });
   }
 
   async function onDeleteComment(commentId: number) {
-    let useInline = false;
-    const target = threadedComments.find((tc) => tc.id === commentId);
-    if (target?.isReview) {
-      useInline = true;
-    } else if (!target) {
-      const parent = threadedComments.find((tc) =>
-        tc.replies.some((r) => r.id === commentId),
-      );
-      if (parent?.isReview) useInline = true;
-    }
-    if (useInline) {
-      await deleteInlineComment(owner, repo, commentId);
-    } else {
-      await deletePRComment(owner, repo, commentId);
-    }
-    threadedComments = threadedComments
-      .map((tc) => {
-        tc.replies = tc.replies.filter((r) => r.id !== commentId);
-        return tc;
-      })
-      .filter((tc) => tc.id !== commentId);
+    await submitAction("deleteComment", {
+      commentId: String(commentId),
+      isReview: reviewIds.has(commentId) ? "true" : "false",
+    });
   }
 
   function startEditDescription() {
     editDescBody = body ?? "";
     editingDesc = true;
-    descError = null;
   }
 
   function cancelEditDescription() {
     editingDesc = false;
-    descError = null;
-  }
-
-  async function saveDescription() {
-    savingDesc = true;
-    descError = null;
-    try {
-      const result = await updatePullRequest(owner, repo, number, {
-        body: editDescBody,
-      });
-      if (result && pr.value) {
-        pr.value.body = result.body ?? null;
-      }
-      editingDesc = false;
-    } catch (e) {
-      descError =
-        e instanceof Error ? e.message : "Failed to update description.";
-    } finally {
-      savingDesc = false;
-    }
   }
 </script>
 
@@ -261,61 +126,70 @@
       <div class="desc-header">
         <h3>Description</h3>
         {#if editingDesc}
-          <div class="desc-edit-actions">
-            <button
-              class="desc-save-btn"
-              onclick={saveDescription}
-              disabled={savingDesc}
-            >
-              {savingDesc ? "Saving..." : "Save"}
-            </button>
-            <button
-              class="desc-cancel-btn"
-              onclick={cancelEditDescription}
-              disabled={savingDesc}
-            >
-              Cancel
-            </button>
-          </div>
-        {:else}
-          <button class="desc-edit-btn" onclick={startEditDescription}
-            >Edit</button
+          <form
+            method="POST"
+            action="?/updatePR"
+            onsubmit={async (e) => {
+              e.preventDefault();
+              savingDesc = true;
+              const fd = new FormData(e.currentTarget);
+              const res = await fetch("?/updatePR", { method: "POST", body: fd });
+              const result = deserialize(await res.text());
+              applyAction(result);
+              if (result.type === "success") {
+                await invalidateAll();
+                editingDesc = false;
+              }
+              savingDesc = false;
+            }}
+            class="desc-edit-form"
           >
+            <div class="desc-edit-actions">
+              <button type="submit" class="desc-save-btn" disabled={savingDesc}>
+                {savingDesc ? "Saving..." : "Save"}
+              </button>
+              <button
+                type="button"
+                class="desc-cancel-btn"
+                onclick={cancelEditDescription}
+                disabled={savingDesc}
+              >
+                Cancel
+              </button>
+            </div>
+            <textarea
+              class="desc-textarea"
+              name="body"
+              bind:value={editDescBody}
+              disabled={savingDesc}
+            ></textarea>
+          </form>
+        {:else}
+          <button class="desc-edit-btn" onclick={startEditDescription}>Edit</button>
         {/if}
       </div>
-      {#if editingDesc}
-        <textarea
-          class="desc-textarea"
-          bind:value={editDescBody}
-          disabled={savingDesc}
-        ></textarea>
-        {#if descError}
-          <span class="desc-error">{descError}</span>
-        {/if}
-      {:else}
+      {#if !editingDesc}
         <Markdown text={body} />
       {/if}
     </div>
   {/if}
-  {#if loading}
-    <p class="status">Loading comments...</p>
-  {:else}
-    <div class="comments">
-      {#each threadedComments as c (c.id)}
-        <Comment
-          comment={c}
-          replies={c.replies}
-          onreply={replyToComment}
-          onupdate={onUpdateComment}
-          ondelete={onDeleteComment}
-        />
-      {/each}
-      {#if threadedComments.length === 0}
-        <p class="status">No comments yet</p>
-      {/if}
-    </div>
-  {/if}
-  <CommentInput onsubmit={postComment} />
+
+  <div class="comments">
+    {#each threadedComments as c (c.id)}
+      <Comment
+        comment={c}
+        replies={c.replies}
+        onreply={onreply}
+        onupdate={onUpdateComment}
+        ondelete={onDeleteComment}
+      />
+    {/each}
+    {#if threadedComments.length === 0}
+      <p class="status">No comments yet</p>
+    {/if}
+  </div>
+
+  <CommentInput action="?/comment" />
 </div>
 
 <style>
@@ -340,6 +214,9 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0;
+  }
+  .desc-edit-form {
+    display: contents;
   }
   .desc-edit-btn {
     padding: 2px 8px;
@@ -411,17 +288,11 @@
     color: var(--text-primary);
     background: var(--bg-primary);
   }
-  .desc-error {
-    display: block;
-    font-size: 12px;
-    color: var(--text-danger);
-    margin-top: 4px;
-  }
   .comments {
     margin-bottom: 16px;
   }
   .status {
-    padding: 16px 0;
+    padding: 16px;
     color: var(--text-secondary);
     font-size: 12px;
   }
