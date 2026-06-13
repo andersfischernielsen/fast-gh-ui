@@ -100,7 +100,7 @@
 </button>
 
 <dialog bind:this={dialog} class="github-dialog" onclose={closeDialog}>
-  <form class="dialog-content" onsubmit={(e) => e.preventDefault()}>
+  <div class="dialog-content">
     <h2 class="dialog-title">Open from GitHub</h2>
     <input
       type="text"
@@ -118,7 +118,7 @@
       >
       <button class="btn-open" type="button" onclick={handleOpen}>Open</button>
     </div>
-  </form>
+  </div>
 </dialog>
 
 <style>

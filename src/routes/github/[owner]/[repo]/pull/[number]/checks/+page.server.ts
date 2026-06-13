@@ -19,8 +19,8 @@ function mapCheckRun(raw: Record<string, unknown>): CheckRunData {
 export const load: PageServerLoad = async ({ parent, params, locals }) => {
   const token = locals.token!;
   const { owner, repo } = params;
-  const { headSha: headShaP } = await parent();
-  const headSha = await headShaP;
+  const { pr } = await parent();
+  const headSha = (await pr).head.sha;
 
   const checks: Promise<{ check_runs?: CheckRunData[] }> = listChecks(token, owner, repo, headSha)
     .then((raw) => ({

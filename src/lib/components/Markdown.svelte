@@ -31,25 +31,10 @@
 
 <script lang="ts">
   import DOMPurify from "dompurify";
-  import { replaceEmojis } from "$lib/github/emojis";
 
-  let {
-    text = "",
-    emojiMap = null,
-  }: {
-    text?: string | null;
-    emojiMap?: Record<string, string> | null;
-  } = $props();
+  let { text = "" }: { text?: string | null } = $props();
 
-  let rendered = $derived(text ?? "");
-
-  let html = $derived.by(() => {
-    let content = rendered;
-    if (emojiMap) {
-      content = replaceEmojis(content, emojiMap);
-    }
-    return DOMPurify.sanitize(marked.parse(content) as string);
-  });
+  let html = $derived(DOMPurify.sanitize(marked.parse(text ?? "") as string));
 </script>
 
 <div class="markdown">{@html html}</div>
