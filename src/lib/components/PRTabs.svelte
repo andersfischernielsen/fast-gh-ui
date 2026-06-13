@@ -4,7 +4,12 @@
   let base = $derived(
     `/github/${page.params.owner}/${page.params.repo}/pull/${page.params.number}`,
   );
-  let active = $derived(page.route.id?.split("/").pop() ?? "conversation");
+  let routeSegments = $derived(page.route.id?.split("/") ?? []);
+  let active = $derived(
+    routeSegments.includes("commits")
+      ? "commits"
+      : (routeSegments.pop() ?? "conversation"),
+  );
 </script>
 
 <nav class="tabs">
