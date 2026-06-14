@@ -3,8 +3,6 @@
   import { invalidateAll } from "$app/navigation";
   import { page } from "$app/state";
 
-  let { canMerge = false }: { canMerge?: boolean } = $props();
-
   let expanded = $state(false);
   let reviewBody = $state("");
   let submitting = $state(false);
@@ -56,11 +54,9 @@
 </script>
 
 <div class="wrapper">
-  {#if canMerge}
-    <button class="merge-btn" onclick={merge} disabled={merging}>
-      {merging ? "Merging..." : "Merge"}
-    </button>
-  {/if}
+  <button class="merge-btn" onclick={merge} disabled={merging}>
+    {merging ? "Merging..." : "Merge"}
+  </button>
 
   <button class="review-btn" onclick={() => (expanded = !expanded)}>
     Review ▾

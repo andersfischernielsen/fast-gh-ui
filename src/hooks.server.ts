@@ -1,5 +1,5 @@
-import { redirect, type Handle, type HandleServerError } from "@sveltejs/kit";
-import { getTokenFromCookies, githubErrorMessage } from "$lib/server/auth";
+import { redirect, type Handle } from "@sveltejs/kit";
+import { getTokenFromCookies } from "$lib/server/auth";
 
 function needsAuth(pathname: string): boolean {
   return pathname.startsWith("/github") && pathname !== "/github/login";
@@ -14,8 +14,4 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
 
   return resolve(event);
-};
-
-export const handleError: HandleServerError = ({ error }) => {
-  return { message: githubErrorMessage(error) };
 };
