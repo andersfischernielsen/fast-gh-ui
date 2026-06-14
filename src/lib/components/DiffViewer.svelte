@@ -21,6 +21,8 @@
     inlineComments = [],
     currentFile = "",
     headSha = "",
+    owner = "",
+    repo = "",
     onCreateComment,
     onUpdateComment,
     onDeleteComment,
@@ -31,6 +33,8 @@
     inlineComments?: InlineCommentData[];
     currentFile?: string;
     headSha?: string;
+    owner?: string;
+    repo?: string;
     onCreateComment?: (
       startLine: number,
       endLine: number,
@@ -326,6 +330,8 @@
                       isReview: true,
                     }}
                     replies={comment.replies}
+                    {owner}
+                    {repo}
                     onupdate={onUpdateComment}
                     ondelete={onDeleteComment}
                     onreply={onReplyComment}

@@ -21,6 +21,8 @@
   let {
     comment,
     replies = [],
+    owner,
+    repo,
     onreply,
     onupdate,
     ondelete,
@@ -28,6 +30,8 @@
   }: {
     comment: CommentData;
     replies?: CommentData[];
+    owner?: string;
+    repo?: string;
     onreply?: (parentId: number, body: string) => Promise<void>;
     onupdate?: (commentId: number, body: string) => Promise<void>;
     ondelete?: (commentId: number) => Promise<void>;
@@ -48,12 +52,12 @@
   let commentReactions = $state<ReactionData[]>([]);
   let replyReactions = $state<Map<number, ReactionData[]>>(new Map());
 
-  async function loadReactions(): Promise<void> {
+async function loadReactions(): Promise<void> {
     const user = await getCurrentUser();
     const fetchFn = comment.isReview
       ? listReviewCommentReactions
       : listCommentReactions;
-    const raw = await fetchFn(undefined, undefined, comment.id);
+    const raw = await fetchFn(owner, repo, comment.id);
     commentReactions = mapReactions(
       raw as Record<string, unknown>[],
       user,
@@ -61,8 +65,8 @@
     const repReactions = new Map<number, ReactionData[]>();
     for (const reply of replies) {
       const replyRaw = await listCommentReactions(
-        undefined,
-        undefined,
+        owner,
+        repo,
         reply.id,
       );
       repReactions.set(
@@ -71,6 +75,47 @@
       );
     }
     replyReactions = repReactions;
+  }
+
+  async function handleReaction(
+    commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    if (onreaction) {
+      await onreaction(commentId, emoji, remove, reactionId);
+      await refreshReactions();
+    }
+  }
+
+  async function refreshReactions() {
+    try {
+      const user = await getCurrentUser();
+      const fetchFn = comment.isReview
+        ? listReviewCommentReactions
+        : listCommentReactions;
+      const raw = await fetchFn(owner, repo, comment.id);
+      commentReactions = mapReactions(
+        raw as Record<string, unknown>[],
+        user,
+      );
+      const repReactions = new Map<number, ReactionData[]>();
+      for (const reply of replies) {
+        const replyRaw = await listCommentReactions(
+          owner,
+          repo,
+          reply.id,
+        );
+        repReactions.set(
+          reply.id,
+          mapReactions(replyRaw as Record<string, unknown>[], user),
+        );
+      }
+      replyReactions = repReactions;
+    } catch {
+      // ignore refresh errors
+    }
   }
 
   function formatDate(dateStr: string): string {
@@ -184,7 +229,7 @@
       {#if commentReactions.length > 0 || onreaction}
         <Reactions
           reactions={commentReactions}
-          {onreaction}
+          onreaction={handleReaction}
           commentId={comment.id}
         />
       {/if}
@@ -256,7 +301,7 @@
             {#await loadReactions() then}
               <Reactions
                 reactions={replyReactions.get(reply.id) ?? []}
-                {onreaction}
+                onreaction={handleReaction}
                 commentId={reply.id}
               />
             {/await}

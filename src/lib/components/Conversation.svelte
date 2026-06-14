@@ -378,6 +378,8 @@
         <Comment
           comment={c}
           replies={c.replies}
+          {owner}
+          {repo}
           onreply={replyToComment}
           onupdate={onUpdateComment}
           ondelete={onDeleteComment}
