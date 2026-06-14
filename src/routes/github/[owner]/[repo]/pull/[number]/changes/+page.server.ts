@@ -1,5 +1,5 @@
 import { error, fail } from "@sveltejs/kit";
-import { githubErrorMessage } from "$lib/server/auth";
+import { githubErrorMessage, getCurrentUser } from "$lib/server/auth";
 import { getFormValue } from "$lib/server/forms";
 import {
   listPRFiles,
@@ -8,6 +8,8 @@ import {
   createInlineComment,
   updateInlineComment,
   deleteInlineComment,
+  createReviewCommentReaction,
+  deleteReviewCommentReaction,
 } from "$lib/server/github/pulls";
 import type { InlineCommentData, PRFile, ReactionData } from "$lib/types/comment";
 import type { Actions, PageServerLoad } from "./$types";
@@ -23,17 +25,25 @@ function mapFile(raw: Record<string, unknown>): PRFile {
   };
 }
 
-function mapReactions(raw: Record<string, unknown>[]): ReactionData[] {
-  const grouped = new Map<string, string[]>();
+function mapReactions(raw: Record<string, unknown>[], currentUser: string): ReactionData[] {
+  const grouped = new Map<string, { authors: string[]; userReactionId?: number }>();
   for (const r of raw) {
     const emoji = (r.content as string) ?? "";
     const author = (r.user as { login?: string } | undefined)?.login ?? "";
+    const reactionId = r.id as number;
     if (!emoji) continue;
-    const list = grouped.get(emoji) ?? [];
-    list.push(author);
-    grouped.set(emoji, list);
+    const entry = grouped.get(emoji) ?? { authors: [] };
+    entry.authors.push(author);
+    if (author === currentUser) {
+      entry.userReactionId = reactionId;
+    }
+    grouped.set(emoji, entry);
   }
-  return Array.from(grouped.entries()).map(([emoji, authors]) => ({ emoji, authors }));
+  return Array.from(grouped.entries()).map(([emoji, { authors, userReactionId }]) => ({
+    emoji,
+    authors,
+    userReactionId,
+  }));
 }
 
 function mapInlineComment(
@@ -41,6 +51,7 @@ function mapInlineComment(
   token: string,
   owner: string,
   repo: string,
+  currentUser: string,
 ): InlineCommentData {
   const id = raw.id as number;
   return {
@@ -56,7 +67,7 @@ function mapInlineComment(
     originalLine: raw.original_line as number | null,
     inReplyToId: (raw.in_reply_to_id as number | null) ?? null,
     reactions: listReviewCommentReactions(token, owner, repo, id)
-      .then(mapReactions)
+      .then((r) => mapReactions(r, currentUser))
       .catch(() => []),
   };
 }
@@ -67,6 +78,7 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
   const number = Number(params.number);
   const { pr } = await parent();
   const headSha = (await pr).head.sha;
+  const currentUser = await getCurrentUser(token);
 
   const files: Promise<PRFile[]> = listPRFiles(token, owner, repo, number)
     .then((raw) => raw.map(mapFile))
@@ -80,7 +92,7 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
     repo,
     number,
   )
-    .then((raw) => raw.map((c) => mapInlineComment(c, token, owner, repo)))
+    .then((raw) => raw.map((c) => mapInlineComment(c, token, owner, repo, currentUser)))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });
@@ -128,6 +140,21 @@ export const actions: Actions = {
     const commentId = Number(data.get("commentId"));
     if (!commentId) return fail(400, { error: "Invalid input" });
     await deleteInlineComment(token, params.owner, params.repo, commentId);
+    return {};
+  },
+  react: async ({ request, locals, params }) => {
+    const token = locals.token!;
+    const data = await request.formData();
+    const commentId = Number(data.get("commentId"));
+    const emoji = getFormValue(data, "emoji");
+    const remove = data.get("remove") === "true";
+    const reactionId = data.get("reactionId") ? Number(data.get("reactionId")) : undefined;
+    if (!commentId || !emoji) return fail(400, { error: "Invalid input" });
+    if (remove && reactionId) {
+      await deleteReviewCommentReaction(token, params.owner, params.repo, commentId, reactionId);
+    } else {
+      await createReviewCommentReaction(token, params.owner, params.repo, commentId, emoji);
+    }
     return {};
   },
 };
