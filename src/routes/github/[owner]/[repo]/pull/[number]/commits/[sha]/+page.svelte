@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { fetchCommit } from "$lib/github/pulls";
   import DiffViewer from "$lib/components/DiffViewer.svelte";
@@ -20,8 +19,6 @@
     date: string;
   }
 
-  let loading = $state(true);
-  let error = $state<string | null>(null);
   let commitInfo = $state<CommitInfo | null>(null);
   let files = $state<CommitFile[]>([]);
   let selectedFile = $state<CommitFile | null>(null);
@@ -32,52 +29,45 @@
   let number = $derived($page.params.number);
   let sha = $derived($page.params.sha);
 
-  onMount(async () => {
-    try {
-      const raw = await fetchCommit(owner, repo, sha);
-      const authorLogin =
-        (raw.author as { login?: string })?.login ??
-        (raw.commit as { author?: { name?: string } })?.author?.name ??
-        "unknown";
-      commitInfo = {
-        sha: raw.sha as string,
-        message: ((raw.commit as { message?: string })?.message ?? "").split(
-          "\n",
-        )[0],
-        author: {
-          login: authorLogin,
-          avatarUrl: (raw.author as { avatar_url?: string })?.avatar_url ?? "",
-        },
-        date:
-          (raw.commit as { author?: { date?: string } })?.author?.date ?? "",
-      };
-      const rawFiles = (raw.files as Array<Record<string, unknown>>) || [];
-      files = rawFiles.map((f) => ({
-        filename: f.filename as string,
-        status: f.status as string,
-        additions: f.additions as number,
-        deletions: f.deletions as number,
-        changes: f.changes as number,
-        patch: f.patch as string | undefined,
-      }));
-      if (files.length > 0) selectedFile = files[0];
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
-    }
-  });
+  async function loadCommit(): Promise<void> {
+    const raw = await fetchCommit(owner, repo, sha);
+    const authorLogin =
+      (raw.author as { login?: string })?.login ??
+      (raw.commit as { author?: { name?: string } })?.author?.name ??
+      "unknown";
+    commitInfo = {
+      sha: raw.sha as string,
+      message: ((raw.commit as { message?: string })?.message ?? "").split(
+        "\n",
+      )[0],
+      author: {
+        login: authorLogin,
+        avatarUrl: (raw.author as { avatar_url?: string })?.avatar_url ?? "",
+      },
+      date:
+        (raw.commit as { author?: { date?: string } })?.author?.date ?? "",
+    };
+    const rawFiles = (raw.files as Array<Record<string, unknown>>) || [];
+    files = rawFiles.map((f) => ({
+      filename: f.filename as string,
+      status: f.status as string,
+      additions: f.additions as number,
+      deletions: f.deletions as number,
+      changes: f.changes as number,
+      patch: f.patch as string | undefined,
+    }));
+    if (files.length > 0) selectedFile = files[0];
+  }
 
   function shortSha(s: string): string {
     return s.substring(0, 7);
   }
 </script>
 
-{#if loading}
+{#await loadCommit()}
   <p class="status">Loading commit...</p>
-{:else if error}
-  <p class="status error">{error}</p>
-{:else if commitInfo}
+{:then}
+  {#if commitInfo}
   <div class="commit-detail">
     <div class="commit-header">
       <h2>{commitInfo.message}</h2>
@@ -142,7 +132,10 @@
       </div>
     </div>
   </div>
-{/if}
+  {/if}
+{:catch error}
+  <p class="status error">{error.message}</p>
+{/await}
 
 <style>
   .commit-detail {

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
@@ -56,7 +55,6 @@
   let { body }: { body: string | null } = $props();
 
   let threadedComments = $state<ThreadedComment[]>([]);
-  let loading = $state(true);
 
   let editingDesc = $state(false);
   let editDescBody = $state("");
@@ -64,7 +62,6 @@
   let descError = $state<string | null>(null);
 
   let descriptionReactions = $state<ReactionData[]>([]);
-  let descReactionsLoading = $state(true);
 
   let reviewIds = new Set<number>();
 
@@ -86,70 +83,65 @@
     };
   }
 
-  onMount(async () => {
-    try {
-      const [issueComments, reviewComments] = await Promise.all([
-        listPRComments(owner, repo, number),
-        listInlineComments(owner, repo, number),
-      ]);
+  async function loadConversation(): Promise<void> {
+    const [issueComments, reviewComments] = await Promise.all([
+      listPRComments(owner, repo, number),
+      listInlineComments(owner, repo, number),
+    ]);
 
-      const user = await getCurrentUser();
+    const user = await getCurrentUser();
 
-      const rawDescReactions = await listIssueReactions(owner, repo, number);
-      descriptionReactions = mapReactions(
-        rawDescReactions as Record<string, unknown>[],
-        user,
-      );
-      descReactionsLoading = false;
+    const rawDescReactions = await listIssueReactions(owner, repo, number);
+    descriptionReactions = mapReactions(
+      rawDescReactions as Record<string, unknown>[],
+      user,
+    );
 
-      const issueItems: ThreadedComment[] = (
-        issueComments as Record<string, unknown>[]
-      )
-        .map(toCommentData)
-        .map((c) => ({
-          ...c,
-          replies: [],
-        }));
+    const issueItems: ThreadedComment[] = (
+      issueComments as Record<string, unknown>[]
+    )
+      .map(toCommentData)
+      .map((c) => ({
+        ...c,
+        replies: [],
+      }));
 
-      const reviewItems = reviewComments as Record<string, unknown>[];
+    const reviewItems = reviewComments as Record<string, unknown>[];
 
-      const replyMap = new Map<number, Record<string, unknown>[]>();
-      const rootReviews: Record<string, unknown>[] = [];
+    const replyMap = new Map<number, Record<string, unknown>[]>();
+    const rootReviews: Record<string, unknown>[] = [];
 
-      for (const rc of reviewItems) {
-        const inReplyTo = rc.in_reply_to_id as number | undefined;
-        if (inReplyTo) {
-          const list = replyMap.get(inReplyTo) ?? [];
-          list.push(rc);
-          replyMap.set(inReplyTo, list);
-        } else {
-          rootReviews.push(rc);
-        }
+    for (const rc of reviewItems) {
+      const inReplyTo = rc.in_reply_to_id as number | undefined;
+      if (inReplyTo) {
+        const list = replyMap.get(inReplyTo) ?? [];
+        list.push(rc);
+        replyMap.set(inReplyTo, list);
+      } else {
+        rootReviews.push(rc);
       }
-
-      const reviewThreads: ThreadedComment[] = rootReviews.map((rc) => {
-        const id = rc.id as number;
-        reviewIds.add(id);
-        const childReplies = replyMap.get(id) ?? [];
-        childReplies.forEach((r) => reviewIds.add(r.id as number));
-        return {
-          ...toCommentData(rc),
-          replies: childReplies.map(toCommentData),
-          isReview: true,
-          commitId: (rc.commit_id as string) ?? "",
-          path: (rc.path as string) ?? "",
-          line: ((rc.line ?? rc.original_line ?? rc.position) as number) ?? 1,
-        };
-      });
-
-      threadedComments = [...issueItems, ...reviewThreads].sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
-    } finally {
-      loading = false;
     }
-  });
+
+    const reviewThreads: ThreadedComment[] = rootReviews.map((rc) => {
+      const id = rc.id as number;
+      reviewIds.add(id);
+      const childReplies = replyMap.get(id) ?? [];
+      childReplies.forEach((r) => reviewIds.add(r.id as number));
+      return {
+        ...toCommentData(rc),
+        replies: childReplies.map(toCommentData),
+        isReview: true,
+        commitId: (rc.commit_id as string) ?? "",
+        path: (rc.path as string) ?? "",
+        line: ((rc.line ?? rc.original_line ?? rc.position) as number) ?? 1,
+      };
+    });
+
+    threadedComments = [...issueItems, ...reviewThreads].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+  }
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
@@ -369,18 +361,18 @@
       {:else}
         <Markdown text={body} />
       {/if}
-      {#if !descReactionsLoading}
+      {#await loadConversation() then}
         <Reactions
           reactions={descriptionReactions}
           commentId={-1}
           onreaction={onDescriptionReaction}
         />
-      {/if}
+      {/await}
     </div>
   {/if}
-  {#if loading}
+  {#await loadConversation()}
     <p class="status">Loading comments...</p>
-  {:else}
+  {:then}
     <div class="comments">
       {#each threadedComments as c (c.id)}
         <Comment
@@ -396,7 +388,9 @@
         <p class="status">No comments yet</p>
       {/if}
     </div>
-  {/if}
+  {:catch error}
+    <p class="status error">{error.message}</p>
+  {/await}
   <CommentInput onsubmit={postComment} />
 </div>
 

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import FileTree from "./FileTree.svelte";
   import DiffViewer from "./DiffViewer.svelte";
@@ -16,8 +15,6 @@
   let { headSha: sha = "" }: { headSha?: string } = $props();
 
   let files = $state<PRFile[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
   let selectedFile = $state<string | null>(null);
   let showFileComment = $state(false);
   let fileCommentBody = $state("");
@@ -45,70 +42,64 @@
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
 
-  onMount(async () => {
-    try {
-      const raw = await listPRFiles(owner, repo, number);
-      files = raw.map((f: Record<string, unknown>) => ({
-        filename: f.filename as string,
-        status: f.status as string,
-        additions: f.additions as number,
-        deletions: f.deletions as number,
-        changes: f.changes as number,
-        patch: f.patch as string | undefined,
-      }));
-      if (files.length > 0) selectedFile = files[0].filename;
+  async function loadFiles(): Promise<void> {
+    const raw = await listPRFiles(owner, repo, number);
+    files = raw.map((f: Record<string, unknown>) => ({
+      filename: f.filename as string,
+      status: f.status as string,
+      additions: f.additions as number,
+      deletions: f.deletions as number,
+      changes: f.changes as number,
+      patch: f.patch as string | undefined,
+    }));
+    if (files.length > 0) selectedFile = files[0].filename;
 
-      const rawComments = await listInlineComments(owner, repo, number);
-      const allComments = rawComments.map((c: Record<string, unknown>) => ({
-        id: c.id as number,
-        body: (c.body as string) ?? "",
-        user: {
-          login: (c.user as { login?: string })?.login ?? "",
-          avatarUrl: (c.user as { avatar_url?: string })?.avatar_url ?? "",
-        },
-        createdAt: c.created_at as string,
-        path: c.path as string,
-        line: c.line as number | null,
-        originalLine: c.original_line as number | null,
-        inReplyToId: c.in_reply_to_id as number | undefined,
-        replies: [] as Array<{
-          id: number;
-          body: string;
-          user: { login: string; avatarUrl: string };
-          createdAt: string;
-        }>,
-      }));
+    const rawComments = await listInlineComments(owner, repo, number);
+    const allComments = rawComments.map((c: Record<string, unknown>) => ({
+      id: c.id as number,
+      body: (c.body as string) ?? "",
+      user: {
+        login: (c.user as { login?: string })?.login ?? "",
+        avatarUrl: (c.user as { avatar_url?: string })?.avatar_url ?? "",
+      },
+      createdAt: c.created_at as string,
+      path: c.path as string,
+      line: c.line as number | null,
+      originalLine: c.original_line as number | null,
+      inReplyToId: c.in_reply_to_id as number | undefined,
+      replies: [] as Array<{
+        id: number;
+        body: string;
+        user: { login: string; avatarUrl: string };
+        createdAt: string;
+      }>,
+    }));
 
-      const replyMap = new Map<number, (typeof allComments)[number]>();
-      const rootComments: typeof allComments = [];
-      for (const c of allComments) {
-        replyMap.set(c.id, c);
-        if (!c.inReplyToId) {
+    const replyMap = new Map<number, (typeof allComments)[number]>();
+    const rootComments: typeof allComments = [];
+    for (const c of allComments) {
+      replyMap.set(c.id, c);
+      if (!c.inReplyToId) {
+        rootComments.push(c);
+      }
+    }
+    for (const c of allComments) {
+      if (c.inReplyToId) {
+        const parent = replyMap.get(c.inReplyToId);
+        if (parent) {
+          parent.replies.push({
+            id: c.id,
+            body: c.body,
+            user: c.user,
+            createdAt: c.createdAt,
+          });
+        } else {
           rootComments.push(c);
         }
       }
-      for (const c of allComments) {
-        if (c.inReplyToId) {
-          const parent = replyMap.get(c.inReplyToId);
-          if (parent) {
-            parent.replies.push({
-              id: c.id,
-              body: c.body,
-              user: c.user,
-              createdAt: c.createdAt,
-            });
-          } else {
-            rootComments.push(c);
-          }
-        }
-      }
-      inlineComments = rootComments.map(({ inReplyToId: _, ...rest }) => rest);
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
     }
-  });
+    inlineComments = rootComments.map(({ inReplyToId: _, ...rest }) => rest);
+  }
 
   let currentFile = $derived(
     files.find((f) => f.filename === selectedFile) ?? null,
@@ -227,11 +218,9 @@
   }
 </script>
 
-{#if loading}
+{#await loadFiles()}
   <p class="status">Loading files...</p>
-{:else if error}
-  <p class="status error">{error}</p>
-{:else}
+{:then}
   <div class="files-changed-container">
     <button class="tree-trigger" onclick={() => (showTree = !showTree)}>
       Files {showTree ? "▾" : "▸"}
@@ -358,7 +347,9 @@
       </div>
     </div>
   </div>
-{/if}
+{:catch error}
+  <p class="status error">{error.message}</p>
+{/await}
 
 <style>
   .status {

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
   import { setContext } from "svelte";
   import IssueHeader from "$lib/components/IssueHeader.svelte";
   import { fetchIssue } from "$lib/github/pulls";
@@ -21,9 +20,6 @@
   let { children } = $props();
 
   let issueData = $state<IssueData | null>(null);
-  let issueLoading = $state(true);
-  let issueError = $state<string | null>(null);
-
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
@@ -34,25 +30,19 @@
     },
   });
 
-  onMount(async () => {
-    try {
-      const raw = await fetchIssue(owner, repo, number);
-      issueData = {
-        number: raw?.number as number,
-        title: raw?.title as string,
-        state: raw?.state as string,
-        body: (raw?.body as string) ?? null,
-        user: { login: (raw?.user as { login?: string })?.login ?? "" },
-        createdAt: raw?.created_at as string,
-        updatedAt: raw?.updated_at as string,
-        htmlUrl: raw?.html_url as string,
-      };
-    } catch (e) {
-      issueError = String(e);
-    } finally {
-      issueLoading = false;
-    }
-  });
+  async function loadIssue(): Promise<void> {
+    const raw = await fetchIssue(owner, repo, number);
+    issueData = {
+      number: raw?.number as number,
+      title: raw?.title as string,
+      state: raw?.state as string,
+      body: (raw?.body as string) ?? null,
+      user: { login: (raw?.user as { login?: string })?.login ?? "" },
+      createdAt: raw?.created_at as string,
+      updatedAt: raw?.updated_at as string,
+      htmlUrl: raw?.html_url as string,
+    };
+  }
 
   $effect(() =>
     useShortcut("g", () => {
@@ -64,11 +54,10 @@
 </script>
 
 <div class="page">
-  {#if issueLoading}
+  {#await loadIssue()}
     <p class="status">Loading issue...</p>
-  {:else if issueError}
-    <p class="status error">{issueError}</p>
-  {:else if issueData}
+  {:then}
+    {#if issueData}
     <div class="top-bar">
       <a class="back-btn" href="/github"
         >← Notifications <span class="shortcut-hint"
@@ -89,7 +78,10 @@
     <div class="tab-content">
       {@render children()}
     </div>
-  {/if}
+    {/if}
+  {:catch error}
+    <p class="status error">{error.message}</p>
+  {/await}
 </div>
 
 <style>
