@@ -2,6 +2,7 @@
   import { page } from "$app/stores";
   import FileTree from "./FileTree.svelte";
   import DiffViewer from "./DiffViewer.svelte";
+  import Comment from "./Comment.svelte";
   import {
     listPRFiles,
     listInlineComments,
@@ -28,7 +29,11 @@
       createdAt: string;
       path: string;
       line: number | null;
+      startLine: number | null;
       originalLine: number | null;
+      originalStartLine: number | null;
+      side: "LEFT" | "RIGHT";
+      outdated: boolean;
       replies: Array<{
         id: number;
         body: string;
@@ -61,11 +66,17 @@
       if (inReplyToId) {
         commentMap.get(inReplyToId)?.replies.push({ id, body, user, createdAt });
       } else {
+        const line = c.line as number | null;
+        const side = (c.side as "LEFT" | "RIGHT" | undefined) ?? "RIGHT";
         commentMap.set(id, {
           id, body, user, createdAt,
           path: c.path as string,
-          line: c.line as number | null,
+          line,
+          startLine: c.start_line as number | null,
           originalLine: c.original_line as number | null,
+          originalStartLine: c.original_start_line as number | null,
+          side,
+          outdated: line === null,
           replies: [],
         });
       }
@@ -103,6 +114,13 @@
     files.find((f) => f.filename === selectedFile) ?? null,
   );
 
+  let outdatedComments = $derived(
+    inlineComments.filter(
+      (c) => c.path === selectedFile && c.outdated,
+    ),
+  );
+  let showOutdated = $state(false);
+
   async function onCreateComment(
     startLine: number,
     endLine: number,
@@ -137,7 +155,12 @@
         createdAt: comment.created_at as string,
         path: comment.path as string,
         line: comment.line as number | null,
+        startLine: comment.start_line as number | null,
         originalLine: comment.original_line as number | null,
+        originalStartLine: comment.original_start_line as number | null,
+        side:
+          ((comment.side as "LEFT" | "RIGHT" | undefined) ?? "RIGHT"),
+        outdated: false,
         replies: [],
       },
     ];
@@ -227,19 +250,11 @@
 {:then}
   <div class="files-changed-container">
     <button class="tree-trigger" onclick={() => (showTree = !showTree)}>
-      Files {showTree ? "▾" : "▸"}
+      <span>Files</span>
+      <span class="tree-arrow">{showTree ? "▾" : "▸"}</span>
     </button>
     <div class="files-changed">
       <div class="tree-wrapper" class:tree-open={showTree}>
-        {#if showTree}
-          <div
-            class="tree-overlay"
-            role="button"
-            tabindex="0"
-            onclick={() => (showTree = false)}
-            onkeydown={(e) => e.key === "Enter" && (showTree = false)}
-          ></div>
-        {/if}
         <FileTree
           {files}
           {selectedFile}
@@ -251,6 +266,44 @@
       </div>
       <div class="diff-panel">
         {#if currentFile}
+          {#if outdatedComments.length}
+            <button
+              class="outdated-toggle"
+              onclick={() => (showOutdated = !showOutdated)}
+            >
+              <span
+                >{outdatedComments.length} outdated comment{outdatedComments.length ===
+                1
+                  ? ""
+                  : "s"}</span
+              >
+              <span class="outdated-arrow">{showOutdated ? "▾" : "▸"}</span>
+            </button>
+            {#if showOutdated}
+              <div class="outdated-list">
+                {#each outdatedComments as comment (comment.id)}
+                  <div class="outdated-comment">
+                    <Comment
+                      comment={{
+                        id: comment.id,
+                        body: comment.body,
+                        user: comment.user,
+                        createdAt: comment.createdAt,
+                        isReview: true,
+                      }}
+                      replies={comment.replies}
+                      {owner}
+                      {repo}
+                      onupdate={onUpdateComment}
+                      ondelete={onDeleteComment}
+                      onreply={onReplyComment}
+                      {onreaction}
+                    />
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          {/if}
           <div class="diff-header">
             <span class="diff-filename">
               <span>{currentFile.filename}</span>
@@ -309,8 +362,12 @@
                           user: { login: "", avatarUrl: "" },
                           createdAt: new Date().toISOString(),
                           path: currentFile.filename,
-                          line: null,
+                          line: 1,
+                          startLine: null,
                           originalLine: 1,
+                          originalStartLine: null,
+                          side: "RIGHT",
+                          outdated: false,
                           replies: [],
                         },
                       ];
@@ -334,7 +391,6 @@
                   (c) => c.path === currentFile.filename,
                 )}
                 currentFile={currentFile.filename}
-                headSha={sha}
                 {owner}
                 {repo}
                 {onCreateComment}
@@ -384,16 +440,19 @@
   .tree-wrapper {
     display: contents;
   }
-  .tree-overlay {
-    display: none;
-  }
   @media (max-width: 768px) {
+    .files-changed {
+      flex-direction: column;
+    }
     .tree-wrapper {
       display: block;
-      position: relative;
+      width: 100%;
+      flex-shrink: 0;
     }
     .tree-trigger {
-      display: block;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 12px 12px;
       border: none;
       border-bottom: 1px solid var(--border-primary);
@@ -409,25 +468,19 @@
     .tree-trigger:hover {
       background: var(--bg-tertiary);
     }
+    .tree-arrow {
+      color: var(--text-secondary);
+    }
     .tree-wrapper:not(.tree-open) > :global(.file-tree) {
       display: none;
     }
     .tree-wrapper.tree-open > :global(.file-tree) {
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 100%;
-      z-index: 20;
-      box-shadow: 4px 0 8px var(--shadow-dialog);
-    }
-    .tree-overlay {
-      display: block;
-      position: fixed;
-      inset: 0;
-      z-index: 19;
-    }
-    .tree-wrapper {
-      position: relative;
+      max-width: 100%;
+      min-width: 0;
+      width: 100%;
+      max-height: 40vh;
+      border-right: none;
+      border-bottom: 1px solid var(--border-primary);
     }
   }
   .diff-panel {
@@ -443,6 +496,42 @@
     font-family: monospace;
     display: flex;
     justify-content: space-between;
+  }
+  .outdated-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 12px 12px;
+    border: none;
+    border-bottom: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .outdated-toggle:hover {
+    background: var(--bg-tertiary);
+  }
+  .outdated-arrow {
+    color: var(--text-secondary);
+  }
+  .outdated-list {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 8px 16px;
+    max-height: 40vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .outdated-comment {
+    padding-top: 6px;
+  }
+  .outdated-comment:first-child {
+    padding-top: 0;
   }
   .diff-stats {
     font-size: 12px;

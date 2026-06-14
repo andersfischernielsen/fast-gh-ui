@@ -4,7 +4,10 @@
   import { onMount } from "svelte";
   import { loadEmojiMap, replaceEmojis } from "$lib/github/emojis";
 
-  let { text = "" }: { text?: string | null } = $props();
+  let {
+    text = "",
+    suggestionLines = [],
+  }: { text?: string | null; suggestionLines?: string[] } = $props();
 
   let emojiMap = $state<Record<string, string> | null>(null);
 
@@ -12,25 +15,39 @@
     loadEmojiMap().then((m) => (emojiMap = m));
   });
 
+  let _suggestionLines: string[] = [];
+
   const marked = new Marked();
   marked.use({
     renderer: {
       code({ text: code, lang }) {
         if (lang === "suggestion") {
-          const lines = code.split("\n");
-          const last = lines.length - 1;
-          const formatted = lines
-            .map((line, i) => {
-              if (i === last && line === "") return "";
-              return `<div class="suggestion-line">${escapeHtml(line)}</div>`;
-            })
-            .join("");
-          return `<div class="suggestion-block"><div class="suggestion-header">Suggested change</div>${formatted}</div>`;
+          return renderSuggestion(code, _suggestionLines);
         }
         return false;
       },
     },
   });
+
+  function renderSuggestion(code: string, originalLines: string[]): string {
+    const suggLines = code.split("\n");
+    if (suggLines[suggLines.length - 1] === "") suggLines.pop();
+
+    if (originalLines.length === 0) {
+      const formatted = suggLines
+        .map((line) => `<div class="suggestion-line">${escapeHtml(line)}</div>`)
+        .join("");
+      return `<div class="suggestion-block"><div class="suggestion-header">Suggested change</div>${formatted}</div>`;
+    }
+
+    const delHtml = originalLines
+      .map((line) => `<div class="suggestion-del">${escapeHtml(line)}</div>`)
+      .join("");
+    const addHtml = suggLines
+      .map((line) => `<div class="suggestion-add">${escapeHtml(line)}</div>`)
+      .join("");
+    return `<div class="suggestion-block"><div class="suggestion-header">Suggested change</div>${delHtml}${addHtml}</div>`;
+  }
 
   function escapeHtml(str: string): string {
     return str
@@ -42,6 +59,7 @@
   let rendered = $derived(text ?? "");
 
   let html = $derived.by(() => {
+    _suggestionLines = suggestionLines;
     let content = rendered;
     if (emojiMap) {
       content = replaceEmojis(content, emojiMap);
@@ -153,5 +171,29 @@
     line-height: 1.5;
     white-space: pre;
     color: var(--text-success);
+  }
+  .markdown :global(.suggestion-del) {
+    padding: 0 12px 0 6px;
+    line-height: 1.5;
+    white-space: pre;
+    background: var(--diff-remove-bg);
+    color: var(--text-danger);
+  }
+  .markdown :global(.suggestion-del)::before {
+    content: "-";
+    margin-right: 6px;
+    opacity: 0.7;
+  }
+  .markdown :global(.suggestion-add) {
+    padding: 0 12px 0 6px;
+    line-height: 1.5;
+    white-space: pre;
+    background: var(--diff-add-bg);
+    color: var(--text-success);
+  }
+  .markdown :global(.suggestion-add)::before {
+    content: "+";
+    margin-right: 6px;
+    opacity: 0.7;
   }
 </style>

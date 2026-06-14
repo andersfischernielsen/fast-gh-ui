@@ -32,6 +32,7 @@
       <button
         class="file-item"
         class:selected={selectedFile === file.filename}
+        title={file.filename}
         onclick={() => onselect(file.filename)}
       >
         <span
