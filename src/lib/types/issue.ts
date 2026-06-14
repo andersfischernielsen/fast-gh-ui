@@ -1,3 +1,5 @@
+import type { ReactionData } from "./comment";
+
 export interface IssueData {
   number: number;
   title: string;
@@ -7,4 +9,5 @@ export interface IssueData {
   createdAt: string;
   updatedAt: string;
   htmlUrl: string;
+  reactions: Promise<ReactionData[]>;
 }

@@ -4,7 +4,8 @@
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
-  import type { CommentData, ReviewCommentData } from "$lib/types/comment";
+  import Reactions from "./Reactions.svelte";
+  import type { CommentData, ReactionData, ReviewCommentData } from "$lib/types/comment";
 
   interface ThreadedComment extends CommentData {
     replies: CommentData[];
@@ -18,10 +19,12 @@
     body,
     comments,
     reviewComments,
+    descriptionReactions,
   }: {
     body: string | null;
     comments: CommentData[];
     reviewComments: ReviewCommentData[];
+    descriptionReactions?: Promise<ReactionData[]>;
   } = $props();
 
   let editingDesc = $state(false);
@@ -111,6 +114,34 @@
     });
   }
 
+  async function onreaction(
+    commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    await submitAction("react", {
+      commentId: String(commentId),
+      emoji,
+      remove: String(remove),
+      reactionId: reactionId ? String(reactionId) : "",
+      isReview: reviewIds.has(commentId) ? "true" : "false",
+    });
+  }
+
+  async function onDescriptionReaction(
+    _commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    await submitAction("reactDescription", {
+      emoji,
+      remove: String(remove),
+      reactionId: reactionId ? String(reactionId) : "",
+    });
+  }
+
   function startEditDescription() {
     editDescBody = body ?? "";
     editingDesc = true;
@@ -176,6 +207,15 @@
       </div>
       {#if !editingDesc}
         <Markdown text={body} />
+        {#if descriptionReactions}
+          {#await descriptionReactions}
+            <span class="reactions-loading"></span>
+          {:then reactions}
+            <Reactions {reactions} commentId={-1} onreaction={onDescriptionReaction} />
+          {:catch}
+            <span class="reactions-loading"></span>
+          {/await}
+        {/if}
       {/if}
     </div>
   {/if}
@@ -188,6 +228,7 @@
         {onreply}
         onupdate={onUpdateComment}
         ondelete={onDeleteComment}
+        {onreaction}
       />
     {/each}
     {#if threadedComments.length === 0}
@@ -301,5 +342,20 @@
     padding: 16px;
     color: var(--text-secondary);
     font-size: 12px;
+  }
+  .reactions-loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-top: 8px;
+    border: 2px solid var(--border-primary);
+    border-top-color: var(--text-secondary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

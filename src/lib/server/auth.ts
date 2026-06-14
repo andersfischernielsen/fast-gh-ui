@@ -35,6 +35,12 @@ function clearTokenCookie(cookies: Cookies): void {
   cookies.delete(TOKEN_COOKIE, { path: "/" });
 }
 
+async function getCurrentUser(token: string): Promise<string> {
+  const octokit = createGitHubClient(token);
+  const response = await octokit.rest.users.getAuthenticated();
+  return response.data.login;
+}
+
 function sanitizeErrorMessage(message: string): string {
   return message
     .replace(/Authorization:[^\r\n]*/gi, "Authorization: [redacted]")
@@ -52,6 +58,7 @@ export {
   createGitHubClient,
   setTokenCookie,
   clearTokenCookie,
+  getCurrentUser,
   sanitizeErrorMessage,
   githubErrorMessage,
   TOKEN_COOKIE,
