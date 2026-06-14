@@ -1,8 +1,9 @@
 <script lang="ts">
   import Markdown from "./Markdown.svelte";
-  import type { CommentData } from "$lib/types/comment";
+  import type { CommentData, ReactionData } from "$lib/types/comment";
+  import Reactions from "./Reactions.svelte";
 
-  type CommentLike = Pick<CommentData, "id" | "body" | "user" | "createdAt"> & {
+  type CommentLike = Pick<CommentData, "id" | "body" | "user" | "createdAt" | "reactions"> & {
     htmlUrl?: string;
   };
 
@@ -131,6 +132,13 @@
     {:else}
       <Markdown text={comment.body} />
     {/if}
+    {#await comment.reactions}
+      <span class="reactions-loading"></span>
+    {:then reactions}
+      <Reactions {reactions} />
+    {:catch}
+      <span class="reactions-loading"></span>
+    {/await}
   </div>
   {#if replies.length > 0}
     <div class="replies">
@@ -195,6 +203,13 @@
             {:else}
               <Markdown text={reply.body} />
             {/if}
+            {#await reply.reactions}
+              <span class="reactions-loading"></span>
+            {:then reactions}
+              <Reactions {reactions} />
+            {:catch}
+              <span class="reactions-loading"></span>
+            {/await}
           </div>
         </article>
       {/each}
@@ -410,5 +425,20 @@
   .reply-body :global(.markdown) {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
+  }
+  .reactions-loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-top: 8px;
+    border: 2px solid var(--border-primary);
+    border-top-color: var(--text-secondary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

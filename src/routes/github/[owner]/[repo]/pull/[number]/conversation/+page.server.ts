@@ -4,6 +4,8 @@ import { getFormValue } from "$lib/server/forms";
 import {
   listPRComments,
   listInlineComments,
+  listCommentReactions,
+  listReviewCommentReactions,
   createPRComment,
   createInlineComment,
   updatePRComment,
@@ -12,12 +14,31 @@ import {
   deleteInlineComment,
   updatePullRequest,
 } from "$lib/server/github/pulls";
-import type { CommentData, ReviewCommentData } from "$lib/types/comment";
+import type { CommentData, ReactionData, ReviewCommentData } from "$lib/types/comment";
 import type { Actions, PageServerLoad } from "./$types";
 
-function mapComment(raw: Record<string, unknown>): CommentData {
+function mapReactions(raw: Record<string, unknown>[]): ReactionData[] {
+  const grouped = new Map<string, string[]>();
+  for (const r of raw) {
+    const emoji = (r.content as string) ?? "";
+    const author = (r.user as { login?: string } | undefined)?.login ?? "";
+    if (!emoji) continue;
+    const list = grouped.get(emoji) ?? [];
+    list.push(author);
+    grouped.set(emoji, list);
+  }
+  return Array.from(grouped.entries()).map(([emoji, authors]) => ({ emoji, authors }));
+}
+
+function mapComment(
+  raw: Record<string, unknown>,
+  token: string,
+  owner: string,
+  repo: string,
+): CommentData {
+  const id = raw.id as number;
   return {
-    id: raw.id as number,
+    id,
     body: (raw.body as string) ?? "",
     user: {
       login: (raw.user as { login?: string })?.login ?? "",
@@ -26,12 +47,21 @@ function mapComment(raw: Record<string, unknown>): CommentData {
     createdAt: raw.created_at as string,
     updatedAt: raw.updated_at as string,
     htmlUrl: raw.html_url as string,
+    reactions: listCommentReactions(token, owner, repo, id)
+      .then(mapReactions)
+      .catch(() => []),
   };
 }
 
-function mapReviewComment(raw: Record<string, unknown>): ReviewCommentData {
+function mapReviewComment(
+  raw: Record<string, unknown>,
+  token: string,
+  owner: string,
+  repo: string,
+): ReviewCommentData {
+  const id = raw.id as number;
   return {
-    id: raw.id as number,
+    id,
     body: (raw.body as string) ?? "",
     user: {
       login: (raw.user as { login?: string })?.login ?? "",
@@ -45,6 +75,9 @@ function mapReviewComment(raw: Record<string, unknown>): ReviewCommentData {
     line: (raw.line as number) ?? 1,
     originalLine: (raw.original_line as number | null) ?? null,
     inReplyToId: (raw.in_reply_to_id as number | null) ?? null,
+    reactions: listReviewCommentReactions(token, owner, repo, id)
+      .then(mapReactions)
+      .catch(() => []),
   };
 }
 
@@ -55,7 +88,7 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
   const { pr } = await parent();
 
   const comments: Promise<CommentData[]> = listPRComments(token, owner, repo, number)
-    .then((raw) => raw.map(mapComment))
+    .then((raw) => raw.map((c) => mapComment(c, token, owner, repo)))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });
@@ -66,7 +99,7 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
     repo,
     number,
   )
-    .then((raw) => raw.map(mapReviewComment))
+    .then((raw) => raw.map((c) => mapReviewComment(c, token, owner, repo)))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });
