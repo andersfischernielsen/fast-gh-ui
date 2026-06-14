@@ -5,29 +5,22 @@
   import CommentInput from "./CommentInput.svelte";
   import Reactions from "./Reactions.svelte";
   import {
-    listPRComments,
+    listPRTimeline,
     createPRComment,
     updatePRComment,
     deletePRComment,
-    listInlineComments,
     createInlineComment,
     updateInlineComment,
     deleteInlineComment,
     updatePullRequest,
-    listIssueReactions,
-    listCommentReactions,
-    listReviewCommentReactions,
     createIssueCommentReaction,
     deleteIssueCommentReaction,
     createReviewCommentReaction,
     deleteReviewCommentReaction,
     createIssueReaction,
     deleteIssueReaction,
-    getCurrentUser,
-    mapReactions,
   } from "$lib/github/pulls";
   import { pr } from "$lib/stores/pr.svelte";
-  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -38,12 +31,6 @@
     htmlUrl: string;
   }
 
-  interface ReviewCommentData extends CommentData {
-    commitId: string;
-    path: string;
-    line: number;
-  }
-
   interface ThreadedComment extends CommentData {
     replies: CommentData[];
     isReview?: boolean;
@@ -52,18 +39,27 @@
     line?: number;
   }
 
-  let { body }: { body: string | null } = $props();
+  let { body, editable = false }: { body: string | null; editable?: boolean } = $props();
 
-  let threadedComments = $state<ThreadedComment[]>([]);
+  const PAGE_SIZE = 20;
+
+  // One promise per page — {#await} handles the loading state for each
+  let pages = $state<Promise<ThreadedComment[]>[]>([]);
+
+  // Mutation overlays applied on top of resolved page data
+  let localComments = $state<ThreadedComment[]>([]);
+  let deletedIds = $state(new Set<number>());
+  let patchedBodies = $state(new Map<number, string>());
+  let addedReplies = $state(new Map<number, CommentData[]>());
+
+  // Non-reactive lookup used for API routing on mutations
+  let commentIndex = new Map<number, ThreadedComment>();
+  let reviewIds = new Set<number>();
 
   let editingDesc = $state(false);
   let editDescBody = $state("");
   let savingDesc = $state(false);
   let descError = $state<string | null>(null);
-
-  let descriptionReactions = $state<ReactionData[]>([]);
-
-  let reviewIds = new Set<number>();
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -77,172 +73,123 @@
         login: (raw.user as { login?: string })?.login ?? "",
         avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? "",
       },
-      createdAt: raw.created_at as string,
-      updatedAt: raw.updated_at as string,
+      createdAt: (raw.created_at as string) ?? "",
+      updatedAt: (raw.updated_at as string) ?? "",
       htmlUrl: raw.html_url as string,
     };
   }
 
-  async function loadConversation(): Promise<void> {
-    const [issueComments, reviewComments] = await Promise.all([
-      listPRComments(owner, repo, number),
-      listInlineComments(owner, repo, number),
-    ]);
-
-    const user = await getCurrentUser();
-
-    const rawDescReactions = await listIssueReactions(owner, repo, number);
-    descriptionReactions = mapReactions(
-      rawDescReactions as Record<string, unknown>[],
-      user,
-    );
-
-    const issueItems: ThreadedComment[] = (
-      issueComments as Record<string, unknown>[]
-    )
-      .map(toCommentData)
-      .map((c) => ({
-        ...c,
-        replies: [],
-      }));
-
-    const reviewItems = reviewComments as Record<string, unknown>[];
-
-    const replyMap = new Map<number, Record<string, unknown>[]>();
-    const rootReviews: Record<string, unknown>[] = [];
-
-    for (const rc of reviewItems) {
-      const inReplyTo = rc.in_reply_to_id as number | undefined;
-      if (inReplyTo) {
-        const list = replyMap.get(inReplyTo) ?? [];
-        list.push(rc);
-        replyMap.set(inReplyTo, list);
-      } else {
-        rootReviews.push(rc);
+  function mapTimelineEvents(events: Record<string, unknown>[]): ThreadedComment[] {
+    const result: ThreadedComment[] = [];
+    for (const event of events) {
+      const type = event.event as string;
+      if (type === "commented") {
+        result.push({ ...toCommentData(event), replies: [] });
+      } else if (type === "line-commented") {
+        const comments = (event.comments as Record<string, unknown>[]) ?? [];
+        if (!comments.length) continue;
+        const root = comments[0];
+        reviewIds.add(root.id as number);
+        comments.slice(1).forEach((r) => reviewIds.add(r.id as number));
+        result.push({
+          ...toCommentData(root),
+          replies: comments.slice(1).map(toCommentData),
+          isReview: true,
+          commitId: root.commit_id as string,
+          path: root.path as string,
+          line: ((root.line ?? root.original_line ?? root.position) as number) ?? 1,
+        });
       }
     }
+    return result;
+  }
 
-    const reviewThreads: ThreadedComment[] = rootReviews.map((rc) => {
-      const id = rc.id as number;
-      reviewIds.add(id);
-      const childReplies = replyMap.get(id) ?? [];
-      childReplies.forEach((r) => reviewIds.add(r.id as number));
-      return {
-        ...toCommentData(rc),
-        replies: childReplies.map(toCommentData),
-        isReview: true,
-        commitId: (rc.commit_id as string) ?? "",
-        path: (rc.path as string) ?? "",
-        line: ((rc.line ?? rc.original_line ?? rc.position) as number) ?? 1,
-      };
+  async function fetchPage(o: string, r: string, n: number, pageNum: number): Promise<{ comments: ThreadedComment[]; hasMore: boolean }> {
+    const events = await listPRTimeline(o, r, n, pageNum);
+    const comments = mapTimelineEvents(events as Record<string, unknown>[]);
+    for (const c of comments) commentIndex.set(c.id, c);
+    return { comments, hasMore: events.length === PAGE_SIZE };
+  }
+
+  $effect(() => {
+    const o = owner;
+    const r = repo;
+    const n = number;
+    commentIndex = new Map();
+    reviewIds = new Set();
+    localComments = [];
+    deletedIds = new Set();
+    patchedBodies = new Map();
+    addedReplies = new Map();
+    pages = [fetchPage(o, r, n, 1)];
+  });
+
+  function lazySentinel(node: HTMLElement) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting)
+        pages = [...pages, fetchPage(owner, repo, number, pages.length + 1)];
     });
+    observer.observe(node);
+    return { destroy() { observer.disconnect(); } };
+  }
 
-    threadedComments = [...issueItems, ...reviewThreads].sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
+  // Applies mutation overlays to a comment before rendering
+  function withOverlays(c: ThreadedComment): { comment: ThreadedComment; replies: CommentData[] } {
+    return {
+      comment: { ...c, body: patchedBodies.get(c.id) ?? c.body },
+      replies: [
+        ...c.replies
+          .filter((r) => !deletedIds.has(r.id))
+          .map((r) => ({ ...r, body: patchedBodies.get(r.id) ?? r.body })),
+        ...(addedReplies.get(c.id) ?? []),
+      ],
+    };
   }
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
-    threadedComments = [
-      ...threadedComments,
-      {
-        ...toCommentData(raw as Record<string, unknown>),
-        replies: [],
-      },
-    ];
+    const comment = { ...toCommentData(raw as Record<string, unknown>), replies: [] };
+    commentIndex.set(comment.id, comment);
+    localComments = [...localComments, comment];
   }
 
   async function replyToComment(parentId: number, replyBody: string) {
-    const parent = threadedComments.find((tc) => tc.id === parentId);
+    const parent = commentIndex.get(parentId);
     if (!parent) return;
 
-    let raw: {
-      id: number;
-      body: string;
-      user: { login: string; avatar_url: string };
-      created_at: string;
-      updated_at: string;
-      html_url: string;
-    };
-
+    let raw: Record<string, unknown>;
     if (parent.isReview && parent.commitId && parent.path) {
       raw = (await createInlineComment(
-        owner,
-        repo,
-        number,
-        replyBody,
-        parent.commitId,
-        parent.path,
-        parent.line ?? 1,
-        undefined,
-        parentId,
-      )) as unknown as typeof raw;
+        owner, repo, number, replyBody,
+        parent.commitId, parent.path, parent.line ?? 1,
+        undefined, parentId,
+      )) as Record<string, unknown>;
     } else {
-      raw = (await createPRComment(
-        owner,
-        repo,
-        number,
-        replyBody,
-      )) as unknown as typeof raw;
+      raw = (await createPRComment(owner, repo, number, replyBody)) as Record<string, unknown>;
     }
 
-    const reply: CommentData = toCommentData(
-      raw as unknown as Record<string, unknown>,
-    );
-    threadedComments = threadedComments.map((tc) =>
-      tc.id === parentId ? { ...tc, replies: [...tc.replies, reply] } : tc,
-    );
+    const reply = toCommentData(raw);
+    addedReplies = new Map([...addedReplies,
+      [parentId, [...(addedReplies.get(parentId) ?? []), reply]],
+    ]);
   }
 
-  async function onUpdateComment(commentId: number, body: string) {
-    let useInline = false;
-    const target = threadedComments.find((tc) => tc.id === commentId);
-    if (target?.isReview) {
-      useInline = true;
-    } else if (!target) {
-      const parent = threadedComments.find((tc) =>
-        tc.replies.some((r) => r.id === commentId),
-      );
-      if (parent?.isReview) useInline = true;
-    }
-    if (useInline) {
-      await updateInlineComment(owner, repo, commentId, body);
+  async function onUpdateComment(commentId: number, newBody: string) {
+    if (reviewIds.has(commentId)) {
+      await updateInlineComment(owner, repo, commentId, newBody);
     } else {
-      await updatePRComment(owner, repo, commentId, body);
+      await updatePRComment(owner, repo, commentId, newBody);
     }
-    threadedComments = threadedComments.map((tc) => {
-      if (tc.id === commentId) return { ...tc, body };
-      tc.replies = tc.replies.map((r) =>
-        r.id === commentId ? { ...r, body } : r,
-      );
-      return tc;
-    });
+    patchedBodies = new Map([...patchedBodies, [commentId, newBody]]);
   }
 
   async function onDeleteComment(commentId: number) {
-    let useInline = false;
-    const target = threadedComments.find((tc) => tc.id === commentId);
-    if (target?.isReview) {
-      useInline = true;
-    } else if (!target) {
-      const parent = threadedComments.find((tc) =>
-        tc.replies.some((r) => r.id === commentId),
-      );
-      if (parent?.isReview) useInline = true;
-    }
-    if (useInline) {
+    if (reviewIds.has(commentId)) {
       await deleteInlineComment(owner, repo, commentId);
     } else {
       await deletePRComment(owner, repo, commentId);
     }
-    threadedComments = threadedComments
-      .map((tc) => {
-        tc.replies = tc.replies.filter((r) => r.id !== commentId);
-        return tc;
-      })
-      .filter((tc) => tc.id !== commentId);
+    deletedIds = new Set([...deletedIds, commentId]);
   }
 
   async function onreaction(
@@ -254,19 +201,9 @@
     const isReview = reviewIds.has(commentId);
     if (remove && reactionId) {
       if (isReview) {
-        await deleteReviewCommentReaction(
-          owner,
-          repo,
-          commentId,
-          reactionId,
-        );
+        await deleteReviewCommentReaction(owner, repo, commentId, reactionId);
       } else {
-        await deleteIssueCommentReaction(
-          owner,
-          repo,
-          commentId,
-          reactionId,
-        );
+        await deleteIssueCommentReaction(owner, repo, commentId, reactionId);
       }
     } else {
       if (isReview) {
@@ -278,7 +215,7 @@
   }
 
   async function onDescriptionReaction(
-    _commentId: number,
+    _: number,
     emoji: string,
     remove: boolean,
     reactionId?: number,
@@ -305,16 +242,11 @@
     savingDesc = true;
     descError = null;
     try {
-      const result = await updatePullRequest(owner, repo, number, {
-        body: editDescBody,
-      });
-      if (result && pr.value) {
-        pr.value.body = result.body ?? null;
-      }
+      const result = await updatePullRequest(owner, repo, number, { body: editDescBody });
+      if (result && pr.value) pr.value.body = result.body ?? null;
       editingDesc = false;
     } catch (e) {
-      descError =
-        e instanceof Error ? e.message : "Failed to update description.";
+      descError = e instanceof Error ? e.message : "Failed to update description.";
     } finally {
       savingDesc = false;
     }
@@ -326,71 +258,77 @@
     <div class="description">
       <div class="desc-header">
         <h3>Description</h3>
-        {#if editingDesc}
-          <div class="desc-edit-actions">
-            <button
-              class="desc-save-btn"
-              onclick={saveDescription}
-              disabled={savingDesc}
-            >
-              {savingDesc ? "Saving..." : "Save"}
-            </button>
-            <button
-              class="desc-cancel-btn"
-              onclick={cancelEditDescription}
-              disabled={savingDesc}
-            >
-              Cancel
-            </button>
-          </div>
-        {:else}
-          <button class="desc-edit-btn" onclick={startEditDescription}
-            >Edit</button
-          >
+        {#if editable}
+          {#if editingDesc}
+            <div class="desc-edit-actions">
+              <button class="desc-save-btn" onclick={saveDescription} disabled={savingDesc}>
+                {savingDesc ? "Saving..." : "Save"}
+              </button>
+              <button class="desc-cancel-btn" onclick={cancelEditDescription} disabled={savingDesc}>
+                Cancel
+              </button>
+            </div>
+          {:else}
+            <button class="desc-edit-btn" onclick={startEditDescription}>Edit</button>
+          {/if}
         {/if}
       </div>
-      {#if editingDesc}
-        <textarea
-          class="desc-textarea"
-          bind:value={editDescBody}
-          disabled={savingDesc}
-        ></textarea>
+      {#if editable && editingDesc}
+        <textarea class="desc-textarea" bind:value={editDescBody} disabled={savingDesc}></textarea>
         {#if descError}
           <span class="desc-error">{descError}</span>
         {/if}
       {:else}
         <Markdown text={body} />
       {/if}
-      <Reactions
-        reactions={descriptionReactions}
-        commentId={-1}
-        onreaction={onDescriptionReaction}
-      />
+      <Reactions {owner} {repo} issueNumber={number} onreaction={onDescriptionReaction} />
     </div>
   {/if}
-  {#await loadConversation()}
-    <p class="status">Loading comments...</p>
-  {:then}
-    <div class="comments">
-      {#each threadedComments as c (c.id)}
-        <Comment
-          comment={c}
-          replies={c.replies}
-          {owner}
-          {repo}
-          onreply={replyToComment}
-          onupdate={onUpdateComment}
-          ondelete={onDeleteComment}
-          {onreaction}
-        />
-      {/each}
-      {#if threadedComments.length === 0}
-        <p class="status">No comments yet</p>
-      {/if}
-    </div>
-  {:catch error}
-    <p class="status error">{error.message}</p>
-  {/await}
+
+  <div class="comments">
+    {#each pages as pagePromise, i}
+      {#await pagePromise}
+        <p class="status">Loading...</p>
+      {:then { comments, hasMore }}
+        {#each comments.filter((c) => !deletedIds.has(c.id)) as c (c.id)}
+          {@const { comment, replies } = withOverlays(c)}
+          <Comment
+            {comment}
+            {replies}
+            {owner}
+            {repo}
+            onreply={replyToComment}
+            onupdate={onUpdateComment}
+            ondelete={onDeleteComment}
+            {onreaction}
+          />
+        {/each}
+        {#if i === 0 && comments.length === 0 && localComments.length === 0}
+          <p class="status">No comments yet</p>
+        {/if}
+        {#if i === pages.length - 1 && hasMore}
+          <div use:lazySentinel></div>
+        {/if}
+      {:catch error}
+        <p class="status error">{error.message}</p>
+      {/await}
+    {/each}
+
+    {#each localComments.filter((c) => !deletedIds.has(c.id)) as c (c.id)}
+      {@const { comment, replies } = withOverlays(c)}
+      <Comment
+        {comment}
+        {replies}
+        {owner}
+        {repo}
+        onreply={replyToComment}
+        onupdate={onUpdateComment}
+        ondelete={onDeleteComment}
+        {onreaction}
+      />
+    {/each}
+  </div>
+
   <CommentInput onsubmit={postComment} />
 </div>
 
@@ -500,5 +438,8 @@
     padding: 16px 0;
     color: var(--text-secondary);
     font-size: 12px;
+  }
+  .status.error {
+    color: var(--text-danger);
   }
 </style>

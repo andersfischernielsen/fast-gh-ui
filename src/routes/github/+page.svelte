@@ -1,15 +1,14 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import {
     notifications,
-    loading,
-    error,
     loadNotifications,
   } from "$lib/stores/notifications.svelte";
   import NotificationItem from "$lib/components/NotificationItem.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+
+  let notificationsPromise = $state(loadNotifications());
 
   let selectedId = $state<string | null>(null);
   let repoFilter = $state<string | null>(null);
@@ -24,11 +23,7 @@
     }),
   );
 
-  onMount(() => {
-    loadNotifications();
-  });
-
-  $effect(() => useShortcut("r", () => loadNotifications(), { shift: true }));
+  $effect(() => useShortcut("r", () => { notificationsPromise = loadNotifications(); }, { shift: true }));
 
   function prHref(item: NotificationItemType): string {
     const match = item.subject.url.match(
@@ -75,31 +70,33 @@
           <option value="unread">Unread</option>
           <option value="read">Read</option>
         </select>
-        <button onclick={() => loadNotifications()} disabled={loading.value}
+        <button onclick={() => { notificationsPromise = loadNotifications(); }}
           >Refresh <span class="shortcut-hint"
             >{shortcutHint("R", { shift: true })}</span
           ></button
         >
       </div>
     </div>
-    {#if loading.value}
+    {#await notificationsPromise}
       <p class="status">Loading...</p>
-    {:else if error.value}
-      <p class="status error">{error.value}</p>
-    {:else if filtered.length === 0}
-      <p class="status">No notifications</p>
-    {:else}
-      <div class="list">
-        {#each filtered as item (item.id)}
-          <NotificationItem
-            {item}
-            selected={selectedId === item.id}
-            href={prHref(item)}
-            prStateKey={prStateKey(item)}
-          />
-        {/each}
-      </div>
-    {/if}
+    {:then}
+      {#if filtered.length === 0}
+        <p class="status">No notifications</p>
+      {:else}
+        <div class="list">
+          {#each filtered as item (item.id)}
+            <NotificationItem
+              {item}
+              selected={selectedId === item.id}
+              href={prHref(item)}
+              prStateKey={prStateKey(item)}
+            />
+          {/each}
+        </div>
+      {/if}
+    {:catch error}
+      <p class="status error">{error.message}</p>
+    {/await}
   </div>
 </div>
 
