@@ -1,117 +1,216 @@
 <script lang="ts">
-  import { untrack } from "svelte";
-  import { applyAction, deserialize } from "$app/forms";
-  import { invalidateAll } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { page } from "$app/stores";
   import FileTree from "./FileTree.svelte";
   import DiffViewer from "./DiffViewer.svelte";
-  import type { PRFile, InlineCommentData } from "$lib/types/comment";
+  import {
+    listPRFiles,
+    listInlineComments,
+    createInlineComment,
+    updateInlineComment,
+    deleteInlineComment,
+  } from "$lib/github/pulls";
 
-  interface ThreadedInlineComment extends InlineCommentData {
-    replies: Array<{
-      id: number;
-      body: string;
-      user: { login: string; avatarUrl: string };
-      createdAt: string;
-    }>;
-  }
+  let { headSha: sha = "" }: { headSha?: string } = $props();
 
-  let {
-    files,
-    inlineComments,
-    headSha,
-  }: {
-    files: PRFile[];
-    inlineComments: InlineCommentData[];
-    headSha: string;
-  } = $props();
-
+  let files = $state<PRFile[]>([]);
+  let loading = $state(true);
+  let error = $state<string | null>(null);
   let selectedFile = $state<string | null>(null);
   let showFileComment = $state(false);
   let fileCommentBody = $state("");
   let fileSubmitting = $state(false);
   let showTree = $state(false);
+  let inlineComments = $state<
+    Array<{
+      id: number;
+      body: string;
+      user: { login: string; avatarUrl: string };
+      createdAt: string;
+      path: string;
+      line: number | null;
+      originalLine: number | null;
+      replies: Array<{
+        id: number;
+        body: string;
+        user: { login: string; avatarUrl: string };
+        createdAt: string;
+      }>;
+    }>
+  >([]);
 
-  let commentsData = $derived.by(() => {
-    const all: ThreadedInlineComment[] = inlineComments.map((c) => ({
-      ...c,
-      replies: [],
-    }));
+  let owner = $derived($page.params.owner);
+  let repo = $derived($page.params.repo);
+  let number = $derived(Number($page.params.number));
 
-    const byId = new Map<number, ThreadedInlineComment>();
-    const roots: ThreadedInlineComment[] = [];
-    for (const c of all) {
-      byId.set(c.id, c);
-      if (!c.inReplyToId) roots.push(c);
-    }
-    for (const c of all) {
-      if (c.inReplyToId) {
-        const parent = byId.get(c.inReplyToId);
-        if (parent) {
-          parent.replies.push({
-            id: c.id,
-            body: c.body,
-            user: c.user,
-            createdAt: c.createdAt,
-          });
-        } else {
-          roots.push(c);
+  onMount(async () => {
+    try {
+      const raw = await listPRFiles(owner, repo, number);
+      files = raw.map((f: Record<string, unknown>) => ({
+        filename: f.filename as string,
+        status: f.status as string,
+        additions: f.additions as number,
+        deletions: f.deletions as number,
+        changes: f.changes as number,
+        patch: f.patch as string | undefined,
+      }));
+      if (files.length > 0) selectedFile = files[0].filename;
+
+      const rawComments = await listInlineComments(owner, repo, number);
+      const allComments = rawComments.map((c: Record<string, unknown>) => ({
+        id: c.id as number,
+        body: (c.body as string) ?? "",
+        user: {
+          login: (c.user as { login?: string })?.login ?? "",
+          avatarUrl: (c.user as { avatar_url?: string })?.avatar_url ?? "",
+        },
+        createdAt: c.created_at as string,
+        path: c.path as string,
+        line: c.line as number | null,
+        originalLine: c.original_line as number | null,
+        inReplyToId: c.in_reply_to_id as number | undefined,
+        replies: [] as Array<{
+          id: number;
+          body: string;
+          user: { login: string; avatarUrl: string };
+          createdAt: string;
+        }>,
+      }));
+
+      const replyMap = new Map<number, (typeof allComments)[number]>();
+      const rootComments: typeof allComments = [];
+      for (const c of allComments) {
+        replyMap.set(c.id, c);
+        if (!c.inReplyToId) {
+          rootComments.push(c);
         }
       }
+      for (const c of allComments) {
+        if (c.inReplyToId) {
+          const parent = replyMap.get(c.inReplyToId);
+          if (parent) {
+            parent.replies.push({
+              id: c.id,
+              body: c.body,
+              user: c.user,
+              createdAt: c.createdAt,
+            });
+          } else {
+            rootComments.push(c);
+          }
+        }
+      }
+      inlineComments = rootComments.map(({ inReplyToId: _, ...rest }) => rest);
+    } catch (e) {
+      error = String(e);
+    } finally {
+      loading = false;
     }
-
-    return { roots, byId };
   });
-
-  let inlineCommentsForDiff = $derived(commentsData.roots);
 
   let currentFile = $derived(
     files.find((f) => f.filename === selectedFile) ?? null,
   );
 
-  $effect(() => {
-    const first = files[0]?.filename ?? null;
-    if (first !== null) {
-      untrack(() => {
-        if (selectedFile === null) selectedFile = first;
-      });
-    }
-  });
-
-  async function submitAction(actionName: string, data: Record<string, string>) {
-    const fd = new FormData();
-    for (const [k, v] of Object.entries(data)) fd.set(k, v);
-    const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
-    const result = deserialize(await res.text());
-    applyAction(result);
-    if (result.type === "success") await invalidateAll();
+  async function onCreateComment(
+    startLine: number,
+    endLine: number,
+    file: string,
+    body: string,
+  ) {
+    const start = startLine === endLine ? undefined : startLine;
+    const comment = await createInlineComment(
+      owner,
+      repo,
+      number,
+      body,
+      sha,
+      file,
+      endLine,
+      start,
+    );
+    inlineComments = [
+      ...inlineComments,
+      {
+        id: comment.id,
+        body: (comment.body as string) ?? "",
+        user: {
+          login: (comment.user as { login?: string })?.login ?? "",
+          avatarUrl:
+            (comment.user as { avatar_url?: string })?.avatar_url ?? "",
+        },
+        createdAt: comment.created_at as string,
+        path: comment.path as string,
+        line: comment.line as number | null,
+        originalLine: comment.original_line as number | null,
+        replies: [],
+      },
+    ];
   }
-
-  async function onCreateComment(startLine: number, endLine: number, file: string, body: string) {
-    const data: Record<string, string> = { body, path: file, line: String(endLine), commitId: headSha };
-    if (startLine !== endLine) data.startLine = String(startLine);
-    await submitAction("createInlineComment", data);
-  }
-
-  async function onReplyComment(commentId: number, body: string) {
-    const parent = commentsData.byId.get(commentId);
-    const path = parent?.path ?? "";
-    const line = parent?.originalLine ?? parent?.line ?? 1;
-    await submitAction("createInlineComment", {
-      body, path, line: String(line), commitId: headSha, inReplyTo: String(commentId),
+  async function onUpdateComment(commentId: number, body: string) {
+    await updateInlineComment(owner, repo, commentId, body);
+    inlineComments = inlineComments.map((c) => {
+      if (c.id === commentId) return { ...c, body };
+      c.replies = c.replies.map((r) =>
+        r.id === commentId ? { ...r, body } : r,
+      );
+      return c;
     });
   }
 
-  async function onUpdateComment(commentId: number, body: string) {
-    await submitAction("updateInlineComment", { commentId: String(commentId), body });
+  async function onDeleteComment(commentId: number) {
+    await deleteInlineComment(owner, repo, commentId);
+    inlineComments = inlineComments
+      .map((c) => {
+        c.replies = c.replies.filter((r) => r.id !== commentId);
+        return c;
+      })
+      .filter((c) => c.id !== commentId);
   }
 
-  async function onDeleteComment(commentId: number) {
-    await submitAction("deleteInlineComment", { commentId: String(commentId) });
+  async function onReplyComment(commentId: number, body: string) {
+    const parent = inlineComments.find((c) => c.id === commentId);
+    const path = parent?.path ?? "";
+    const line = parent?.originalLine ?? parent?.line ?? 1;
+    const comment = await createInlineComment(
+      owner,
+      repo,
+      number,
+      body,
+      sha,
+      path,
+      line,
+      undefined,
+      commentId,
+    );
+    inlineComments = inlineComments.map((c) => {
+      if (c.id === commentId) {
+        return {
+          ...c,
+          replies: [
+            ...c.replies,
+            {
+              id: comment.id,
+              body: (comment.body as string) ?? "",
+              user: {
+                login: (comment.user as { login?: string })?.login ?? "",
+                avatarUrl:
+                  (comment.user as { avatar_url?: string })?.avatar_url ?? "",
+              },
+              createdAt: comment.created_at as string,
+            },
+          ],
+        };
+      }
+      return c;
+    });
   }
 </script>
 
-{#if files.length === 0}
-  <p class="status">No files changed</p>
+{#if loading}
+  <p class="status">Loading files...</p>
+{:else if error}
+  <p class="status error">{error}</p>
 {:else}
   <div class="files-changed-container">
     <button class="tree-trigger" onclick={() => (showTree = !showTree)}>
@@ -129,7 +228,7 @@
           ></div>
         {/if}
         <FileTree
-          files={files}
+          {files}
           {selectedFile}
           onselect={(f: string) => {
             selectedFile = f;
@@ -154,28 +253,8 @@
             </span>
           </div>
           {#if showFileComment}
-            <form
-              class="file-comment-input"
-              onsubmit={async (e) => {
-                e.preventDefault();
-                if (!fileCommentBody.trim()) return;
-                fileSubmitting = true;
-                try {
-                  await submitAction("createInlineComment", {
-                    body: fileCommentBody,
-                    path: currentFile.filename,
-                    line: "1",
-                    commitId: headSha,
-                  });
-                  fileCommentBody = "";
-                  showFileComment = false;
-                } finally {
-                  fileSubmitting = false;
-                }
-              }}
-            >
+            <div class="file-comment-input">
               <textarea
-                name="body"
                 bind:value={fileCommentBody}
                 placeholder="Write a comment on this file..."
                 rows={2}
@@ -183,7 +262,6 @@
               ></textarea>
               <div class="file-comment-actions">
                 <button
-                  type="button"
                   class="cancel"
                   onclick={() => {
                     showFileComment = false;
@@ -191,23 +269,59 @@
                   }}>Cancel</button
                 >
                 <button
-                  type="submit"
                   class="submit"
+                  onclick={async () => {
+                    if (
+                      !fileCommentBody.trim() ||
+                      fileSubmitting ||
+                      !currentFile
+                    )
+                      return;
+                    fileSubmitting = true;
+                    try {
+                      await createInlineComment(
+                        owner,
+                        repo,
+                        number,
+                        fileCommentBody,
+                        sha,
+                        currentFile.filename,
+                        1,
+                      );
+                      inlineComments = [
+                        ...inlineComments,
+                        {
+                          id: Date.now(),
+                          body: fileCommentBody,
+                          user: { login: "", avatarUrl: "" },
+                          createdAt: new Date().toISOString(),
+                          path: currentFile.filename,
+                          line: null,
+                          originalLine: 1,
+                          replies: [],
+                        },
+                      ];
+                      fileCommentBody = "";
+                      showFileComment = false;
+                    } finally {
+                      fileSubmitting = false;
+                    }
+                  }}
                   disabled={fileSubmitting || !fileCommentBody.trim()}
                   >Comment</button
                 >
               </div>
-            </form>
+            </div>
           {/if}
           <div class="diff-body">
             {#if currentFile.patch}
               <DiffViewer
                 patch={currentFile.patch}
-                inlineComments={inlineCommentsForDiff.filter(
+                inlineComments={inlineComments.filter(
                   (c) => c.path === currentFile.filename,
                 )}
                 currentFile={currentFile.filename}
-                {headSha}
+                headSha={sha}
                 {onCreateComment}
                 {onUpdateComment}
                 {onDeleteComment}
@@ -225,12 +339,14 @@
   </div>
 {/if}
 
-
 <style>
   .status {
-    padding: 16px;
+    padding: 24px;
     color: var(--text-secondary);
     font-size: 12px;
+  }
+  .status.error {
+    color: var(--text-danger);
   }
   .files-changed-container {
     display: flex;

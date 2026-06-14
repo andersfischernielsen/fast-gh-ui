@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { applyAction, deserialize } from "$app/forms";
-  import { invalidateAll } from "$app/navigation";
+  import { createReview, mergePullRequest } from "$lib/github/pulls";
 
   let {
     owner,
@@ -13,39 +12,51 @@
   } = $props();
 
   let expanded = $state(false);
-  let reviewBody = $state("");
+  let body = $state("");
   let submitting = $state(false);
+  let success = $state<string | null>(null);
+  let error = $state<string | null>(null);
+  let mergeSuccess = $state<string | null>(null);
+  let mergeError = $state<string | null>(null);
   let merging = $state(false);
 
-  function cancel() {
-    expanded = false;
-    reviewBody = "";
-  }
-
-  async function submitAction(actionName: string, data: Record<string, string>) {
-    const fd = new FormData();
-    for (const [k, v] of Object.entries(data)) fd.set(k, v);
-    const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
-    const result = deserialize(await res.text());
-    applyAction(result);
-    if (result.type === "success") await invalidateAll();
-  }
-
-  async function submitReview(event: "APPROVE" | "REQUEST_CHANGES") {
+  async function handleReview(event: "APPROVE" | "REQUEST_CHANGES") {
     submitting = true;
+    error = null;
+    success = null;
     try {
-      await submitAction("createReview", { event, body: reviewBody });
+      await createReview(owner, repo, number, event, body.trim() || undefined);
+      success = event === "APPROVE" ? "Approved!" : "Changes requested.";
+      body = "";
       expanded = false;
-      reviewBody = "";
+      setTimeout(() => {
+        success = null;
+      }, 2000);
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Failed to submit review.";
     } finally {
       submitting = false;
     }
   }
 
-  async function merge() {
+  function cancel() {
+    expanded = false;
+    body = "";
+    error = null;
+  }
+
+  async function handleMerge() {
     merging = true;
+    mergeError = null;
+    mergeSuccess = null;
     try {
-      await submitAction("merge", {});
+      await mergePullRequest(owner, repo, number);
+      mergeSuccess = "Merged!";
+      setTimeout(() => {
+        mergeSuccess = null;
+      }, 2000);
+    } catch (e) {
+      mergeError = e instanceof Error ? e.message : "Failed to merge.";
     } finally {
       merging = false;
     }
@@ -53,43 +64,50 @@
 </script>
 
 <div class="wrapper">
-  <button class="merge-btn" onclick={merge} disabled={merging}>
+  <button class="merge-btn" onclick={handleMerge} disabled={merging}>
     {merging ? "Merging..." : "Merge"}
   </button>
-
+  {#if mergeError}
+    <span class="error-msg">{mergeError}</span>
+  {/if}
+  {#if mergeSuccess}
+    <span class="success">{mergeSuccess}</span>
+  {/if}
   <button class="review-btn" onclick={() => (expanded = !expanded)}>
     Review ▾
   </button>
+  {#if success}
+    <span class="success">{success}</span>
+  {/if}
 
   {#if expanded}
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
       class="overlay"
       onclick={cancel}
-      onkeydown={(e) => e.key === "Escape" && cancel()}
+      onkeydown={(e) => {
+        if (e.key === "Escape") cancel();
+      }}
     ></div>
     <div class="pane">
       <div class="pane-header">Review this pull request</div>
-      <textarea
-        name="body"
-        bind:value={reviewBody}
-        placeholder="Leave a comment (optional)..."
-        disabled={submitting}
+      <textarea bind:value={body} placeholder="Leave a comment (optional)..."
       ></textarea>
+      {#if error}
+        <span class="error-msg">{error}</span>
+      {/if}
       <div class="pane-footer">
-        <button type="button" class="cancel-btn" onclick={cancel}>Cancel</button>
+        <button class="cancel-btn" onclick={cancel}>Cancel</button>
         <button
-          type="button"
           class="approve-btn"
-          onclick={() => submitReview("APPROVE")}
+          onclick={() => handleReview("APPROVE")}
           disabled={submitting}
         >
           Approve
         </button>
         <button
-          type="button"
           class="request-changes-btn"
-          onclick={() => submitReview("REQUEST_CHANGES")}
+          onclick={() => handleReview("REQUEST_CHANGES")}
           disabled={submitting}
         >
           Request changes
@@ -143,6 +161,10 @@
     opacity: 0.6;
     cursor: not-allowed;
   }
+  .success {
+    font-size: 12px;
+    color: var(--text-success);
+  }
   .overlay {
     position: fixed;
     inset: 0;
@@ -180,6 +202,10 @@
     box-sizing: border-box;
     color: var(--text-primary);
     background: var(--bg-primary);
+  }
+  .error-msg {
+    font-size: 12px;
+    color: var(--text-danger);
   }
   .pane-footer {
     display: flex;

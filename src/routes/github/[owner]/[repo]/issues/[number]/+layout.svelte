@@ -1,9 +1,58 @@
 <script lang="ts">
+  import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import { onMount } from "svelte";
+  import { setContext } from "svelte";
   import IssueHeader from "$lib/components/IssueHeader.svelte";
-  import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+  import { fetchIssue } from "$lib/github/pulls";
+  import { shortcutHint, useShortcut } from "$lib/utils/shortcut.svelte";
 
-  let { children, data } = $props();
+  interface IssueData {
+    number: number;
+    title: string;
+    state: string;
+    body: string | null;
+    user: { login: string };
+    createdAt: string;
+    updatedAt: string;
+    htmlUrl: string;
+  }
+
+  let { children } = $props();
+
+  let issueData = $state<IssueData | null>(null);
+  let issueLoading = $state(true);
+  let issueError = $state<string | null>(null);
+
+  let owner = $derived($page.params.owner);
+  let repo = $derived($page.params.repo);
+  let number = $derived(Number($page.params.number));
+
+  setContext("issue", {
+    get value() {
+      return issueData;
+    },
+  });
+
+  onMount(async () => {
+    try {
+      const raw = await fetchIssue(owner, repo, number);
+      issueData = {
+        number: raw?.number as number,
+        title: raw?.title as string,
+        state: raw?.state as string,
+        body: (raw?.body as string) ?? null,
+        user: { login: (raw?.user as { login?: string })?.login ?? "" },
+        createdAt: raw?.created_at as string,
+        updatedAt: raw?.updated_at as string,
+        htmlUrl: raw?.html_url as string,
+      };
+    } catch (e) {
+      issueError = String(e);
+    } finally {
+      issueLoading = false;
+    }
+  });
 
   $effect(() =>
     useShortcut("g", () => {
@@ -15,28 +64,32 @@
 </script>
 
 <div class="page">
-  {#await data.issue}
+  {#if issueLoading}
     <p class="status">Loading issue...</p>
-  {:then issueData}
+  {:else if issueError}
+    <p class="status error">{issueError}</p>
+  {:else if issueData}
     <div class="top-bar">
       <a class="back-btn" href="/github"
-        >← Notifications <span class="shortcut-hint">{shortcutHint("H", { shift: true })}</span></a
+        >← Notifications <span class="shortcut-hint"
+          >{shortcutHint("H", { shift: true })}</span
+        ></a
       >
       <a
         class="github-btn"
         href={issueData.htmlUrl}
         target="_blank"
         rel="noopener"
-        >Open on GitHub ↗ <span class="shortcut-hint">{shortcutHint("G", { shift: true })}</span></a
+        >Open on GitHub ↗ <span class="shortcut-hint"
+          >{shortcutHint("G", { shift: true })}</span
+        ></a
       >
     </div>
-    <IssueHeader issue={issueData} owner={data.owner} repo={data.repo} />
+    <IssueHeader issue={issueData} {owner} {repo} />
     <div class="tab-content">
       {@render children()}
     </div>
-  {:catch e}
-    <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
-  {/await}
+  {/if}
 </div>
 
 <style>
@@ -99,7 +152,7 @@
     overflow-y: auto;
   }
   .status {
-    padding: 16px;
+    padding: 24px;
     color: var(--text-secondary);
   }
   .status.error {

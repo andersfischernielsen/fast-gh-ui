@@ -1,39 +1,30 @@
 <script lang="ts">
-  import { enhance } from "$app/forms";
-
-  let {
-    action,
-    buttonLabel = "Comment",
-  }: {
-    action: string;
-    buttonLabel?: string;
-  } = $props();
+  let { onsubmit }: { onsubmit: (body: string) => Promise<void> } = $props();
 
   let body = $state("");
   let submitting = $state(false);
+
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    if (!body.trim()) return;
+    submitting = true;
+    try {
+      await onsubmit(body);
+      body = "";
+    } finally {
+      submitting = false;
+    }
+  }
 </script>
 
-<form
-  class="input"
-  method="POST"
-  {action}
-  use:enhance={() => {
-    submitting = true;
-    return async ({ update, result }) => {
-      submitting = false;
-      if (result.type === "success" || result.type === "redirect") body = "";
-      await update();
-    };
-  }}
->
+<form class="input" onsubmit={handleSubmit}>
   <textarea
-    name="body"
     bind:value={body}
     placeholder="Write a comment..."
     rows={3}
     disabled={submitting}
   ></textarea>
-  <button type="submit" disabled={submitting || !body.trim()}>{buttonLabel}</button>
+  <button type="submit" disabled={submitting || !body.trim()}>Comment</button>
 </form>
 
 <style>

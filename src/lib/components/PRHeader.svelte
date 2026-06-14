@@ -1,46 +1,78 @@
 <script lang="ts">
-  import { enhance } from "$app/forms";
-  import type { PullRequest } from "$lib/types/pullRequest";
-  import type { ReviewData } from "$lib/types/review";
+  import type { PullRequest } from "$lib/stores/pr.svelte";
+  import { updatePullRequest, listReviews } from "$lib/github/pulls";
+  import { onMount } from "svelte";
   import PRReviewActions from "./PRReviewActions.svelte";
 
   let {
     pr,
     owner,
     repo,
-    reviews,
-  }: {
-    pr: PullRequest;
-    owner: string | undefined;
-    repo: string | undefined;
-    reviews: ReviewData[];
-  } = $props();
+  }: { pr: PullRequest; owner: string | undefined; repo: string | undefined } =
+    $props();
 
   let editing = $state(false);
   let editTitle = $state("");
   let saving = $state(false);
+  let editError = $state<string | null>(null);
 
-  let reviewCounts = $derived.by(() => {
-    const latestByUser = new Map<string, string>();
-    for (const r of reviews) {
-      if (r.state === "APPROVED" || r.state === "CHANGES_REQUESTED") {
-        latestByUser.set(r.user.login, r.state);
+  let approvals = $state(0);
+  let changesRequested = $state(0);
+  let reviewsLoading = $state(false);
+
+  onMount(async () => {
+    reviewsLoading = true;
+    try {
+      const reviews = await listReviews(owner, repo, pr.number);
+      const latestByUser = new Map<string, string>();
+      for (const r of reviews) {
+        const user = (r.user as { login: string })?.login ?? "";
+        const state = r.state as string;
+        if (state === "APPROVED" || state === "CHANGES_REQUESTED") {
+          latestByUser.set(user, state);
+        }
       }
+      approvals = [...latestByUser.values()].filter(
+        (s) => s === "APPROVED",
+      ).length;
+      changesRequested = [...latestByUser.values()].filter(
+        (s) => s === "CHANGES_REQUESTED",
+      ).length;
+    } catch {
+      approvals = 0;
+      changesRequested = 0;
+    } finally {
+      reviewsLoading = false;
     }
-    const states = [...latestByUser.values()];
-    return {
-      approvals: states.filter((s) => s === "APPROVED").length,
-      changesRequested: states.filter((s) => s === "CHANGES_REQUESTED").length,
-    };
   });
 
   function startEditing() {
     editTitle = pr.title;
     editing = true;
+    editError = null;
   }
 
   function cancelEditing() {
     editing = false;
+    editError = null;
+  }
+
+  async function saveTitle() {
+    saving = true;
+    editError = null;
+    try {
+      const result = await updatePullRequest(owner, repo, pr.number, {
+        title: editTitle.trim() || pr.title,
+      });
+      if (result) {
+        pr.title = result.title;
+      }
+      editing = false;
+    } catch (e) {
+      editError = e instanceof Error ? e.message : "Failed to update title.";
+    } finally {
+      saving = false;
+    }
   }
 
   function stateColor(state: string): string {
@@ -61,42 +93,15 @@
   <div class="title-row">
     <div class="title-content">
       {#if editing}
-        <form
-          method="POST"
-          action="?/updatePR"
-          use:enhance={() => {
-            saving = true;
-            return async ({ update }) => {
-              saving = false;
-              editing = false;
-              await update();
-            };
+        <input
+          class="edit-input"
+          bind:value={editTitle}
+          disabled={saving}
+          onkeydown={(e) => {
+            if (e.key === "Escape") cancelEditing();
+            if (e.key === "Enter") saveTitle();
           }}
-          class="edit-form"
-        >
-          <input
-            class="edit-input"
-            name="title"
-            bind:value={editTitle}
-            disabled={saving}
-            onkeydown={(e) => {
-              if (e.key === "Escape") cancelEditing();
-            }}
-          />
-          <input type="hidden" name="body" value={pr.body ?? ""} />
-          <div class="edit-actions">
-            <button type="submit" class="save-btn" disabled={saving}>
-              {saving ? "Saving..." : "Save"}
-            </button>
-            <button
-              type="button"
-              class="cancel-btn"
-              onclick={cancelEditing}
-              disabled={saving}>
-              Cancel
-            </button>
-          </div>
-        </form>
+        />
       {:else}
         <h1>
           <span class="number">#{pr.number}</span>
@@ -105,7 +110,17 @@
       {/if}
     </div>
     <div class="title-actions">
-      {#if !editing}
+      {#if editing}
+        <div class="edit-actions">
+          <span class="edit-error">{editError || ""}</span>
+          <button class="save-btn" onclick={saveTitle} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </button>
+          <button class="cancel-btn" onclick={cancelEditing} disabled={saving}>
+            Cancel
+          </button>
+        </div>
+      {:else}
         <button class="edit-btn" onclick={startEditing}>Edit</button>
       {/if}
       {#if pr.state === "open"}
@@ -125,11 +140,15 @@
     <span>{pr.user.login}</span>
     <span class="branch-ref">{pr.head.ref} → {pr.base.ref}</span>
     <span class="review-summary">
-      {#if reviewCounts.approvals > 0}
-        <span class="review-approved">✓ {reviewCounts.approvals}</span>
-      {/if}
-      {#if reviewCounts.changesRequested > 0}
-        <span class="review-changes">✗ {reviewCounts.changesRequested}</span>
+      {#if reviewsLoading}
+        <span class="review-loading">...</span>
+      {:else}
+        {#if approvals > 0}
+          <span class="review-approved">✓ {approvals}</span>
+        {/if}
+        {#if changesRequested > 0}
+          <span class="review-changes">✗ {changesRequested}</span>
+        {/if}
       {/if}
     </span>
     <span class="stats"
@@ -181,12 +200,6 @@
     color: var(--text-secondary);
     font-weight: 400;
   }
-  .edit-form {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-  }
   .edit-btn {
     padding: 5px 16px;
     border: 1px solid var(--border-primary);
@@ -205,8 +218,7 @@
     background: var(--btn-secondary-hover);
   }
   .edit-input {
-    flex: 1;
-    min-width: 0;
+    width: 100%;
     padding: 5px 12px;
     border: 1px solid var(--text-link);
     border-radius: 6px;
@@ -223,7 +235,10 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-shrink: 0;
+  }
+  .edit-error {
+    font-size: 12px;
+    color: var(--text-danger);
   }
   .save-btn {
     padding: 5px 16px;
@@ -296,6 +311,9 @@
     align-items: center;
     gap: 8px;
     font-size: 12px;
+  }
+  .review-loading {
+    color: var(--text-secondary);
   }
   .review-approved {
     color: var(--text-success);

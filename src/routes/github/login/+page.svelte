@@ -1,10 +1,32 @@
 <script lang="ts">
-  import { enhance } from "$app/forms";
-  import type { ActionData } from "./$types";
+  import { setToken } from "$lib/stores/token.svelte";
+  import { goto } from "$app/navigation";
+  import { Octokit } from "@octokit/rest";
 
-  let { form }: { form?: ActionData } = $props();
   let input = $state("");
+  let error = $state("");
   let loading = $state(false);
+
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault();
+    const trimmed = input.trim();
+    if (!trimmed) {
+      error = "Enter a GitHub personal access token.";
+      return;
+    }
+    loading = true;
+    error = "";
+    try {
+      const octokit = new Octokit({ auth: trimmed });
+      await octokit.rest.users.getAuthenticated();
+      setToken(trimmed);
+      goto("/github");
+    } catch {
+      error = "Invalid token. Check your personal access token.";
+    } finally {
+      loading = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -15,27 +37,17 @@
   <h1>Fast GitHub UI</h1>
   <p>Enter a GitHub personal access token to get started.</p>
 
-  <form
-    method="POST"
-    use:enhance={() => {
-      loading = true;
-      return async ({ update }) => {
-        loading = false;
-        await update();
-      };
-    }}
-  >
+  <form onsubmit={handleSubmit}>
     <label for="token">Personal Access Token</label>
     <input
       id="token"
-      name="token"
       type="password"
       bind:value={input}
       placeholder="github_pat_..."
       disabled={loading}
     />
-    {#if form?.error}
-      <p class="error-message">{form.error}</p>
+    {#if error}
+      <p class="error-message">{error}</p>
     {/if}
     <button type="submit" disabled={loading}>
       {loading ? "Verifying..." : "Sign In"}
@@ -84,16 +96,17 @@
     <h3>Privacy &amp; storage</h3>
     <div class="help-content">
       <p>
-        Your token is sent to this app over HTTPS and stored as an
-        <strong>HttpOnly cookie</strong>. It is used only by the server to call
-        GitHub's API on your behalf, and is never logged or exposed to the browser.
+        Your token is stored <strong>only in your browser</strong>
+        (localStorage). It is <strong>never sent to any server</strong> operated
+        by this app — all API calls go directly from your browser to GitHub's servers
+        over HTTPS. Your token never touches this app's infrastructure.
       </p>
       <p>
         You can revoke your token at any time in <a
           href="https://github.com/settings/tokens"
           target="_blank"
           rel="noopener">GitHub Settings</a
-        >, or sign out below to clear the cookie from your browser.
+        >, or sign out below to clear it from your browser.
       </p>
     </div>
   </section>

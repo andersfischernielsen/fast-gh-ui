@@ -1,10 +1,13 @@
 <script lang="ts">
   import Markdown from "./Markdown.svelte";
-  import type { CommentData } from "$lib/types/comment";
 
-  type CommentLike = Pick<CommentData, "id" | "body" | "user" | "createdAt"> & {
+  interface CommentData {
+    id: number;
+    body: string;
+    user: { login: string; avatarUrl: string };
+    createdAt: string;
     htmlUrl?: string;
-  };
+  }
 
   let {
     comment,
@@ -13,8 +16,8 @@
     onupdate,
     ondelete,
   }: {
-    comment: CommentLike;
-    replies?: CommentLike[];
+    comment: CommentData;
+    replies?: CommentData[];
     onreply?: (parentId: number, body: string) => Promise<void>;
     onupdate?: (commentId: number, body: string) => Promise<void>;
     ondelete?: (commentId: number) => Promise<void>;

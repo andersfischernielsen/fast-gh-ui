@@ -1,12 +1,17 @@
 <script lang="ts">
-  import type { IssueData } from "$lib/types/issue";
-
   let {
     issue,
     owner,
     repo,
   }: {
-    issue: IssueData;
+    issue: {
+      number: number;
+      title: string;
+      state: string;
+      user: { login: string };
+      createdAt: string;
+      htmlUrl: string;
+    };
     owner: string | undefined;
     repo: string | undefined;
   } = $props();
