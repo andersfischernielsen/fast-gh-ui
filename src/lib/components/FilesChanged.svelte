@@ -4,7 +4,7 @@
   import { invalidateAll } from "$app/navigation";
   import FileTree from "./FileTree.svelte";
   import DiffViewer from "./DiffViewer.svelte";
-  import type { PRFile, InlineCommentData, ReactionData } from "$lib/types/comment";
+  import type { PRFile, InlineCommentData } from "$lib/types/comment";
 
   interface ThreadedInlineComment extends InlineCommentData {
     replies: Array<{
@@ -12,7 +12,6 @@
       body: string;
       user: { login: string; avatarUrl: string };
       createdAt: string;
-      reactions: Promise<ReactionData[]>;
     }>;
   }
 
@@ -53,7 +52,6 @@
             body: c.body,
             user: c.user,
             createdAt: c.createdAt,
-            reactions: c.reactions,
           });
         } else {
           roots.push(c);

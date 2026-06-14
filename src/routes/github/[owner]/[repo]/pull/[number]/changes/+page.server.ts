@@ -4,12 +4,11 @@ import { getFormValue } from "$lib/server/forms";
 import {
   listPRFiles,
   listInlineComments,
-  listReviewCommentReactions,
   createInlineComment,
   updateInlineComment,
   deleteInlineComment,
 } from "$lib/server/github/pulls";
-import type { InlineCommentData, PRFile, ReactionData } from "$lib/types/comment";
+import type { PRFile, InlineCommentData } from "$lib/types/comment";
 import type { Actions, PageServerLoad } from "./$types";
 
 function mapFile(raw: Record<string, unknown>): PRFile {
@@ -23,28 +22,9 @@ function mapFile(raw: Record<string, unknown>): PRFile {
   };
 }
 
-function mapReactions(raw: Record<string, unknown>[]): ReactionData[] {
-  const grouped = new Map<string, string[]>();
-  for (const r of raw) {
-    const emoji = (r.content as string) ?? "";
-    const author = (r.user as { login?: string } | undefined)?.login ?? "";
-    if (!emoji) continue;
-    const list = grouped.get(emoji) ?? [];
-    list.push(author);
-    grouped.set(emoji, list);
-  }
-  return Array.from(grouped.entries()).map(([emoji, authors]) => ({ emoji, authors }));
-}
-
-function mapInlineComment(
-  raw: Record<string, unknown>,
-  token: string,
-  owner: string,
-  repo: string,
-): InlineCommentData {
-  const id = raw.id as number;
+function mapInlineComment(raw: Record<string, unknown>): InlineCommentData {
   return {
-    id,
+    id: raw.id as number,
     body: (raw.body as string) ?? "",
     user: {
       login: (raw.user as { login?: string })?.login ?? "",
@@ -55,9 +35,6 @@ function mapInlineComment(
     line: raw.line as number | null,
     originalLine: raw.original_line as number | null,
     inReplyToId: (raw.in_reply_to_id as number | null) ?? null,
-    reactions: listReviewCommentReactions(token, owner, repo, id)
-      .then(mapReactions)
-      .catch(() => []),
   };
 }
 
@@ -80,7 +57,7 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
     repo,
     number,
   )
-    .then((raw) => raw.map((c) => mapInlineComment(c, token, owner, repo)))
+    .then((raw) => raw.map(mapInlineComment))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });

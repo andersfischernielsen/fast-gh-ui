@@ -1,8 +1,6 @@
 <script lang="ts">
   import Comment from "./Comment.svelte";
 
-  import type { ReactionData } from "$lib/types/comment";
-
   interface InlineCommentData {
     id: number;
     body: string;
@@ -10,13 +8,11 @@
     createdAt: string;
     line: number | null;
     originalLine: number | null;
-    reactions: Promise<ReactionData[]>;
     replies: Array<{
       id: number;
       body: string;
       user: { login: string; avatarUrl: string };
       createdAt: string;
-      reactions: Promise<ReactionData[]>;
     }>;
   }
 
@@ -320,12 +316,8 @@
                       body: comment.body,
                       user: comment.user,
                       createdAt: comment.createdAt,
-                      reactions: comment.reactions,
                     }}
-                    replies={comment.replies.map((r) => ({
-                      ...r,
-                      reactions: r.reactions,
-                    }))}
+                    replies={comment.replies}
                     onupdate={onUpdateComment}
                     ondelete={onDeleteComment}
                     onreply={onReplyComment}

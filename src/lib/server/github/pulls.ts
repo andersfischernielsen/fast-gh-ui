@@ -21,33 +21,6 @@ async function listPRComments(token: string, owner: string, repo: string, pullNu
   return response;
 }
 
-async function listCommentReactions(token: string, owner: string, repo: string, commentId: number) {
-  const octokit = createGitHubClient(token);
-  const response = await octokit.paginate(octokit.rest.reactions.listForIssueComment, {
-    owner,
-    repo,
-    comment_id: commentId,
-    per_page: 100,
-  });
-  return response;
-}
-
-async function listReviewCommentReactions(
-  token: string,
-  owner: string,
-  repo: string,
-  commentId: number,
-) {
-  const octokit = createGitHubClient(token);
-  const response = await octokit.paginate(octokit.rest.reactions.listForPullRequestReviewComment, {
-    owner,
-    repo,
-    comment_id: commentId,
-    per_page: 100,
-  });
-  return response;
-}
-
 async function createPRComment(
   token: string,
   owner: string,
@@ -284,6 +257,4 @@ export {
   listChecks,
   listReviews,
   fetchCommit,
-  listCommentReactions,
-  listReviewCommentReactions,
 };
