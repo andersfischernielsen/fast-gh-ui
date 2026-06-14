@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { getToken } from "$lib/stores/token.svelte";
 import type { ReactionData } from "$lib/types/comment";
 
 let _currentUser: string | null = null;
@@ -325,14 +326,28 @@ async function listIssueReactions(
   issueNumber: number,
 ) {
   if (!owner || !repo) return [];
-  const octokit = createClient();
-  const response = await octokit.paginate(octokit.rest.reactions.listForIssue, {
-    owner,
-    repo,
-    issue_number: issueNumber,
-    per_page: 100,
-  });
-  return response;
+  const token = getToken();
+  if (!token) return [];
+  const all: Record<string, unknown>[] = [];
+  let page = 1;
+  while (true) {
+    const res = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/${issueNumber}/reactions?per_page=100&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) break;
+    const data = (await res.json()) as Record<string, unknown>[];
+    all.push(...data);
+    if (data.length < 100) break;
+    page++;
+  }
+  return all;
 }
 
 async function listCommentReactions(
@@ -341,14 +356,28 @@ async function listCommentReactions(
   commentId: number,
 ) {
   if (!owner || !repo) return [];
-  const octokit = createClient();
-  const response = await octokit.paginate(octokit.rest.reactions.listForIssueComment, {
-    owner,
-    repo,
-    comment_id: commentId,
-    per_page: 100,
-  });
-  return response;
+  const token = getToken();
+  if (!token) return [];
+  const all: Record<string, unknown>[] = [];
+  let page = 1;
+  while (true) {
+    const res = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/issues/comments/${commentId}/reactions?per_page=100&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) break;
+    const data = (await res.json()) as Record<string, unknown>[];
+    all.push(...data);
+    if (data.length < 100) break;
+    page++;
+  }
+  return all;
 }
 
 async function listReviewCommentReactions(
@@ -357,14 +386,28 @@ async function listReviewCommentReactions(
   commentId: number,
 ) {
   if (!owner || !repo) return [];
-  const octokit = createClient();
-  const response = await octokit.paginate(octokit.rest.reactions.listForPullRequestReviewComment, {
-    owner,
-    repo,
-    comment_id: commentId,
-    per_page: 100,
-  });
-  return response;
+  const token = getToken();
+  if (!token) return [];
+  const all: Record<string, unknown>[] = [];
+  let page = 1;
+  while (true) {
+    const res = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/pulls/comments/${commentId}/reactions?per_page=100&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+        cache: "no-store",
+      },
+    );
+    if (!res.ok) break;
+    const data = (await res.json()) as Record<string, unknown>[];
+    all.push(...data);
+    if (data.length < 100) break;
+    page++;
+  }
+  return all;
 }
 
 async function createIssueReaction(
@@ -391,12 +434,15 @@ async function deleteIssueReaction(
 ) {
   if (!owner || !repo) return;
   const octokit = createClient();
-  await octokit.rest.reactions.deleteForIssue({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    reaction_id: reactionId,
-  });
+  await octokit.request(
+    "DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}",
+    {
+      owner,
+      repo,
+      issue_number: issueNumber,
+      reaction_id: reactionId,
+    },
+  );
 }
 
 async function createIssueCommentReaction(
@@ -423,12 +469,15 @@ async function deleteIssueCommentReaction(
 ) {
   if (!owner || !repo) return;
   const octokit = createClient();
-  await octokit.rest.reactions.deleteForIssueComment({
-    owner,
-    repo,
-    comment_id: commentId,
-    reaction_id: reactionId,
-  });
+  await octokit.request(
+    "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions/{reaction_id}",
+    {
+      owner,
+      repo,
+      comment_id: commentId,
+      reaction_id: reactionId,
+    },
+  );
 }
 
 async function createReviewCommentReaction(

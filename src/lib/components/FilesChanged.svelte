@@ -342,6 +342,8 @@
                 )}
                 currentFile={currentFile.filename}
                 headSha={sha}
+                {owner}
+                {repo}
                 {onCreateComment}
                 {onUpdateComment}
                 {onDeleteComment}
