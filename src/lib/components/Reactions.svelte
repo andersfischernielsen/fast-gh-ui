@@ -81,39 +81,37 @@
       <span class="count">{reaction.authors.length}</span>
     </button>
   {/each}
-  {#if onreaction && commentId}
-    <div class="picker-wrapper">
-      <button
-        type="button"
-        class="reaction add-reaction"
-        aria-label="Add reaction"
-        disabled={submitting}
-        onclick={(e) => {
-          e.stopPropagation();
-          togglePicker(e);
-        }}
-      >
-        <span class="count">+</span>
-      </button>
-      {#if pickerOpen}
-        <div class="picker-popover">
-          {#each availableEmojis as [key, emoji]}
-            <button
-              type="button"
-              class="picker-emoji"
-              disabled={submitting}
-              onclick={(e) => {
-                e.stopPropagation();
-                handleReaction(key, false);
-              }}
-            >
-              {emoji}
-            </button>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  {/if}
+  <div class="picker-wrapper">
+    <button
+      type="button"
+      class="reaction add-reaction"
+      aria-label="Add reaction"
+      disabled={submitting || !onreaction || !commentId}
+      onclick={(e) => {
+        e.stopPropagation();
+        togglePicker(e);
+      }}
+    >
+      <span class="count">+</span>
+    </button>
+    {#if pickerOpen}
+      <div class="picker-popover">
+        {#each availableEmojis as [key, emoji]}
+          <button
+            type="button"
+            class="picker-emoji"
+            disabled={submitting}
+            onclick={(e) => {
+              e.stopPropagation();
+              handleReaction(key, false);
+            }}
+          >
+            {emoji}
+          </button>
+        {/each}
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>

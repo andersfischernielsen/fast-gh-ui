@@ -153,13 +153,11 @@ async function loadConversation(): Promise<void> {
     <div class="description">
       <h3>Description</h3>
       <Markdown text={body} />
-{#await loadConversation() then}
-        <Reactions
-          reactions={descriptionReactions}
-          commentId={-1}
-          onreaction={onDescriptionReaction}
-        />
-      {/await}
+      <Reactions
+        reactions={descriptionReactions}
+        commentId={-1}
+        onreaction={onDescriptionReaction}
+      />
     </div>
   {/if}
   {#await loadConversation()}
