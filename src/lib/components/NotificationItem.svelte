@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type { NotificationItem } from "$lib/stores/notifications.svelte";
   import { markAsRead } from "$lib/stores/notifications.svelte";
   import { fetchPullRequest } from "$lib/github/pulls";
@@ -62,7 +63,10 @@
   }
 
   let prNumber = $derived(parsePRNumber(item.subject.url));
-  let mergeStatusPromise = $state(fetchMergeStatus());
+  let mergeStatusPromise: Promise<string | null> = $state(Promise.resolve(null));
+  onMount(() => {
+    mergeStatusPromise = fetchMergeStatus();
+  });
 </script>
 
 <a
