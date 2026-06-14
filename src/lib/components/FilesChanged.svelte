@@ -42,6 +42,49 @@
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
 
+  type InlineComment = (typeof inlineComments)[number];
+
+  // Non-reactive map used to thread replies incrementally across pages
+  let commentMap = new Map<number, InlineComment>();
+
+  function processCommentBatch(rawBatch: Record<string, unknown>[]): void {
+    for (const c of rawBatch) {
+      const id = c.id as number;
+      const body = (c.body as string) ?? "";
+      const user = {
+        login: (c.user as { login?: string })?.login ?? "",
+        avatarUrl: (c.user as { avatar_url?: string })?.avatar_url ?? "",
+      };
+      const createdAt = c.created_at as string;
+      const inReplyToId = c.in_reply_to_id as number | undefined;
+
+      if (inReplyToId) {
+        commentMap.get(inReplyToId)?.replies.push({ id, body, user, createdAt });
+      } else {
+        commentMap.set(id, {
+          id, body, user, createdAt,
+          path: c.path as string,
+          line: c.line as number | null,
+          originalLine: c.original_line as number | null,
+          replies: [],
+        });
+      }
+    }
+    inlineComments = [...commentMap.values()];
+  }
+
+  async function loadAllComments(): Promise<void> {
+    commentMap = new Map();
+    let page = 1;
+    while (true) {
+      const batch = await listInlineComments(owner, repo, number, page, 100);
+      if (!batch.length) break;
+      processCommentBatch(batch as Record<string, unknown>[]);
+      if (batch.length < 100) break;
+      page++;
+    }
+  }
+
   async function loadFiles(): Promise<void> {
     const raw = await listPRFiles(owner, repo, number);
     files = raw.map((f: Record<string, unknown>) => ({
@@ -53,52 +96,7 @@
       patch: f.patch as string | undefined,
     }));
     if (files.length > 0) selectedFile = files[0].filename;
-
-    const rawComments = await listInlineComments(owner, repo, number);
-    const allComments = rawComments.map((c: Record<string, unknown>) => ({
-      id: c.id as number,
-      body: (c.body as string) ?? "",
-      user: {
-        login: (c.user as { login?: string })?.login ?? "",
-        avatarUrl: (c.user as { avatar_url?: string })?.avatar_url ?? "",
-      },
-      createdAt: c.created_at as string,
-      path: c.path as string,
-      line: c.line as number | null,
-      originalLine: c.original_line as number | null,
-      inReplyToId: c.in_reply_to_id as number | undefined,
-      replies: [] as Array<{
-        id: number;
-        body: string;
-        user: { login: string; avatarUrl: string };
-        createdAt: string;
-      }>,
-    }));
-
-    const replyMap = new Map<number, (typeof allComments)[number]>();
-    const rootComments: typeof allComments = [];
-    for (const c of allComments) {
-      replyMap.set(c.id, c);
-      if (!c.inReplyToId) {
-        rootComments.push(c);
-      }
-    }
-    for (const c of allComments) {
-      if (c.inReplyToId) {
-        const parent = replyMap.get(c.inReplyToId);
-        if (parent) {
-          parent.replies.push({
-            id: c.id,
-            body: c.body,
-            user: c.user,
-            createdAt: c.createdAt,
-          });
-        } else {
-          rootComments.push(c);
-        }
-      }
-    }
-    inlineComments = rootComments.map(({ inReplyToId: _, ...rest }) => rest);
+    loadAllComments().catch(() => {});
   }
 
   let currentFile = $derived(

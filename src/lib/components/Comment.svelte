@@ -1,14 +1,6 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import Markdown from "./Markdown.svelte";
   import Reactions from "./Reactions.svelte";
-  import {
-    listCommentReactions,
-    listReviewCommentReactions,
-    mapReactions,
-    getCurrentUser,
-  } from "$lib/github/pulls";
-  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -37,7 +29,7 @@
     onupdate?: (commentId: number, body: string) => Promise<void>;
     ondelete?: (commentId: number) => Promise<void>;
     onreaction?: (
-      commentId: number,
+      id: number,
       emoji: string,
       remove: boolean,
       reactionId?: number,
@@ -49,75 +41,6 @@
   let editing = $state(false);
   let editingReplyId = $state<number | null>(null);
   let editBody = $state("");
-
-  let commentReactions = $state<ReactionData[]>([]);
-  let replyReactions = $state<Map<number, ReactionData[]>>(new Map());
-
-  async function loadReactions(): Promise<void> {
-    const user = await getCurrentUser();
-    const fetchFn = comment.isReview
-      ? listReviewCommentReactions
-      : listCommentReactions;
-    const raw = await fetchFn(owner, repo, comment.id);
-    commentReactions = mapReactions(
-      raw as Record<string, unknown>[],
-      user,
-    );
-    const repReactions = new Map<number, ReactionData[]>();
-    for (const reply of replies) {
-      const replyRaw = await listCommentReactions(
-        owner,
-        repo,
-        reply.id,
-      );
-      repReactions.set(
-        reply.id,
-        mapReactions(replyRaw as Record<string, unknown>[], user),
-      );
-    }
-    replyReactions = repReactions;
-  }
-
-  async function handleReaction(
-    commentId: number,
-    emoji: string,
-    remove: boolean,
-    reactionId?: number,
-  ) {
-    if (onreaction) {
-      await onreaction(commentId, emoji, remove, reactionId);
-      await refreshReactions();
-    }
-  }
-
-  async function refreshReactions() {
-    try {
-      const user = await getCurrentUser();
-      const fetchFn = comment.isReview
-        ? listReviewCommentReactions
-        : listCommentReactions;
-      const raw = await fetchFn(owner, repo, comment.id);
-      commentReactions = mapReactions(
-        raw as Record<string, unknown>[],
-        user,
-      );
-      const repReactions = new Map<number, ReactionData[]>();
-      for (const reply of replies) {
-        const replyRaw = await listCommentReactions(
-          owner,
-          repo,
-          reply.id,
-        );
-        repReactions.set(
-          reply.id,
-          mapReactions(replyRaw as Record<string, unknown>[], user),
-        );
-      }
-      replyReactions = repReactions;
-    } catch {
-      // ignore refresh errors
-    }
-  }
 
   function formatDate(dateStr: string): string {
     const d = new Date(dateStr);
@@ -224,15 +147,13 @@
     {:else}
       <Markdown text={comment.body} />
     {/if}
-{#await loadReactions()}
-      <span class="reactions-loading"></span>
-    {:then}
-      <Reactions
-        reactions={commentReactions}
-        onreaction={handleReaction}
-        commentId={comment.id}
-      />
-    {/await}
+    <Reactions
+      {owner}
+      {repo}
+      commentId={comment.id}
+      isReview={comment.isReview}
+      {onreaction}
+    />
   </div>
   {#if replies.length > 0}
     <div class="replies">
@@ -297,13 +218,13 @@
             {:else}
               <Markdown text={reply.body} />
             {/if}
-{#await loadReactions() then}
-              <Reactions
-                reactions={replyReactions.get(reply.id) ?? []}
-                onreaction={handleReaction}
-                commentId={reply.id}
-              />
-            {/await}
+            <Reactions
+              {owner}
+              {repo}
+              commentId={reply.id}
+              isReview={comment.isReview}
+              {onreaction}
+            />
           </div>
         </article>
       {/each}
@@ -519,20 +440,5 @@
   .reply-body :global(.markdown) {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
-  }
-  .reactions-loading {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-top: 8px;
-    border: 2px solid var(--border-primary);
-    border-top-color: var(--text-secondary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>

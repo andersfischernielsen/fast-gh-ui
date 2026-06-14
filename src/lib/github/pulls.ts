@@ -149,17 +149,20 @@ async function listInlineComments(
   owner: string | undefined,
   repo: string | undefined,
   pullNumber: number | undefined,
+  page: number = 1,
+  perPage: number = 100,
 ) {
   if (!owner || !repo || !pullNumber) return [];
 
   const octokit = createClient();
-  const response = await octokit.paginate(octokit.rest.pulls.listReviewComments, {
+  const response = await octokit.rest.pulls.listReviewComments({
     owner,
     repo,
     pull_number: pullNumber,
-    per_page: 100,
+    per_page: perPage,
+    page,
   });
-  return response;
+  return response.data;
 }
 
 async function createReview(
@@ -515,6 +518,25 @@ async function deleteReviewCommentReaction(
   );
 }
 
+async function listPRTimeline(
+  owner: string | undefined,
+  repo: string | undefined,
+  pullNumber: number,
+  page: number,
+  perPage: number = 20,
+) {
+  if (!owner || !repo) return [];
+  const octokit = createClient();
+  const response = await octokit.rest.issues.listEventsForTimeline({
+    owner,
+    repo,
+    issue_number: pullNumber,
+    per_page: perPage,
+    page,
+  });
+  return response.data;
+}
+
 async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
   if (!owner || !repo) return undefined;
 
@@ -530,6 +552,7 @@ async function listChecks(owner: string | undefined, repo: string | undefined, r
 
 export {
   fetchPullRequest,
+  listPRTimeline,
   fetchIssue,
   mergePullRequest,
   updatePullRequest,

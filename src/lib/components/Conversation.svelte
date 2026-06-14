@@ -5,29 +5,22 @@
   import CommentInput from "./CommentInput.svelte";
   import Reactions from "./Reactions.svelte";
   import {
-    listPRComments,
+    listPRTimeline,
     createPRComment,
     updatePRComment,
     deletePRComment,
-    listInlineComments,
     createInlineComment,
     updateInlineComment,
     deleteInlineComment,
     updatePullRequest,
-    listIssueReactions,
-    listCommentReactions,
-    listReviewCommentReactions,
     createIssueCommentReaction,
     deleteIssueCommentReaction,
     createReviewCommentReaction,
     deleteReviewCommentReaction,
     createIssueReaction,
     deleteIssueReaction,
-    getCurrentUser,
-    mapReactions,
   } from "$lib/github/pulls";
   import { pr } from "$lib/stores/pr.svelte";
-  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -36,12 +29,6 @@
     createdAt: string;
     updatedAt: string;
     htmlUrl: string;
-  }
-
-  interface ReviewCommentData extends CommentData {
-    commitId: string;
-    path: string;
-    line: number;
   }
 
   interface ThreadedComment extends CommentData {
@@ -55,13 +42,16 @@
   let { body }: { body: string | null } = $props();
 
   let threadedComments = $state<ThreadedComment[]>([]);
+  let loading = $state(true);
+  let loadError = $state<string | null>(null);
+  let currentPage = $state(1);
+  let hasMore = $state(true);
+  let loadingMore = $state(false);
 
   let editingDesc = $state(false);
   let editDescBody = $state("");
   let savingDesc = $state(false);
   let descError = $state<string | null>(null);
-
-  let descriptionReactions = $state<ReactionData[]>([]);
 
   let reviewIds = new Set<number>();
 
@@ -77,71 +67,88 @@
         login: (raw.user as { login?: string })?.login ?? "",
         avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? "",
       },
-      createdAt: raw.created_at as string,
-      updatedAt: raw.updated_at as string,
+      createdAt: (raw.created_at as string) ?? "",
+      updatedAt: (raw.updated_at as string) ?? "",
       htmlUrl: raw.html_url as string,
     };
   }
 
-  async function loadConversation(): Promise<void> {
-    const [issueComments, reviewComments] = await Promise.all([
-      listPRComments(owner, repo, number),
-      listInlineComments(owner, repo, number),
-    ]);
-
-    const user = await getCurrentUser();
-
-    const rawDescReactions = await listIssueReactions(owner, repo, number);
-    descriptionReactions = mapReactions(
-      rawDescReactions as Record<string, unknown>[],
-      user,
-    );
-
-    const issueItems: ThreadedComment[] = (
-      issueComments as Record<string, unknown>[]
-    )
-      .map(toCommentData)
-      .map((c) => ({
-        ...c,
-        replies: [],
-      }));
-
-    const reviewItems = reviewComments as Record<string, unknown>[];
-
-    const replyMap = new Map<number, Record<string, unknown>[]>();
-    const rootReviews: Record<string, unknown>[] = [];
-
-    for (const rc of reviewItems) {
-      const inReplyTo = rc.in_reply_to_id as number | undefined;
-      if (inReplyTo) {
-        const list = replyMap.get(inReplyTo) ?? [];
-        list.push(rc);
-        replyMap.set(inReplyTo, list);
-      } else {
-        rootReviews.push(rc);
+  function mapTimelineEvents(events: Record<string, unknown>[]): ThreadedComment[] {
+    const result: ThreadedComment[] = [];
+    for (const event of events) {
+      const type = event.event as string;
+      if (type === "commented") {
+        result.push({ ...toCommentData(event), replies: [] });
+      } else if (type === "line-commented") {
+        const comments = (event.comments as Record<string, unknown>[]) ?? [];
+        if (!comments.length) continue;
+        const root = comments[0];
+        reviewIds.add(root.id as number);
+        comments.slice(1).forEach((r) => reviewIds.add(r.id as number));
+        result.push({
+          ...toCommentData(root),
+          replies: comments.slice(1).map(toCommentData),
+          isReview: true,
+          commitId: root.commit_id as string,
+          path: root.path as string,
+          line: ((root.line ?? root.original_line ?? root.position) as number) ?? 1,
+        });
       }
     }
-
-    const reviewThreads: ThreadedComment[] = rootReviews.map((rc) => {
-      const id = rc.id as number;
-      reviewIds.add(id);
-      const childReplies = replyMap.get(id) ?? [];
-      childReplies.forEach((r) => reviewIds.add(r.id as number));
-      return {
-        ...toCommentData(rc),
-        replies: childReplies.map(toCommentData),
-        isReview: true,
-        commitId: (rc.commit_id as string) ?? "",
-        path: (rc.path as string) ?? "",
-        line: ((rc.line ?? rc.original_line ?? rc.position) as number) ?? 1,
-      };
-    });
-
-    threadedComments = [...issueItems, ...reviewThreads].sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
+    return result;
   }
+
+  async function loadConversation(o: string, r: string, n: number): Promise<void> {
+    loading = true;
+    loadError = null;
+    threadedComments = [];
+    reviewIds = new Set();
+
+    try {
+      const events = await listPRTimeline(o, r, n, 1);
+
+      threadedComments = mapTimelineEvents(events as Record<string, unknown>[]);
+      hasMore = (events as unknown[]).length === 20;
+      currentPage = 2;
+    } catch (e) {
+      loadError = e instanceof Error ? e.message : "Failed to load comments";
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function loadMore(): Promise<void> {
+    if (loadingMore || !hasMore) return;
+    loadingMore = true;
+    try {
+      const events = await listPRTimeline(owner, repo, number, currentPage);
+      threadedComments = [
+        ...threadedComments,
+        ...mapTimelineEvents(events as Record<string, unknown>[]),
+      ];
+      hasMore = (events as unknown[]).length === 20;
+      currentPage++;
+    } catch {
+      // silently ignore — user can scroll again to retry
+    } finally {
+      loadingMore = false;
+    }
+  }
+
+  function lazySentinel(node: HTMLElement) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) loadMore();
+    });
+    observer.observe(node);
+    return { destroy() { observer.disconnect(); } };
+  }
+
+  $effect(() => {
+    const o = owner;
+    const r = repo;
+    const n = number;
+    loadConversation(o, r, n);
+  });
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
@@ -254,19 +261,9 @@
     const isReview = reviewIds.has(commentId);
     if (remove && reactionId) {
       if (isReview) {
-        await deleteReviewCommentReaction(
-          owner,
-          repo,
-          commentId,
-          reactionId,
-        );
+        await deleteReviewCommentReaction(owner, repo, commentId, reactionId);
       } else {
-        await deleteIssueCommentReaction(
-          owner,
-          repo,
-          commentId,
-          reactionId,
-        );
+        await deleteIssueCommentReaction(owner, repo, commentId, reactionId);
       }
     } else {
       if (isReview) {
@@ -278,7 +275,7 @@
   }
 
   async function onDescriptionReaction(
-    _commentId: number,
+    _: number,
     emoji: string,
     remove: boolean,
     reactionId?: number,
@@ -362,15 +359,19 @@
         <Markdown text={body} />
       {/if}
       <Reactions
-        reactions={descriptionReactions}
-        commentId={-1}
+        {owner}
+        {repo}
+        issueNumber={number}
         onreaction={onDescriptionReaction}
       />
     </div>
   {/if}
-  {#await loadConversation()}
+
+  {#if loading}
     <p class="status">Loading comments...</p>
-  {:then}
+  {:else if loadError}
+    <p class="status error">{loadError}</p>
+  {:else}
     <div class="comments">
       {#each threadedComments as c (c.id)}
         <Comment
@@ -384,13 +385,18 @@
           {onreaction}
         />
       {/each}
-      {#if threadedComments.length === 0}
+      {#if threadedComments.length === 0 && !hasMore}
         <p class="status">No comments yet</p>
       {/if}
     </div>
-  {:catch error}
-    <p class="status error">{error.message}</p>
-  {/await}
+    {#if loadingMore}
+      <p class="status">Loading more...</p>
+    {/if}
+    {#if hasMore && !loadingMore}
+      <div use:lazySentinel></div>
+    {/if}
+  {/if}
+
   <CommentInput onsubmit={postComment} />
 </div>
 

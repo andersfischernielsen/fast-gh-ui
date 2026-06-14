@@ -5,19 +5,15 @@
   import CommentInput from "./CommentInput.svelte";
   import Reactions from "./Reactions.svelte";
   import {
-    listPRComments,
+    listPRTimeline,
     createPRComment,
     updatePRComment,
     deletePRComment,
-    listIssueReactions,
     createIssueCommentReaction,
     deleteIssueCommentReaction,
     createIssueReaction,
     deleteIssueReaction,
-    getCurrentUser,
-    mapReactions,
   } from "$lib/github/pulls";
-  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -35,8 +31,11 @@
   let { body }: { body: string | null } = $props();
 
   let threadedComments = $state<ThreadedComment[]>([]);
-
-  let descriptionReactions = $state<ReactionData[]>([]);
+  let loading = $state(true);
+  let loadError = $state<string | null>(null);
+  let currentPage = $state(1);
+  let hasMore = $state(true);
+  let loadingMore = $state(false);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -50,46 +49,79 @@
         login: (raw.user as { login?: string })?.login ?? "",
         avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? "",
       },
-      createdAt: raw.created_at as string,
-      updatedAt: raw.updated_at as string,
+      createdAt: (raw.created_at as string) ?? "",
+      updatedAt: (raw.updated_at as string) ?? "",
       htmlUrl: raw.html_url as string,
     };
   }
 
-async function loadConversation(): Promise<void> {
-    const [issueComments, rawDescReactions] = await Promise.all([
-      listPRComments(owner, repo, number),
-      listIssueReactions(owner, repo, number),
-    ]);
-    const user = await getCurrentUser();
-    descriptionReactions = mapReactions(
-      rawDescReactions as Record<string, unknown>[],
-      user,
-    );
-    threadedComments = (issueComments as Record<string, unknown>[])
-      .map(toCommentData)
-      .map((c) => ({
-        ...c,
-        replies: [],
-      }));
+  function mapTimelineEvents(events: Record<string, unknown>[]): ThreadedComment[] {
+    return events
+      .filter((e) => e.event === "commented")
+      .map((e) => ({ ...toCommentData(e), replies: [] }));
   }
+
+  async function loadConversation(o: string, r: string, n: number): Promise<void> {
+    loading = true;
+    loadError = null;
+    threadedComments = [];
+
+    try {
+      const events = await listPRTimeline(o, r, n, 1);
+      threadedComments = mapTimelineEvents(events as Record<string, unknown>[]);
+      hasMore = (events as unknown[]).length === 20;
+      currentPage = 2;
+    } catch (e) {
+      loadError = e instanceof Error ? e.message : "Failed to load comments";
+    } finally {
+      loading = false;
+    }
+  }
+
+  async function loadMore(): Promise<void> {
+    if (loadingMore || !hasMore) return;
+    loadingMore = true;
+    try {
+      const events = await listPRTimeline(owner, repo, number, currentPage);
+      threadedComments = [
+        ...threadedComments,
+        ...mapTimelineEvents(events as Record<string, unknown>[]),
+      ];
+      hasMore = (events as unknown[]).length === 20;
+      currentPage++;
+    } catch {
+      // silently ignore — user can scroll again to retry
+    } finally {
+      loadingMore = false;
+    }
+  }
+
+  function lazySentinel(node: HTMLElement) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) loadMore();
+    });
+    observer.observe(node);
+    return { destroy() { observer.disconnect(); } };
+  }
+
+  $effect(() => {
+    const o = owner;
+    const r = repo;
+    const n = number;
+    loadConversation(o, r, n);
+  });
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
     threadedComments = [
       ...threadedComments,
-      {
-        ...toCommentData(raw as Record<string, unknown>),
-        replies: [],
-      },
+      { ...toCommentData(raw as Record<string, unknown>), replies: [] },
     ];
   }
 
   async function replyToComment(parentId: number, replyBody: string) {
     const raw = await createPRComment(owner, repo, number, replyBody);
-    const reply: CommentData = toCommentData(
-      raw as unknown as Record<string, unknown>,
-    );
+    const reply = toCommentData(raw as Record<string, unknown>);
     threadedComments = threadedComments.map((tc) =>
       tc.id === parentId ? { ...tc, replies: [...tc.replies, reply] } : tc,
     );
@@ -123,19 +155,14 @@ async function loadConversation(): Promise<void> {
     reactionId?: number,
   ) {
     if (remove && reactionId) {
-      await deleteIssueCommentReaction(
-        owner,
-        repo,
-        commentId,
-        reactionId,
-      );
+      await deleteIssueCommentReaction(owner, repo, commentId, reactionId);
     } else {
       await createIssueCommentReaction(owner, repo, commentId, emoji);
     }
   }
 
   async function onDescriptionReaction(
-    _commentId: number,
+    _: number,
     emoji: string,
     remove: boolean,
     reactionId?: number,
@@ -154,15 +181,19 @@ async function loadConversation(): Promise<void> {
       <h3>Description</h3>
       <Markdown text={body} />
       <Reactions
-        reactions={descriptionReactions}
-        commentId={-1}
+        {owner}
+        {repo}
+        issueNumber={number}
         onreaction={onDescriptionReaction}
       />
     </div>
   {/if}
-  {#await loadConversation()}
+
+  {#if loading}
     <p class="status">Loading comments...</p>
-  {:then}
+  {:else if loadError}
+    <p class="status error">{loadError}</p>
+  {:else}
     <div class="comments">
       {#each threadedComments as c (c.id)}
         <Comment
@@ -176,13 +207,18 @@ async function loadConversation(): Promise<void> {
           {onreaction}
         />
       {/each}
-      {#if threadedComments.length === 0}
+      {#if threadedComments.length === 0 && !hasMore}
         <p class="status">No comments yet</p>
       {/if}
     </div>
-  {:catch error}
-    <p class="status error">{error.message}</p>
-  {/await}
+    {#if loadingMore}
+      <p class="status">Loading more...</p>
+    {/if}
+    {#if hasMore && !loadingMore}
+      <div use:lazySentinel></div>
+    {/if}
+  {/if}
+
   <CommentInput onsubmit={postComment} />
 </div>
 
@@ -210,5 +246,8 @@ async function loadConversation(): Promise<void> {
     padding: 16px 0;
     color: var(--text-secondary);
     font-size: 12px;
+  }
+  .status.error {
+    color: var(--text-danger);
   }
 </style>
