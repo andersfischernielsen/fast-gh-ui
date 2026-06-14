@@ -1,3 +1,8 @@
+export interface ReactionData {
+  emoji: string;
+  authors: string[];
+}
+
 export interface CommentData {
   id: number;
   body: string;
@@ -5,6 +10,7 @@ export interface CommentData {
   createdAt: string;
   updatedAt: string;
   htmlUrl: string;
+  reactions: Promise<ReactionData[]>;
 }
 
 export interface ReviewCommentData extends CommentData {
@@ -33,4 +39,5 @@ export interface InlineCommentData {
   line: number | null;
   originalLine: number | null;
   inReplyToId: number | null;
+  reactions: Promise<ReactionData[]>;
 }
