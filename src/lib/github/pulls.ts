@@ -203,7 +203,9 @@ async function createInlineComment(
   commitId: string,
   path: string,
   line: number,
+  side: "LEFT" | "RIGHT" = "RIGHT",
   startLine?: number,
+  startSide?: "LEFT" | "RIGHT",
   inReplyTo?: number,
 ) {
   if (!owner || !repo || !pullNumber) return undefined;
@@ -217,7 +219,8 @@ async function createInlineComment(
     commit_id: commitId,
     path,
     line,
-    ...(startLine ? { start_line: startLine, side: "RIGHT" } : {}),
+    side,
+    ...(startLine ? { start_line: startLine, start_side: startSide ?? side } : {}),
     ...(inReplyTo ? { in_reply_to: inReplyTo } : {}),
   });
   return response.data;

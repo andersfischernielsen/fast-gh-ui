@@ -40,6 +40,8 @@
       endLine: number,
       file: string,
       body: string,
+      startSide: "LEFT" | "RIGHT",
+      endSide: "LEFT" | "RIGHT",
     ) => Promise<void>;
     onUpdateComment?: (commentId: number, body: string) => Promise<void>;
     onDeleteComment?: (commentId: number) => Promise<void>;
@@ -57,6 +59,8 @@
   let selectionEnd = $state<number | null>(null);
   let commentStartLine = $state<number | null>(null);
   let commentEndLine = $state<number | null>(null);
+  let commentStartSide = $state<"LEFT" | "RIGHT">("RIGHT");
+  let commentEndSide = $state<"LEFT" | "RIGHT">("RIGHT");
   let commentIndex = $state<number | null>(null);
   let commentBody = $state("");
   let submitting = $state(false);
@@ -161,37 +165,35 @@
     return result;
   }
 
-  function isSelected(line: DiffLine): boolean {
-    const num = line.newLine ?? line.oldLine;
-    if (num == null || selectionStart == null || selectionEnd == null)
-      return false;
+  function isSelected(i: number): boolean {
+    if (selectionStart == null || selectionEnd == null) return false;
     const min = Math.min(selectionStart, selectionEnd);
     const max = Math.max(selectionStart, selectionEnd);
-    return num >= min && num <= max;
+    return i >= min && i <= max;
   }
 
   function canSelect(type: string): boolean {
     return type !== "header";
   }
 
-  function beginSelection(lineNum: number, e: MouseEvent) {
+  function beginSelection(idx: number, e: MouseEvent) {
     e.preventDefault();
     selecting = true;
-    selectionStart = lineNum;
-    selectionEnd = lineNum;
+    selectionStart = idx;
+    selectionEnd = idx;
     document.addEventListener("mousemove", handleDrag);
     document.addEventListener("mouseup", endSelection);
   }
 
   function handleDrag(e: MouseEvent) {
-    const rows = containerEl?.querySelectorAll("[data-line]");
+    const rows = containerEl?.querySelectorAll("[data-index]");
     if (!rows) return;
     const target = document.elementFromPoint(e.clientX, e.clientY);
     for (const row of rows) {
       if (row.contains(target)) {
-        const n = parseInt((row as HTMLElement).dataset.line || "", 10);
+        const n = parseInt((row as HTMLElement).dataset.index || "", 10);
         const type = (row as HTMLElement).dataset.type || "";
-        if (n && canSelect(type)) {
+        if (!isNaN(n) && canSelect(type)) {
           selectionEnd = n;
         }
         break;
@@ -203,33 +205,18 @@
     document.removeEventListener("mousemove", handleDrag);
     document.removeEventListener("mouseup", endSelection);
     if (selectionStart != null && selectionEnd != null) {
-      const s = Math.min(selectionStart, selectionEnd);
-      const e = Math.max(selectionStart, selectionEnd);
-      let idx = -1;
-      let removeIdx = -1;
-      let addIdx = -1;
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const l = lines[i];
-        const n = l.newLine ?? l.oldLine;
-        if (n === e && l.type !== "header") {
-          if (l.type === "remove") {
-            removeIdx = i;
-            if (addIdx < 0) idx = i;
-          } else if (l.type === "add") {
-            addIdx = i;
-            idx = i;
-            break;
-          } else {
-            idx = i;
-            break;
-          }
-        }
-      }
-      if (idx < 0 && removeIdx >= 0) idx = removeIdx;
-      if (idx >= 0) {
-        commentStartLine = s;
-        commentEndLine = e;
-        commentIndex = idx;
+      const startIdx = Math.min(selectionStart, selectionEnd);
+      const endIdx = Math.max(selectionStart, selectionEnd);
+      const sl = lines[startIdx];
+      const el = lines[endIdx];
+      const startNum = sl?.newLine ?? sl?.oldLine;
+      const endNum = el?.newLine ?? el?.oldLine;
+      if (startNum != null && endNum != null) {
+        commentStartLine = startNum;
+        commentStartSide = sl.newLine ? "RIGHT" : "LEFT";
+        commentEndLine = endNum;
+        commentEndSide = el.newLine ? "RIGHT" : "LEFT";
+        commentIndex = endIdx;
       }
     }
     selecting = false;
@@ -238,10 +225,26 @@
   function cancelComment() {
     commentStartLine = null;
     commentEndLine = null;
+    commentStartSide = "RIGHT";
+    commentEndSide = "RIGHT";
     commentIndex = null;
     commentBody = "";
     selectionStart = null;
     selectionEnd = null;
+  }
+
+  function insertSuggestion() {
+    if (selectionStart == null || selectionEnd == null) {
+      commentBody += "```suggestion\n```";
+      return;
+    }
+    const startIdx = Math.min(selectionStart, selectionEnd);
+    const endIdx = Math.max(selectionStart, selectionEnd);
+    const content = lines
+      .slice(startIdx, endIdx + 1)
+      .map((l) => l.content)
+      .join("\n");
+    commentBody += "```suggestion\n" + content + "\n```";
   }
 
   async function submitComment() {
@@ -260,6 +263,8 @@
           commentEndLine,
           currentFile,
           commentBody,
+          commentStartSide,
+          commentEndSide,
         );
       cancelComment();
     } finally {
@@ -278,11 +283,11 @@
             class:row-add={line.type === "add"}
             class:row-remove={line.type === "remove"}
             class:row-header={line.type === "header"}
-            class:selected={isSelected(line)}
+            class:selected={isSelected(i)}
             class:has-comment={(line.newLine != null &&
               linesWithComments.has(line.newLine)) ||
               (line.oldLine != null && linesWithComments.has(line.oldLine))}
-            data-line={line.newLine ?? line.oldLine ?? ""}
+            data-index={i}
             data-type={line.type}
           >
             {#if line.type === "header"}
@@ -300,18 +305,10 @@
                       ? "-"
                       : " ") + line.content}</span
                 >
-                {#if canSelect(line.type) && line.newLine && onCreateComment}
+                {#if canSelect(line.type) && onCreateComment}
                   <button
                     class="add-btn"
-                    onmousedown={(e) => beginSelection(line.newLine!, e)}
-                    >+</button
-                  >
-                {/if}
-                {#if canSelect(line.type) && !line.newLine && line.oldLine && onCreateComment}
-                  <button
-                    class="add-btn"
-                    onmousedown={(e) => beginSelection(line.oldLine!, e)}
-                    >+</button
+                    onmousedown={(e) => beginSelection(i, e)}>+</button
                   >
                 {/if}
               </td>
@@ -345,11 +342,30 @@
             <tr class="comment-input-row">
               <td colspan="3">
                 <div class="comment-input">
-                  <span class="comment-range">
-                    {commentStartLine === commentEndLine
-                      ? `Comment on line R${commentStartLine}`
-                      : `Comment on lines R${commentStartLine} to R${commentEndLine}`}
-                  </span>
+                  <div class="comment-toolbar">
+                    <span class="comment-range">
+                      {commentStartLine === commentEndLine
+                        ? `Comment on line R${commentStartLine}`
+                        : `Comment on lines R${commentStartLine} to R${commentEndLine}`}
+                    </span>
+                    <button
+                      class="suggestion-btn"
+                      title="Insert suggestion"
+                      onclick={insertSuggestion}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 16 16"
+                        fill="currentColor"
+                      >
+                        <path
+                          d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61zm1.414 1.06a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354l-1.086-1.086zM11.189 6.25 9.75 4.81 4 10.561v.689h.752l.75-.211.001-.001 5.686-5.788z"
+                        />
+                      </svg>
+                      Suggestion
+                    </button>
+                  </div>
                   <textarea
                     bind:value={commentBody}
                     placeholder="Write a comment..."
@@ -479,10 +495,31 @@
     border-top: 1px solid var(--border-primary);
     border-bottom: 1px solid var(--border-primary);
   }
+  .comment-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .comment-range {
     font-size: 12px;
     font-weight: 600;
     color: var(--text-primary);
+  }
+  .suggestion-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .suggestion-btn:hover {
+    background: var(--bg-selected);
   }
   .comment-input textarea {
     width: 100%;
