@@ -1,19 +1,6 @@
 <script lang="ts">
   import DiffViewer from "$lib/components/DiffViewer.svelte";
-  import type { CommitFile } from "$lib/types/commit";
-
   let { data } = $props();
-
-  let selectedFile = $state<CommitFile | null>(null);
-  let showFiles = $state(false);
-
-  $effect(() => {
-    data.commit.then((commit) => {
-      if (!selectedFile && commit.files.length > 0) {
-        selectedFile = commit.files[0];
-      }
-    });
-  });
 
   function shortSha(s: string): string {
     return s.substring(0, 7);
@@ -31,53 +18,37 @@
         <span class="sha">{shortSha(commit.sha)}</span>
       </div>
     </div>
-    <button class="files-trigger" onclick={() => (showFiles = !showFiles)}>
-      Files {showFiles ? "▾" : "▸"}
-    </button>
     <div class="file-diff-layout">
-      <div class="files-wrapper" class:files-open={showFiles}>
-        {#if showFiles}
-          <div
-            class="files-overlay"
-            role="button"
-            tabindex="0"
-            onclick={() => (showFiles = false)}
-            onkeydown={(e) => e.key === "Enter" && (showFiles = false)}
-          ></div>
-        {/if}
-        <div class="file-list">
-          <h3>{commit.files.length} files</h3>
-          {#each commit.files as file (file.filename)}
-            <button
-              class="file-item"
-              class:active={selectedFile?.filename === file.filename}
-              onclick={() => {
-                selectedFile = file;
-                showFiles = false;
-              }}
-            >
-              <span class="file-name">{file.filename}</span>
-              <span class="file-stats">
-                {#if file.status === "added"}<span class="added-badge">added</span>{/if}
-                {#if file.status === "removed"}<span class="removed-badge">removed</span>{/if}
-                {#if file.status === "renamed"}<span class="renamed-badge">renamed</span>{/if}
-                <span class="adds">+{file.additions}</span>
-                <span class="dels">-{file.deletions}</span>
-              </span>
-            </button>
-          {/each}
-        </div>
+      <div class="file-list">
+        <h3>{commit.files.length} files</h3>
+        {#each commit.files as file (file.filename)}
+          <div class="file-item">
+            <span class="file-name">{file.filename}</span>
+            <span class="file-stats">
+              {#if file.status === "added"}<span class="added-badge">added</span
+                >{/if}
+              {#if file.status === "removed"}<span class="removed-badge"
+                  >removed</span
+                >{/if}
+              {#if file.status === "renamed"}<span class="renamed-badge"
+                  >renamed</span
+                >{/if}
+              <span class="adds">+{file.additions}</span>
+              <span class="dels">-{file.deletions}</span>
+            </span>
+          </div>
+        {/each}
       </div>
       <div class="diff-view">
-        {#if selectedFile?.patch}
-          <div class="diff-header">{selectedFile.filename}</div>
+        {#if commit.files[0]?.patch}
+          <div class="diff-header">{commit.files[0].filename}</div>
           <DiffViewer
-            patch={selectedFile.patch}
-            currentFile={selectedFile.filename}
+            patch={commit.files[0].patch}
+            currentFile={commit.files[0].filename}
           />
         {:else}
           <p class="no-diff">
-            No diff available for {selectedFile?.filename}
+            No diff available for {commit.files[0]?.filename}
           </p>
         {/if}
       </div>
@@ -124,58 +95,6 @@
     flex: 1;
     overflow: hidden;
   }
-  .files-trigger {
-    display: none;
-  }
-  .files-wrapper {
-    display: contents;
-  }
-  .files-overlay {
-    display: none;
-  }
-  @media (max-width: 768px) {
-    .files-trigger {
-      display: block;
-      padding: 12px 12px;
-      border: none;
-      border-bottom: 1px solid var(--border-primary);
-      background: var(--bg-secondary);
-      font-size: 12px;
-      cursor: pointer;
-      color: var(--text-primary);
-      font-family: inherit;
-      text-align: left;
-      width: 100%;
-      flex-shrink: 0;
-    }
-    .files-trigger:hover {
-      background: var(--bg-tertiary);
-    }
-    .file-diff-layout {
-      position: relative;
-    }
-    .files-wrapper {
-      display: block;
-      position: relative;
-    }
-    .files-wrapper:not(.files-open) > .file-list {
-      display: none;
-    }
-    .files-wrapper.files-open > .file-list {
-      position: absolute;
-      left: 0;
-      top: 0;
-      height: 100%;
-      z-index: 20;
-      box-shadow: 4px 0 8px var(--shadow-dialog);
-    }
-    .files-overlay {
-      display: block;
-      position: fixed;
-      inset: 0;
-      z-index: 19;
-    }
-  }
   .file-list {
     width: 280px;
     min-width: 280px;
@@ -196,20 +115,8 @@
     justify-content: space-between;
     align-items: center;
     padding: 6px 12px;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
-    font-family: inherit;
+    border-bottom: 1px solid var(--border-primary);
     font-size: 12px;
-    color: var(--text-primary);
-  }
-  .file-item:hover {
-    background: var(--bg-tertiary);
-  }
-  .file-item.active {
-    background: var(--border-primary);
   }
   .file-name {
     overflow: hidden;
