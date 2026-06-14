@@ -1,5 +1,3 @@
-import type { ReactionData } from "./comment";
-
 export interface PullRequest {
   number: number;
   title: string;
@@ -16,5 +14,4 @@ export interface PullRequest {
   additions: number;
   deletions: number;
   changedFiles: number;
-  reactions: Promise<ReactionData[]>;
 }

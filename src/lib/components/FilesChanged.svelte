@@ -130,20 +130,6 @@
   async function onDeleteComment(commentId: number) {
     await submitAction("deleteInlineComment", { commentId: String(commentId) });
   }
-
-  async function onreaction(
-    commentId: number,
-    emoji: string,
-    remove: boolean,
-    reactionId?: number,
-  ) {
-    await submitAction("react", {
-      commentId: String(commentId),
-      emoji,
-      remove: String(remove),
-      reactionId: reactionId ? String(reactionId) : "",
-    });
-  }
 </script>
 
 {#if files.length === 0}
@@ -248,7 +234,6 @@
                 {onUpdateComment}
                 {onDeleteComment}
                 {onReplyComment}
-                {onreaction}
               />
             {:else}
               <p class="status">No diff available (binary file or too large)</p>

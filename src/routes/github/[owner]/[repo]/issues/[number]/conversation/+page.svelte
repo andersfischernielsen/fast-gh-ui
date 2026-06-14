@@ -7,16 +7,10 @@
   <p class="status error">{form.error}</p>
 {/if}
 
-{#await data.issue}
-  <p class="status">Loading issue...</p>
-{:then issue}
-  {#await data.comments}
-    <p class="status">Loading comments...</p>
-  {:then comments}
-    <IssueConversation body={issue.body} {comments} descriptionReactions={issue.reactions} />
-  {:catch e}
-    <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
-  {/await}
+{#await data.comments}
+  <p class="status">Loading comments...</p>
+{:then comments}
+  <IssueConversation {comments} />
 {:catch e}
   <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
 {/await}

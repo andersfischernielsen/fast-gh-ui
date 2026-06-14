@@ -4,8 +4,7 @@
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
-  import Reactions from "./Reactions.svelte";
-  import type { CommentData, ReactionData } from "$lib/types/comment";
+  import type { CommentData } from "$lib/types/comment";
 
   interface ThreadedComment extends CommentData {
     replies: CommentData[];
@@ -14,11 +13,9 @@
   let {
     body,
     comments,
-    descriptionReactions,
   }: {
     body?: string | null;
     comments: CommentData[];
-    descriptionReactions?: Promise<ReactionData[]>;
   } = $props();
 
   let threadedComments = $derived<ThreadedComment[]>(
@@ -48,33 +45,6 @@
   async function onDeleteComment(commentId: number) {
     await submitAction("deleteComment", { commentId: String(commentId) });
   }
-
-  async function onreaction(
-    commentId: number,
-    emoji: string,
-    remove: boolean,
-    reactionId?: number,
-  ) {
-    await submitAction("react", {
-      commentId: String(commentId),
-      emoji,
-      remove: String(remove),
-      reactionId: reactionId ? String(reactionId) : "",
-    });
-  }
-
-  async function onDescriptionReaction(
-    _commentId: number,
-    emoji: string,
-    remove: boolean,
-    reactionId?: number,
-  ) {
-    await submitAction("reactDescription", {
-      emoji,
-      remove: String(remove),
-      reactionId: reactionId ? String(reactionId) : "",
-    });
-  }
 </script>
 
 <div class="conversation">
@@ -82,15 +52,6 @@
     <div class="description">
       <h3>Description</h3>
       <Markdown text={body} />
-      {#if descriptionReactions}
-        {#await descriptionReactions}
-          <span class="reactions-loading"></span>
-        {:then reactions}
-          <Reactions {reactions} commentId={-1} onreaction={onDescriptionReaction} />
-        {:catch}
-          <span class="reactions-loading"></span>
-        {/await}
-      {/if}
     </div>
   {/if}
 
@@ -102,7 +63,6 @@
         {onreply}
         onupdate={onUpdateComment}
         ondelete={onDeleteComment}
-        {onreaction}
       />
     {/each}
     {#if threadedComments.length === 0}
@@ -137,20 +97,5 @@
     padding: 16px;
     color: var(--text-secondary);
     font-size: 12px;
-  }
-  .reactions-loading {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-top: 8px;
-    border: 2px solid var(--border-primary);
-    border-top-color: var(--text-secondary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>

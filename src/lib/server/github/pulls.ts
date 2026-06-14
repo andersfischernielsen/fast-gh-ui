@@ -10,50 +10,6 @@ async function fetchPullRequest(token: string, owner: string, repo: string, pull
   return response.data;
 }
 
-async function listIssueReactions(token: string, owner: string, repo: string, issueNumber: number) {
-  const octokit = createGitHubClient(token);
-  const response = await octokit.paginate(octokit.rest.reactions.listForIssue, {
-    owner,
-    repo,
-    issue_number: issueNumber,
-    per_page: 100,
-  });
-  return response;
-}
-
-async function createIssueReaction(
-  token: string,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  content: string,
-) {
-  const octokit = createGitHubClient(token);
-  const response = await octokit.rest.reactions.createForIssue({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    content: content as any,
-  });
-  return response.data;
-}
-
-async function deleteIssueReaction(
-  token: string,
-  owner: string,
-  repo: string,
-  issueNumber: number,
-  reactionId: number,
-) {
-  const octokit = createGitHubClient(token);
-  await octokit.rest.reactions.deleteForIssue({
-    owner,
-    repo,
-    issue_number: issueNumber,
-    reaction_id: reactionId,
-  });
-}
-
 async function listPRComments(token: string, owner: string, repo: string, pullNumber: number) {
   const octokit = createGitHubClient(token);
   const response = await octokit.paginate(octokit.rest.issues.listComments, {
@@ -90,75 +46,6 @@ async function listReviewCommentReactions(
     per_page: 100,
   });
   return response;
-}
-
-async function createIssueCommentReaction(
-  token: string,
-  owner: string,
-  repo: string,
-  commentId: number,
-  content: string,
-) {
-  const octokit = createGitHubClient(token);
-  const response = await octokit.rest.reactions.createForIssueComment({
-    owner,
-    repo,
-    comment_id: commentId,
-    content: content as any,
-  });
-  return response.data;
-}
-
-async function deleteIssueCommentReaction(
-  token: string,
-  owner: string,
-  repo: string,
-  commentId: number,
-  reactionId: number,
-) {
-  const octokit = createGitHubClient(token);
-  await octokit.rest.reactions.deleteForIssueComment({
-    owner,
-    repo,
-    comment_id: commentId,
-    reaction_id: reactionId,
-  });
-}
-
-async function createReviewCommentReaction(
-  token: string,
-  owner: string,
-  repo: string,
-  commentId: number,
-  content: string,
-) {
-  const octokit = createGitHubClient(token);
-  const response = await octokit.rest.reactions.createForPullRequestReviewComment({
-    owner,
-    repo,
-    comment_id: commentId,
-    content: content as any,
-  });
-  return response.data;
-}
-
-async function deleteReviewCommentReaction(
-  token: string,
-  owner: string,
-  repo: string,
-  commentId: number,
-  reactionId: number,
-) {
-  const octokit = createGitHubClient(token);
-  await octokit.request(
-    "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}",
-    {
-      owner,
-      repo,
-      comment_id: commentId,
-      reaction_id: reactionId,
-    },
-  );
 }
 
 async function createPRComment(
@@ -399,11 +286,4 @@ export {
   fetchCommit,
   listCommentReactions,
   listReviewCommentReactions,
-  createIssueCommentReaction,
-  deleteIssueCommentReaction,
-  createReviewCommentReaction,
-  deleteReviewCommentReaction,
-  listIssueReactions,
-  createIssueReaction,
-  deleteIssueReaction,
 };

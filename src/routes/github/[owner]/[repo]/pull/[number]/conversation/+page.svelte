@@ -13,12 +13,7 @@
   {#await Promise.all([data.comments, data.reviewComments])}
     <p class="status">Loading comments...</p>
   {:then [comments, reviewComments]}
-    <Conversation
-      body={pr.body}
-      {comments}
-      {reviewComments}
-      descriptionReactions={pr.reactions}
-    />
+    <Conversation body={pr.body} {comments} {reviewComments} />
   {:catch e}
     <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
   {/await}
