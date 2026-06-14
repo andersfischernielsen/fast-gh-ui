@@ -108,8 +108,10 @@
     endLine: number,
     file: string,
     body: string,
+    startSide: "LEFT" | "RIGHT",
+    endSide: "LEFT" | "RIGHT",
   ) {
-    const start = startLine === endLine ? undefined : startLine;
+    const isSingleLine = startLine === endLine && startSide === endSide;
     const comment = await createInlineComment(
       owner,
       repo,
@@ -118,7 +120,9 @@
       sha,
       file,
       endLine,
-      start,
+      endSide,
+      isSingleLine ? undefined : startLine,
+      isSingleLine ? undefined : startSide,
     );
     inlineComments = [
       ...inlineComments,
@@ -171,6 +175,8 @@
       sha,
       path,
       line,
+      "RIGHT",
+      undefined,
       undefined,
       commentId,
     );
