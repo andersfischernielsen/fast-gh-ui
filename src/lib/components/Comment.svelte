@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import Markdown from "./Markdown.svelte";
   import Reactions from "./Reactions.svelte";
   import {
@@ -52,7 +53,7 @@
   let commentReactions = $state<ReactionData[]>([]);
   let replyReactions = $state<Map<number, ReactionData[]>>(new Map());
 
-async function loadReactions(): Promise<void> {
+  async function loadReactions(): Promise<void> {
     const user = await getCurrentUser();
     const fetchFn = comment.isReview
       ? listReviewCommentReactions
@@ -223,7 +224,7 @@ async function loadReactions(): Promise<void> {
     {:else}
       <Markdown text={comment.body} />
     {/if}
-    {#await loadReactions()}
+{#await loadReactions()}
       <span class="reactions-loading"></span>
     {:then}
       {#if commentReactions.length > 0 || onreaction}
@@ -298,7 +299,7 @@ async function loadReactions(): Promise<void> {
             {:else}
               <Markdown text={reply.body} />
             {/if}
-            {#await loadReactions() then}
+{#await loadReactions() then}
               <Reactions
                 reactions={replyReactions.get(reply.id) ?? []}
                 onreaction={handleReaction}

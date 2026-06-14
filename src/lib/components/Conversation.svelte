@@ -361,7 +361,7 @@
       {:else}
         <Markdown text={body} />
       {/if}
-      {#await loadConversation() then}
+{#await loadConversation() then}
         <Reactions
           reactions={descriptionReactions}
           commentId={-1}

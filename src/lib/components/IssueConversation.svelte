@@ -56,7 +56,7 @@
     };
   }
 
-  async function loadConversation(): Promise<void> {
+async function loadConversation(): Promise<void> {
     const [issueComments, rawDescReactions] = await Promise.all([
       listPRComments(owner, repo, number),
       listIssueReactions(owner, repo, number),
@@ -153,7 +153,7 @@
     <div class="description">
       <h3>Description</h3>
       <Markdown text={body} />
-      {#await loadConversation() then}
+{#await loadConversation() then}
         <Reactions
           reactions={descriptionReactions}
           commentId={-1}
