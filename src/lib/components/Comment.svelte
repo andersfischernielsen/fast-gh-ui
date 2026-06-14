@@ -1,9 +1,12 @@
 <script lang="ts">
   import Markdown from "./Markdown.svelte";
-  import type { CommentData, ReactionData } from "$lib/types/comment";
+  import type { CommentData } from "$lib/types/comment";
   import Reactions from "./Reactions.svelte";
 
-  type CommentLike = Pick<CommentData, "id" | "body" | "user" | "createdAt" | "reactions"> & {
+  type CommentLike = Pick<
+    CommentData,
+    "id" | "body" | "user" | "createdAt" | "reactions"
+  > & {
     htmlUrl?: string;
   };
 
@@ -13,12 +16,19 @@
     onreply,
     onupdate,
     ondelete,
+    onreaction,
   }: {
     comment: CommentLike;
     replies?: CommentLike[];
     onreply?: (parentId: number, body: string) => Promise<void>;
     onupdate?: (commentId: number, body: string) => Promise<void>;
     ondelete?: (commentId: number) => Promise<void>;
+    onreaction?: (
+      commentId: number,
+      emoji: string,
+      remove: boolean,
+      reactionId?: number,
+    ) => Promise<void>;
   } = $props();
 
   let replyBody = $state("");
@@ -135,7 +145,7 @@
     {#await comment.reactions}
       <span class="reactions-loading"></span>
     {:then reactions}
-      <Reactions {reactions} />
+      <Reactions {reactions} {onreaction} commentId={comment.id} />
     {:catch}
       <span class="reactions-loading"></span>
     {/await}
@@ -206,7 +216,7 @@
             {#await reply.reactions}
               <span class="reactions-loading"></span>
             {:then reactions}
-              <Reactions {reactions} />
+              <Reactions {reactions} {onreaction} commentId={reply.id} />
             {:catch}
               <span class="reactions-loading"></span>
             {/await}
