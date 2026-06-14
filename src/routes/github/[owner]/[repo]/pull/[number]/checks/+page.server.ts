@@ -22,12 +22,7 @@ export const load: PageServerLoad = async ({ parent, params, locals }) => {
   const { headSha: headShaP } = await parent();
   const headSha = await headShaP;
 
-  const checks: Promise<{ check_runs?: CheckRunData[] }> = listChecks(
-    token,
-    owner,
-    repo,
-    headSha,
-  )
+  const checks: Promise<{ check_runs?: CheckRunData[] }> = listChecks(token, owner, repo, headSha)
     .then((raw) => ({
       check_runs: raw?.check_runs?.map(mapCheckRun),
     }))

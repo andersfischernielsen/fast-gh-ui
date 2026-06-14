@@ -47,7 +47,12 @@
   let prNumber = $derived(parsePRNumber(item.subject.url));
 </script>
 
-<a class="item" class:selected class:unread={item.unread} {href}>
+<a
+  class="item"
+  class:selected
+  class:unread={item.unread}
+  {href}
+>
   <span class="repo">{item.repository.fullName}</span>
   <span class="title">
     <span class="number">{prNumber}</span>

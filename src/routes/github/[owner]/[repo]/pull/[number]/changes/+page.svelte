@@ -11,9 +11,9 @@
   <p class="status">Loading files...</p>
 {:then [files, inlineComments]}
   <FilesChanged {files} {inlineComments} headSha={data.headSha} />
-{:catch e}
-  <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
-{/await}
+  {:catch e}
+    <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
+  {/await}
 
 <style>
   .status {

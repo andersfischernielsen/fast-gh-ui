@@ -33,9 +33,7 @@
     rows={3}
     disabled={submitting}
   ></textarea>
-  <button type="submit" disabled={submitting || !body.trim()}
-    >{buttonLabel}</button
-  >
+  <button type="submit" disabled={submitting || !body.trim()}>{buttonLabel}</button>
 </form>
 
 <style>

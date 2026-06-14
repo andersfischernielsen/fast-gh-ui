@@ -18,10 +18,8 @@ function mapCommit(raw: Record<string, unknown>): PRCommitData {
     commit: {
       message: (raw.commit as { message?: string })?.message ?? "",
       author: {
-        name:
-          (raw.commit as { author?: { name?: string } })?.author?.name ?? "",
-        date:
-          (raw.commit as { author?: { date?: string } })?.author?.date ?? "",
+        name: (raw.commit as { author?: { name?: string } })?.author?.name ?? "",
+        date: (raw.commit as { author?: { date?: string } })?.author?.date ?? "",
       },
     },
   };
@@ -32,12 +30,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   const { owner, repo } = params;
   const number = Number(params.number);
 
-  const commits: Promise<PRCommitData[]> = listPRCommits(
-    token,
-    owner,
-    repo,
-    number,
-  )
+  const commits: Promise<PRCommitData[]> = listPRCommits(token, owner, repo, number)
     .then((raw) => raw.map(mapCommit))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));

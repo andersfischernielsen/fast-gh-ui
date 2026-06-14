@@ -22,10 +22,7 @@
     comments.map((c) => ({ ...c, replies: [] })),
   );
 
-  async function submitAction(
-    actionName: string,
-    data: Record<string, string>,
-  ) {
+  async function submitAction(actionName: string, data: Record<string, string>) {
     const fd = new FormData();
     for (const [k, v] of Object.entries(data)) fd.set(k, v);
     const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
@@ -60,7 +57,7 @@
       <Comment
         comment={c}
         replies={c.replies}
-        {onreply}
+        onreply={onreply}
         onupdate={onUpdateComment}
         ondelete={onDeleteComment}
       />

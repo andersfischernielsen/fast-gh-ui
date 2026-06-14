@@ -7,9 +7,9 @@
   <p class="status">Loading checks...</p>
 {:then checks}
   <Checks {checks} />
-{:catch e}
-  <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
-{/await}
+  {:catch e}
+    <p class="status error">{e instanceof Error ? e.message : String(e)}</p>
+  {/await}
 
 <style>
   .status {

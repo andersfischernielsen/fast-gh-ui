@@ -29,12 +29,7 @@ export const load: PageServerLoad = async ({ params, locals }) => {
   const { owner, repo } = params;
   const number = Number(params.number);
 
-  const comments: Promise<CommentData[]> = listPRComments(
-    token,
-    owner,
-    repo,
-    number,
-  )
+  const comments: Promise<CommentData[]> = listPRComments(token, owner, repo, number)
     .then((raw) => raw.map(mapComment))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
@@ -49,13 +44,7 @@ export const actions: Actions = {
     const data = await request.formData();
     const body = getFormValue(data, "body");
     if (!body.trim()) return fail(400, { error: "Comment body is required" });
-    await createPRComment(
-      token,
-      params.owner,
-      params.repo,
-      Number(params.number),
-      body.trim(),
-    );
+    await createPRComment(token, params.owner, params.repo, Number(params.number), body.trim());
     return {};
   },
   updateComment: async ({ request, locals, params }) => {
@@ -63,15 +52,8 @@ export const actions: Actions = {
     const data = await request.formData();
     const commentId = Number(data.get("commentId"));
     const body = getFormValue(data, "body");
-    if (!commentId || !body.trim())
-      return fail(400, { error: "Invalid input" });
-    await updatePRComment(
-      token,
-      params.owner,
-      params.repo,
-      commentId,
-      body.trim(),
-    );
+    if (!commentId || !body.trim()) return fail(400, { error: "Invalid input" });
+    await updatePRComment(token, params.owner, params.repo, commentId, body.trim());
     return {};
   },
   deleteComment: async ({ request, locals, params }) => {

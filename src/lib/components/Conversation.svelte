@@ -61,18 +61,17 @@
   });
 
   let threadedComments = $derived<ThreadedComment[]>(
-    [...comments.map((c) => ({ ...c, replies: [] })), ...reviewData.roots].sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    [
+      ...comments.map((c) => ({ ...c, replies: [] })),
+      ...reviewData.roots,
+    ].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     ),
   );
 
   let reviewIds = $derived(reviewData.ids);
 
-  async function submitAction(
-    actionName: string,
-    data: Record<string, string>,
-  ) {
+  async function submitAction(actionName: string, data: Record<string, string>) {
     const fd = new FormData();
     for (const [k, v] of Object.entries(data)) fd.set(k, v);
     const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
@@ -134,10 +133,7 @@
               e.preventDefault();
               savingDesc = true;
               const fd = new FormData(e.currentTarget);
-              const res = await fetch("?/updatePR", {
-                method: "POST",
-                body: fd,
-              });
+              const res = await fetch("?/updatePR", { method: "POST", body: fd });
               const result = deserialize(await res.text());
               applyAction(result);
               if (result.type === "success") {
@@ -169,9 +165,7 @@
             ></textarea>
           </form>
         {:else}
-          <button class="desc-edit-btn" onclick={startEditDescription}
-            >Edit</button
-          >
+          <button class="desc-edit-btn" onclick={startEditDescription}>Edit</button>
         {/if}
       </div>
       {#if !editingDesc}
@@ -185,7 +179,7 @@
       <Comment
         comment={c}
         replies={c.replies}
-        {onreply}
+        onreply={onreply}
         onupdate={onUpdateComment}
         ondelete={onDeleteComment}
       />

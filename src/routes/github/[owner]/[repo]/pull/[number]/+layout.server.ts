@@ -7,9 +7,7 @@ import type { LayoutServerLoad } from "./$types";
 
 export type { ReviewData };
 
-function mapPullRequest(
-  raw: Awaited<ReturnType<typeof fetchPullRequest>>,
-): PullRequest {
+function mapPullRequest(raw: Awaited<ReturnType<typeof fetchPullRequest>>): PullRequest {
   return {
     number: raw.number,
     title: raw.title,

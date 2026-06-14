@@ -86,8 +86,7 @@
       <p>
         Your token is sent to this app over HTTPS and stored as an
         <strong>HttpOnly cookie</strong>. It is used only by the server to call
-        GitHub's API on your behalf, and is never logged or exposed to the
-        browser.
+        GitHub's API on your behalf, and is never logged or exposed to the browser.
       </p>
       <p>
         You can revoke your token at any time in <a
