@@ -22,7 +22,6 @@ interface NotificationItem {
 }
 
 const notifications = $state({ value: [] as NotificationItem[] });
-let prStates = $state<Record<string, string>>({});
 
 function mapNotification(raw: {
   id: string;
@@ -83,10 +82,6 @@ async function loadNotifications(): Promise<NotificationItem[]> {
   }
 }
 
-function setPRState(key: string, state: string, merged: boolean) {
-  prStates[key] = state === "closed" && merged ? "merged" : state;
-}
-
 async function markAsRead(threadId: string): Promise<void> {
   try {
     await markThreadAsRead(threadId);
@@ -98,5 +93,5 @@ async function markAsRead(threadId: string): Promise<void> {
   }
 }
 
-export { notifications, prStates, loadNotifications, setPRState, markAsRead };
+export { notifications, loadNotifications, markAsRead };
 export type { NotificationItem };

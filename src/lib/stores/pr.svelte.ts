@@ -1,5 +1,4 @@
 import { fetchPullRequest } from "$lib/github/pulls";
-import { setPRState } from "$lib/stores/notifications.svelte";
 
 interface PullRequest {
   number: number;
@@ -57,7 +56,6 @@ async function loadPR(
       changedFiles: raw.changed_files ?? 0,
     };
     loadedId = id;
-    setPRState(`${owner}/${repo}#${number}`, raw.state, raw.merged ?? false);
   } catch (e) {
     error.value = e instanceof Error ? e.message : "Failed to load PR";
   } finally {
