@@ -227,13 +227,11 @@
 {#await loadReactions()}
       <span class="reactions-loading"></span>
     {:then}
-      {#if commentReactions.length > 0 || onreaction}
-        <Reactions
-          reactions={commentReactions}
-          onreaction={handleReaction}
-          commentId={comment.id}
-        />
-      {/if}
+      <Reactions
+        reactions={commentReactions}
+        onreaction={handleReaction}
+        commentId={comment.id}
+      />
     {/await}
   </div>
   {#if replies.length > 0}
