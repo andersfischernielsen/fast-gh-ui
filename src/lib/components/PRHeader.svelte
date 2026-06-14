@@ -110,7 +110,7 @@
         <button class="edit-btn" onclick={startEditing}>Edit</button>
       {/if}
       {#if pr.state === "open"}
-        <PRReviewActions />
+        <PRReviewActions {owner} {repo} number={pr.number} />
       {/if}
     </div>
   </div>

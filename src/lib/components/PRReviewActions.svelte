@@ -1,16 +1,21 @@
 <script lang="ts">
   import { applyAction, deserialize } from "$app/forms";
   import { invalidateAll } from "$app/navigation";
-  import { page } from "$app/state";
+
+  let {
+    owner,
+    repo,
+    number,
+  }: {
+    owner: string | undefined;
+    repo: string | undefined;
+    number: number | undefined;
+  } = $props();
 
   let expanded = $state(false);
   let reviewBody = $state("");
   let submitting = $state(false);
   let merging = $state(false);
-
-  let actionBase = $derived(
-    `/github/${page.params.owner}/${page.params.repo}/pull/${page.params.number}`,
-  );
 
   function cancel() {
     expanded = false;
@@ -23,10 +28,7 @@
   ) {
     const fd = new FormData();
     for (const [k, v] of Object.entries(data)) fd.set(k, v);
-    const res = await fetch(`${actionBase}?/${actionName}`, {
-      method: "POST",
-      body: fd,
-    });
+    const res = await fetch(`?/${actionName}`, { method: "POST", body: fd });
     const result = deserialize(await res.text());
     applyAction(result);
     if (result.type === "success") await invalidateAll();

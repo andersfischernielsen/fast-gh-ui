@@ -49,9 +49,11 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
       throw error(500, githubErrorMessage(e));
     });
 
+  const headSha: Promise<string> = pr.then((p) => p.head.sha);
+
   const reviews: Promise<ReviewData[]> = listReviews(token, owner, repo, number)
     .then((raw) => raw.map(mapReview))
     .catch(() => []);
 
-  return { pr, reviews, owner, repo, number };
+  return { pr, reviews, headSha, owner, repo, number };
 };

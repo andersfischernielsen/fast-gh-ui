@@ -7,6 +7,8 @@ import {
   createInlineComment,
   updateInlineComment,
   deleteInlineComment,
+  createReview,
+  mergePullRequest,
 } from "$lib/server/github/pulls";
 import type { PRFile, InlineCommentData } from "$lib/types/comment";
 import type { Actions, PageServerLoad } from "./$types";
@@ -42,8 +44,8 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
   const token = locals.token!;
   const { owner, repo } = params;
   const number = Number(params.number);
-  const { pr } = await parent();
-  const headSha = (await pr).head.sha;
+  const { headSha: headShaP } = await parent();
+  const headSha = await headShaP;
 
   const files: Promise<PRFile[]> = listPRFiles(token, owner, repo, number)
     .then((raw) => raw.map(mapFile))
@@ -105,6 +107,27 @@ export const actions: Actions = {
     const commentId = Number(data.get("commentId"));
     if (!commentId) return fail(400, { error: "Invalid input" });
     await deleteInlineComment(token, params.owner, params.repo, commentId);
+    return {};
+  },
+  createReview: async ({ request, locals, params }) => {
+    const token = locals.token!;
+    const data = await request.formData();
+    const event = getFormValue(data, "event") as "APPROVE" | "REQUEST_CHANGES";
+    const body = getFormValue(data, "body");
+    if (!event) return fail(400, { error: "Invalid input" });
+    await createReview(
+      token,
+      params.owner,
+      params.repo,
+      Number(params.number),
+      event,
+      body || undefined,
+    );
+    return {};
+  },
+  merge: async ({ locals, params }) => {
+    const token = locals.token!;
+    await mergePullRequest(token, params.owner, params.repo, Number(params.number));
     return {};
   },
 };
