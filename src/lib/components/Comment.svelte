@@ -14,6 +14,7 @@
   let {
     comment,
     replies = [],
+    suggestionLines = [],
     owner,
     repo,
     onreply,
@@ -23,6 +24,7 @@
   }: {
     comment: CommentData;
     replies?: CommentData[];
+    suggestionLines?: string[];
     owner?: string;
     repo?: string;
     onreply?: (parentId: number, body: string) => Promise<void>;
@@ -145,7 +147,7 @@
         >
       </div>
     {:else}
-      <Markdown text={comment.body} />
+      <Markdown text={comment.body} {suggestionLines} />
     {/if}
     <Reactions
       {owner}
