@@ -52,6 +52,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Fast GH UI</title>
+</svelte:head>
+
 <div class="app-shell">
   <Sidebar onfilterchange={(repo) => (repoFilter = repo)} />
   <div class="list-panel">

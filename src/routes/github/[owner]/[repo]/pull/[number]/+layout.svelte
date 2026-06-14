@@ -26,6 +26,10 @@
   $effect(() => useShortcut("h", () => goto("/github"), { shift: true }));
 </script>
 
+<svelte:head>
+  <title>{pr.value ? `#${pr.value.number} ${pr.value.title}` : 'Fast GH UI'}</title>
+</svelte:head>
+
 <div class="page">
   {#if loading.value}
     <p class="status">Loading PR...</p>

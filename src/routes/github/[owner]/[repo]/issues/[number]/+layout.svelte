@@ -53,6 +53,10 @@
   $effect(() => useShortcut("h", () => goto("/github"), { shift: true }));
 </script>
 
+<svelte:head>
+  <title>{issueData ? `#${issueData.number} ${issueData.title}` : 'Fast GH UI'}</title>
+</svelte:head>
+
 <div class="page">
   {#await loadIssue()}
     <p class="status">Loading issue...</p>
