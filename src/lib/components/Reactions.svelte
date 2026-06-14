@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import {
     listCommentReactions,
     listReviewCommentReactions,
@@ -58,7 +59,10 @@
     return mapReactions(raw, user);
   }
 
-  let reactionsPromise = $state(fetchReactions());
+  let reactionsPromise: Promise<ReactionData[]> = $state(Promise.resolve([]));
+  onMount(() => {
+    reactionsPromise = fetchReactions();
+  });
 
   async function handleReaction(
     emoji: string,

@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import type { NotificationItem } from "$lib/stores/notifications.svelte";
-  import { markAsRead, prStates } from "$lib/stores/notifications.svelte";
+  import { markAsRead } from "$lib/stores/notifications.svelte";
   import { fetchPullRequest } from "$lib/github/pulls";
 
   let {
@@ -45,25 +46,27 @@
     return `${Math.floor(hours / 24)}d`;
   }
 
+  async function fetchMergeStatus(): Promise<string | null> {
+    if (!prStateKey) return null;
+    const match = prStateKey.match(/^(.+)\/(.+)#(\d+)$/);
+    if (!match) return null;
+    try {
+      const pr = await fetchPullRequest(match[1], match[2], parseInt(match[3]));
+      return pr.state === "closed" && pr.merged ? "merged" : pr.state;
+    } catch {
+      return null;
+    }
+  }
+
   function handleClick() {
     if (item.unread) markAsRead(item.id);
   }
 
-  async function handleMouseEnter() {
-    if (!prStateKey) return;
-    const match = prStateKey.match(/^(.+)\/(.+)#(\d+)$/);
-    if (!match) return;
-    try {
-      const pr = await fetchPullRequest(match[1], match[2], parseInt(match[3]));
-      prStates[prStateKey] =
-        pr.state === "closed" && pr.merged ? "merged" : pr.state;
-    } catch {
-      // ignore
-    }
-  }
-
   let prNumber = $derived(parsePRNumber(item.subject.url));
-  let state = $derived(prStateKey ? prStates[prStateKey] : null);
+  let mergeStatusPromise: Promise<string | null> = $state(Promise.resolve(null));
+  onMount(() => {
+    mergeStatusPromise = fetchMergeStatus();
+  });
 </script>
 
 <a
@@ -72,7 +75,6 @@
   class:unread={item.unread}
   {href}
   onclick={handleClick}
-  onmouseenter={handleMouseEnter}
 >
   <span class="repo">{item.repository.fullName}</span>
   <span class="title">
@@ -81,14 +83,16 @@
   </span>
   <span class="meta">
     <span class="badge">{getTypeBadge(item.subject.type)}</span>
-    {#if state}
-      <span
-        class="pr-state"
-        class:open={state === "open"}
-        class:merged={state === "merged"}
-        class:closed={state === "closed"}>{state}</span
-      >
-    {/if}
+    {#await mergeStatusPromise then state}
+      {#if state}
+        <span
+          class="pr-state"
+          class:open={state === "open"}
+          class:merged={state === "merged"}
+          class:closed={state === "closed"}>{state}</span
+        >
+      {/if}
+    {/await}
     <span class="time">{formatTime(item.updatedAt)}</span>
   </span>
   {#if item.unread}
