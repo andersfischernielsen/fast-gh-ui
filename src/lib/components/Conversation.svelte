@@ -64,7 +64,6 @@
   let descError = $state<string | null>(null);
 
   let descriptionReactions = $state<ReactionData[]>([]);
-  let descReactionsLoading = $state(true);
 
   let reviewIds = new Set<number>();
 
@@ -100,7 +99,6 @@
         rawDescReactions as Record<string, unknown>[],
         user,
       );
-      descReactionsLoading = false;
 
       const issueItems: ThreadedComment[] = (
         issueComments as Record<string, unknown>[]
@@ -369,13 +367,11 @@
       {:else}
         <Markdown text={body} />
       {/if}
-      {#if !descReactionsLoading}
-        <Reactions
-          reactions={descriptionReactions}
-          commentId={-1}
-          onreaction={onDescriptionReaction}
-        />
-      {/if}
+      <Reactions
+        reactions={descriptionReactions}
+        commentId={-1}
+        onreaction={onDescriptionReaction}
+      />
     </div>
   {/if}
   {#if loading}

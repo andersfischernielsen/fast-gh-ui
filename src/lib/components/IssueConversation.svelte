@@ -39,7 +39,6 @@
   let loading = $state(true);
 
   let descriptionReactions = $state<ReactionData[]>([]);
-  let descReactionsLoading = $state(true);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -70,7 +69,6 @@
         rawDescReactions as Record<string, unknown>[],
         user,
       );
-      descReactionsLoading = false;
       threadedComments = (issueComments as Record<string, unknown>[])
         .map(toCommentData)
         .map((c) => ({
@@ -161,13 +159,11 @@
     <div class="description">
       <h3>Description</h3>
       <Markdown text={body} />
-      {#if !descReactionsLoading}
-        <Reactions
-          reactions={descriptionReactions}
-          commentId={-1}
-          onreaction={onDescriptionReaction}
-        />
-      {/if}
+      <Reactions
+        reactions={descriptionReactions}
+        commentId={-1}
+        onreaction={onDescriptionReaction}
+      />
     </div>
   {/if}
   {#if loading}

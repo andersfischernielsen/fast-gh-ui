@@ -52,7 +52,6 @@
 
   let commentReactions = $state<ReactionData[]>([]);
   let replyReactions = $state<Map<number, ReactionData[]>>(new Map());
-  let reactionsLoading = $state(true);
 
   onMount(async () => {
     try {
@@ -78,8 +77,8 @@
         );
       }
       replyReactions = repReactions;
-    } finally {
-      reactionsLoading = false;
+    } catch {
+      // silently ignore reaction fetch failures
     }
   });
 
@@ -229,15 +228,11 @@
     {:else}
       <Markdown text={comment.body} />
     {/if}
-    {#if reactionsLoading}
-      <span class="reactions-loading"></span>
-    {:else if commentReactions.length > 0 || onreaction}
-      <Reactions
-        reactions={commentReactions}
-        onreaction={handleReaction}
-        commentId={comment.id}
-      />
-    {/if}
+    <Reactions
+      reactions={commentReactions}
+      onreaction={handleReaction}
+      commentId={comment.id}
+    />
   </div>
   {#if replies.length > 0}
     <div class="replies">
@@ -302,13 +297,11 @@
             {:else}
               <Markdown text={reply.body} />
             {/if}
-            {#if !reactionsLoading}
-              <Reactions
-                reactions={replyReactions.get(reply.id) ?? []}
-                onreaction={handleReaction}
-                commentId={reply.id}
-              />
-            {/if}
+            <Reactions
+              reactions={replyReactions.get(reply.id) ?? []}
+              onreaction={handleReaction}
+              commentId={reply.id}
+            />
           </div>
         </article>
       {/each}
@@ -524,20 +517,5 @@
   .reply-body :global(.markdown) {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
-  }
-  .reactions-loading {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    margin-top: 8px;
-    border: 2px solid var(--border-primary);
-    border-top-color: var(--text-secondary);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>
