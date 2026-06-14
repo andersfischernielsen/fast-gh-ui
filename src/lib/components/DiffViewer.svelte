@@ -25,6 +25,7 @@
     onUpdateComment,
     onDeleteComment,
     onReplyComment,
+    onreaction,
   }: {
     patch: string;
     inlineComments?: InlineCommentData[];
@@ -39,6 +40,12 @@
     onUpdateComment?: (commentId: number, body: string) => Promise<void>;
     onDeleteComment?: (commentId: number) => Promise<void>;
     onReplyComment?: (commentId: number, body: string) => Promise<void>;
+    onreaction?: (
+      commentId: number,
+      emoji: string,
+      remove: boolean,
+      reactionId?: number,
+    ) => Promise<void>;
   } = $props();
 
   let selecting = $state(false);
@@ -316,11 +323,13 @@
                       body: comment.body,
                       user: comment.user,
                       createdAt: comment.createdAt,
+                      isReview: true,
                     }}
                     replies={comment.replies}
                     onupdate={onUpdateComment}
                     ondelete={onDeleteComment}
                     onreply={onReplyComment}
+                    {onreaction}
                   />
                 </div>
               </td>

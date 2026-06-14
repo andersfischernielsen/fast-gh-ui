@@ -1,5 +1,14 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import Markdown from "./Markdown.svelte";
+  import Reactions from "./Reactions.svelte";
+  import {
+    listCommentReactions,
+    listReviewCommentReactions,
+    mapReactions,
+    getCurrentUser,
+  } from "$lib/github/pulls";
+  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -7,6 +16,7 @@
     user: { login: string; avatarUrl: string };
     createdAt: string;
     htmlUrl?: string;
+    isReview?: boolean;
   }
 
   let {
@@ -15,12 +25,19 @@
     onreply,
     onupdate,
     ondelete,
+    onreaction,
   }: {
     comment: CommentData;
     replies?: CommentData[];
     onreply?: (parentId: number, body: string) => Promise<void>;
     onupdate?: (commentId: number, body: string) => Promise<void>;
     ondelete?: (commentId: number) => Promise<void>;
+    onreaction?: (
+      commentId: number,
+      emoji: string,
+      remove: boolean,
+      reactionId?: number,
+    ) => Promise<void>;
   } = $props();
 
   let replyBody = $state("");
@@ -28,6 +45,39 @@
   let editing = $state(false);
   let editingReplyId = $state<number | null>(null);
   let editBody = $state("");
+
+  let commentReactions = $state<ReactionData[]>([]);
+  let replyReactions = $state<Map<number, ReactionData[]>>(new Map());
+  let reactionsLoading = $state(true);
+
+  onMount(async () => {
+    try {
+      const user = await getCurrentUser();
+      const fetchFn = comment.isReview
+        ? listReviewCommentReactions
+        : listCommentReactions;
+      const raw = await fetchFn(undefined, undefined, comment.id);
+      commentReactions = mapReactions(
+        raw as Record<string, unknown>[],
+        user,
+      );
+      const repReactions = new Map<number, ReactionData[]>();
+      for (const reply of replies) {
+        const replyRaw = await listCommentReactions(
+          undefined,
+          undefined,
+          reply.id,
+        );
+        repReactions.set(
+          reply.id,
+          mapReactions(replyRaw as Record<string, unknown>[], user),
+        );
+      }
+      replyReactions = repReactions;
+    } finally {
+      reactionsLoading = false;
+    }
+  });
 
   function formatDate(dateStr: string): string {
     const d = new Date(dateStr);
@@ -134,6 +184,15 @@
     {:else}
       <Markdown text={comment.body} />
     {/if}
+    {#if reactionsLoading}
+      <span class="reactions-loading"></span>
+    {:else if commentReactions.length > 0 || onreaction}
+      <Reactions
+        reactions={commentReactions}
+        {onreaction}
+        commentId={comment.id}
+      />
+    {/if}
   </div>
   {#if replies.length > 0}
     <div class="replies">
@@ -197,6 +256,13 @@
               </div>
             {:else}
               <Markdown text={reply.body} />
+            {/if}
+            {#if !reactionsLoading}
+              <Reactions
+                reactions={replyReactions.get(reply.id) ?? []}
+                {onreaction}
+                commentId={reply.id}
+              />
             {/if}
           </div>
         </article>
@@ -413,5 +479,20 @@
   .reply-body :global(.markdown) {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       sans-serif;
+  }
+  .reactions-loading {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-top: 8px;
+    border: 2px solid var(--border-primary);
+    border-top-color: var(--text-secondary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

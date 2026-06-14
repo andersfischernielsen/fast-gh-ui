@@ -4,12 +4,21 @@
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
+  import Reactions from "./Reactions.svelte";
   import {
     listPRComments,
     createPRComment,
     updatePRComment,
     deletePRComment,
+    listIssueReactions,
+    createIssueCommentReaction,
+    deleteIssueCommentReaction,
+    createIssueReaction,
+    deleteIssueReaction,
+    getCurrentUser,
+    mapReactions,
   } from "$lib/github/pulls";
+  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -28,6 +37,9 @@
 
   let threadedComments = $state<ThreadedComment[]>([]);
   let loading = $state(true);
+
+  let descriptionReactions = $state<ReactionData[]>([]);
+  let descReactionsLoading = $state(true);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -49,7 +61,16 @@
 
   onMount(async () => {
     try {
-      const issueComments = await listPRComments(owner, repo, number);
+      const [issueComments, rawDescReactions] = await Promise.all([
+        listPRComments(owner, repo, number),
+        listIssueReactions(owner, repo, number),
+      ]);
+      const user = await getCurrentUser();
+      descriptionReactions = mapReactions(
+        rawDescReactions as Record<string, unknown>[],
+        user,
+      );
+      descReactionsLoading = false;
       threadedComments = (issueComments as Record<string, unknown>[])
         .map(toCommentData)
         .map((c) => ({
@@ -102,6 +123,37 @@
       })
       .filter((tc) => tc.id !== commentId);
   }
+
+  async function onreaction(
+    commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    if (remove && reactionId) {
+      await deleteIssueCommentReaction(
+        owner,
+        repo,
+        commentId,
+        reactionId,
+      );
+    } else {
+      await createIssueCommentReaction(owner, repo, commentId, emoji);
+    }
+  }
+
+  async function onDescriptionReaction(
+    _commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    if (remove && reactionId) {
+      await deleteIssueReaction(owner, repo, number, reactionId);
+    } else {
+      await createIssueReaction(owner, repo, number, emoji);
+    }
+  }
 </script>
 
 <div class="conversation">
@@ -109,6 +161,13 @@
     <div class="description">
       <h3>Description</h3>
       <Markdown text={body} />
+      {#if !descReactionsLoading}
+        <Reactions
+          reactions={descriptionReactions}
+          commentId={-1}
+          onreaction={onDescriptionReaction}
+        />
+      {/if}
     </div>
   {/if}
   {#if loading}
@@ -122,6 +181,7 @@
           onreply={replyToComment}
           onupdate={onUpdateComment}
           ondelete={onDeleteComment}
+          {onreaction}
         />
       {/each}
       {#if threadedComments.length === 0}

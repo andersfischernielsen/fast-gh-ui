@@ -1,4 +1,36 @@
 import { createClient } from "./client";
+import type { ReactionData } from "$lib/types/comment";
+
+let _currentUser: string | null = null;
+
+async function getCurrentUser(): Promise<string> {
+  if (_currentUser) return _currentUser;
+  const octokit = createClient();
+  const response = await octokit.rest.users.getAuthenticated();
+  _currentUser = response.data.login;
+  return _currentUser;
+}
+
+function mapReactions(raw: Record<string, unknown>[], currentUser: string): ReactionData[] {
+  const grouped = new Map<string, { authors: string[]; userReactionId?: number }>();
+  for (const r of raw) {
+    const emoji = (r.content as string) ?? "";
+    const author = (r.user as { login?: string } | undefined)?.login ?? "";
+    const reactionId = r.id as number;
+    if (!emoji) continue;
+    const entry = grouped.get(emoji) ?? { authors: [] };
+    entry.authors.push(author);
+    if (author === currentUser) {
+      entry.userReactionId = reactionId;
+    }
+    grouped.set(emoji, entry);
+  }
+  return Array.from(grouped.entries()).map(([emoji, { authors, userReactionId }]) => ({
+    emoji,
+    authors,
+    userReactionId,
+  }));
+}
 
 async function fetchPullRequest(owner: string, repo: string, pullNumber: number) {
   const octokit = createClient();
@@ -287,6 +319,153 @@ async function listReviews(
   return response;
 }
 
+async function listIssueReactions(
+  owner: string | undefined,
+  repo: string | undefined,
+  issueNumber: number,
+) {
+  if (!owner || !repo) return [];
+  const octokit = createClient();
+  const response = await octokit.paginate(octokit.rest.reactions.listForIssue, {
+    owner,
+    repo,
+    issue_number: issueNumber,
+    per_page: 100,
+  });
+  return response;
+}
+
+async function listCommentReactions(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+) {
+  if (!owner || !repo) return [];
+  const octokit = createClient();
+  const response = await octokit.paginate(octokit.rest.reactions.listForIssueComment, {
+    owner,
+    repo,
+    comment_id: commentId,
+    per_page: 100,
+  });
+  return response;
+}
+
+async function listReviewCommentReactions(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+) {
+  if (!owner || !repo) return [];
+  const octokit = createClient();
+  const response = await octokit.paginate(octokit.rest.reactions.listForPullRequestReviewComment, {
+    owner,
+    repo,
+    comment_id: commentId,
+    per_page: 100,
+  });
+  return response;
+}
+
+async function createIssueReaction(
+  owner: string | undefined,
+  repo: string | undefined,
+  issueNumber: number,
+  content: string,
+) {
+  if (!owner || !repo) return;
+  const octokit = createClient();
+  await octokit.rest.reactions.createForIssue({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    content: content as any,
+  });
+}
+
+async function deleteIssueReaction(
+  owner: string | undefined,
+  repo: string | undefined,
+  issueNumber: number,
+  reactionId: number,
+) {
+  if (!owner || !repo) return;
+  const octokit = createClient();
+  await octokit.rest.reactions.deleteForIssue({
+    owner,
+    repo,
+    issue_number: issueNumber,
+    reaction_id: reactionId,
+  });
+}
+
+async function createIssueCommentReaction(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+  content: string,
+) {
+  if (!owner || !repo) return;
+  const octokit = createClient();
+  await octokit.rest.reactions.createForIssueComment({
+    owner,
+    repo,
+    comment_id: commentId,
+    content: content as any,
+  });
+}
+
+async function deleteIssueCommentReaction(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+  reactionId: number,
+) {
+  if (!owner || !repo) return;
+  const octokit = createClient();
+  await octokit.rest.reactions.deleteForIssueComment({
+    owner,
+    repo,
+    comment_id: commentId,
+    reaction_id: reactionId,
+  });
+}
+
+async function createReviewCommentReaction(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+  content: string,
+) {
+  if (!owner || !repo) return;
+  const octokit = createClient();
+  await octokit.rest.reactions.createForPullRequestReviewComment({
+    owner,
+    repo,
+    comment_id: commentId,
+    content: content as any,
+  });
+}
+
+async function deleteReviewCommentReaction(
+  owner: string | undefined,
+  repo: string | undefined,
+  commentId: number,
+  reactionId: number,
+) {
+  if (!owner || !repo) return;
+  const octokit = createClient();
+  await octokit.request(
+    "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}",
+    {
+      owner,
+      repo,
+      comment_id: commentId,
+      reaction_id: reactionId,
+    },
+  );
+}
+
 async function listChecks(owner: string | undefined, repo: string | undefined, ref: string) {
   if (!owner || !repo) return undefined;
 
@@ -319,4 +498,15 @@ export {
   listChecks,
   listReviews,
   fetchCommit,
+  getCurrentUser,
+  mapReactions,
+  listIssueReactions,
+  listCommentReactions,
+  listReviewCommentReactions,
+  createIssueReaction,
+  deleteIssueReaction,
+  createIssueCommentReaction,
+  deleteIssueCommentReaction,
+  createReviewCommentReaction,
+  deleteReviewCommentReaction,
 };
