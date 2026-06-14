@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { listChecks } from "$lib/github/pulls";
 
@@ -14,33 +13,22 @@
   let { headSha = "" }: { headSha?: string } = $props();
 
   let checkRuns = $state<CheckRun[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
 
-  onMount(async () => {
-    try {
-      if (!headSha) {
-        loading = false;
-        return;
-      }
-      const raw = await listChecks(owner, repo, headSha);
-      checkRuns =
-        raw?.check_runs.map((r: Record<string, unknown>) => ({
-          id: r.id as number,
-          name: (r.name as string) ?? "",
-          status: (r.status as string) ?? "unknown",
-          conclusion: (r.conclusion as string | null) ?? null,
-          detailsUrl: (r.details_url as string | null) ?? null,
-        })) ?? [];
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
-    }
-  });
+  async function loadChecks(): Promise<void> {
+    if (!headSha) return;
+    const raw = await listChecks(owner, repo, headSha);
+    checkRuns =
+      raw?.check_runs.map((r: Record<string, unknown>) => ({
+        id: r.id as number,
+        name: (r.name as string) ?? "",
+        status: (r.status as string) ?? "unknown",
+        conclusion: (r.conclusion as string | null) ?? null,
+        detailsUrl: (r.details_url as string | null) ?? null,
+      })) ?? [];
+  }
 
   function conclusionIcon(conclusion: string | null): string {
     if (conclusion === "success") return "✓";
@@ -60,11 +48,9 @@
   }
 </script>
 
-{#if loading}
+{#await loadChecks()}
   <p class="status">Loading checks...</p>
-{:else if error}
-  <p class="status error">{error}</p>
-{:else}
+{:then}
   <div class="checks-panel">
     {#if checkRuns.length === 0}
       <p class="status">No checks configured</p>
@@ -93,7 +79,9 @@
       {/each}
     {/if}
   </div>
-{/if}
+{:catch error}
+  <p class="status error">{error.message}</p>
+{/await}
 
 <style>
   .check {

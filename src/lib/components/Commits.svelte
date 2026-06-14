@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { listPRCommits } from "$lib/github/pulls";
 
@@ -11,47 +10,37 @@
   }
 
   let commits = $state<PRCommit[]>([]);
-  let loading = $state(true);
-  let error = $state<string | null>(null);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
 
-  onMount(async () => {
-    try {
-      const raw = await listPRCommits(owner, repo, number);
-      commits = raw.map((c: Record<string, unknown>) => ({
-        sha: c.sha as string,
-        author: {
-          login:
-            (c.author as { login?: string })?.login ??
-            (c.commit as { author?: { name?: string } })?.author?.name ??
-            "unknown",
-          avatarUrl: (c.author as { avatar_url?: string })?.avatar_url ?? "",
-        },
-        message: ((c.commit as { message?: string })?.message ?? "").split(
-          "\n",
-        )[0],
-        date: (c.commit as { author?: { date?: string } })?.author?.date ?? "",
-      }));
-    } catch (e) {
-      error = String(e);
-    } finally {
-      loading = false;
-    }
-  });
+  async function loadCommits(): Promise<void> {
+    const raw = await listPRCommits(owner, repo, number);
+    commits = raw.map((c: Record<string, unknown>) => ({
+      sha: c.sha as string,
+      author: {
+        login:
+          (c.author as { login?: string })?.login ??
+          (c.commit as { author?: { name?: string } })?.author?.name ??
+          "unknown",
+        avatarUrl: (c.author as { avatar_url?: string })?.avatar_url ?? "",
+      },
+      message: ((c.commit as { message?: string })?.message ?? "").split(
+        "\n",
+      )[0],
+      date: (c.commit as { author?: { date?: string } })?.author?.date ?? "",
+    }));
+  }
 
   function shortSha(sha: string): string {
     return sha.substring(0, 7);
   }
 </script>
 
-{#if loading}
+{#await loadCommits()}
   <p class="status">Loading commits...</p>
-{:else if error}
-  <p class="status error">{error}</p>
-{:else}
+{:then}
   <div class="commits">
     {#each commits as commit (commit.sha)}
       <a
@@ -69,7 +58,9 @@
       <p class="status">No commits</p>
     {/if}
   </div>
-{/if}
+{:catch error}
+  <p class="status error">{error.message}</p>
+{/await}
 
 <style>
   .commit {

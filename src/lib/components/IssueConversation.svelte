@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { page } from "$app/stores";
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
@@ -36,10 +35,8 @@
   let { body }: { body: string | null } = $props();
 
   let threadedComments = $state<ThreadedComment[]>([]);
-  let loading = $state(true);
 
   let descriptionReactions = $state<ReactionData[]>([]);
-  let descReactionsLoading = $state(true);
 
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
@@ -59,28 +56,23 @@
     };
   }
 
-  onMount(async () => {
-    try {
-      const [issueComments, rawDescReactions] = await Promise.all([
-        listPRComments(owner, repo, number),
-        listIssueReactions(owner, repo, number),
-      ]);
-      const user = await getCurrentUser();
-      descriptionReactions = mapReactions(
-        rawDescReactions as Record<string, unknown>[],
-        user,
-      );
-      descReactionsLoading = false;
-      threadedComments = (issueComments as Record<string, unknown>[])
-        .map(toCommentData)
-        .map((c) => ({
-          ...c,
-          replies: [],
-        }));
-    } finally {
-      loading = false;
-    }
-  });
+async function loadConversation(): Promise<void> {
+    const [issueComments, rawDescReactions] = await Promise.all([
+      listPRComments(owner, repo, number),
+      listIssueReactions(owner, repo, number),
+    ]);
+    const user = await getCurrentUser();
+    descriptionReactions = mapReactions(
+      rawDescReactions as Record<string, unknown>[],
+      user,
+    );
+    threadedComments = (issueComments as Record<string, unknown>[])
+      .map(toCommentData)
+      .map((c) => ({
+        ...c,
+        replies: [],
+      }));
+  }
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
@@ -161,18 +153,18 @@
     <div class="description">
       <h3>Description</h3>
       <Markdown text={body} />
-      {#if !descReactionsLoading}
+{#await loadConversation() then}
         <Reactions
           reactions={descriptionReactions}
           commentId={-1}
           onreaction={onDescriptionReaction}
         />
-      {/if}
+      {/await}
     </div>
   {/if}
-  {#if loading}
+  {#await loadConversation()}
     <p class="status">Loading comments...</p>
-  {:else}
+  {:then}
     <div class="comments">
       {#each threadedComments as c (c.id)}
         <Comment
@@ -190,7 +182,9 @@
         <p class="status">No comments yet</p>
       {/if}
     </div>
-  {/if}
+  {:catch error}
+    <p class="status error">{error.message}</p>
+  {/await}
   <CommentInput onsubmit={postComment} />
 </div>
 

@@ -52,36 +52,31 @@
 
   let commentReactions = $state<ReactionData[]>([]);
   let replyReactions = $state<Map<number, ReactionData[]>>(new Map());
-  let reactionsLoading = $state(true);
 
-  onMount(async () => {
-    try {
-      const user = await getCurrentUser();
-      const fetchFn = comment.isReview
-        ? listReviewCommentReactions
-        : listCommentReactions;
-      const raw = await fetchFn(owner, repo, comment.id);
-      commentReactions = mapReactions(
-        raw as Record<string, unknown>[],
-        user,
+  async function loadReactions(): Promise<void> {
+    const user = await getCurrentUser();
+    const fetchFn = comment.isReview
+      ? listReviewCommentReactions
+      : listCommentReactions;
+    const raw = await fetchFn(owner, repo, comment.id);
+    commentReactions = mapReactions(
+      raw as Record<string, unknown>[],
+      user,
+    );
+    const repReactions = new Map<number, ReactionData[]>();
+    for (const reply of replies) {
+      const replyRaw = await listCommentReactions(
+        owner,
+        repo,
+        reply.id,
       );
-      const repReactions = new Map<number, ReactionData[]>();
-      for (const reply of replies) {
-        const replyRaw = await listCommentReactions(
-          owner,
-          repo,
-          reply.id,
-        );
-        repReactions.set(
-          reply.id,
-          mapReactions(replyRaw as Record<string, unknown>[], user),
-        );
-      }
-      replyReactions = repReactions;
-    } finally {
-      reactionsLoading = false;
+      repReactions.set(
+        reply.id,
+        mapReactions(replyRaw as Record<string, unknown>[], user),
+      );
     }
-  });
+    replyReactions = repReactions;
+  }
 
   async function handleReaction(
     commentId: number,
@@ -229,15 +224,17 @@
     {:else}
       <Markdown text={comment.body} />
     {/if}
-    {#if reactionsLoading}
+{#await loadReactions()}
       <span class="reactions-loading"></span>
-    {:else if commentReactions.length > 0 || onreaction}
-      <Reactions
-        reactions={commentReactions}
-        onreaction={handleReaction}
-        commentId={comment.id}
-      />
-    {/if}
+    {:then}
+      {#if commentReactions.length > 0 || onreaction}
+        <Reactions
+          reactions={commentReactions}
+          onreaction={handleReaction}
+          commentId={comment.id}
+        />
+      {/if}
+    {/await}
   </div>
   {#if replies.length > 0}
     <div class="replies">
@@ -302,13 +299,13 @@
             {:else}
               <Markdown text={reply.body} />
             {/if}
-            {#if !reactionsLoading}
+{#await loadReactions() then}
               <Reactions
                 reactions={replyReactions.get(reply.id) ?? []}
                 onreaction={handleReaction}
                 commentId={reply.id}
               />
-            {/if}
+            {/await}
           </div>
         </article>
       {/each}

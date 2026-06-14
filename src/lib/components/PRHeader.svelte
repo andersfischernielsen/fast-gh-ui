@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { PullRequest } from "$lib/stores/pr.svelte";
   import { updatePullRequest, listReviews } from "$lib/github/pulls";
-  import { onMount } from "svelte";
   import PRReviewActions from "./PRReviewActions.svelte";
 
   let {
@@ -18,33 +17,24 @@
 
   let approvals = $state(0);
   let changesRequested = $state(0);
-  let reviewsLoading = $state(false);
 
-  onMount(async () => {
-    reviewsLoading = true;
-    try {
-      const reviews = await listReviews(owner, repo, pr.number);
-      const latestByUser = new Map<string, string>();
-      for (const r of reviews) {
-        const user = (r.user as { login: string })?.login ?? "";
-        const state = r.state as string;
-        if (state === "APPROVED" || state === "CHANGES_REQUESTED") {
-          latestByUser.set(user, state);
-        }
+  async function loadReviews(): Promise<void> {
+    const reviews = await listReviews(owner, repo, pr.number);
+    const latestByUser = new Map<string, string>();
+    for (const r of reviews) {
+      const user = (r.user as { login: string })?.login ?? "";
+      const state = r.state as string;
+      if (state === "APPROVED" || state === "CHANGES_REQUESTED") {
+        latestByUser.set(user, state);
       }
-      approvals = [...latestByUser.values()].filter(
-        (s) => s === "APPROVED",
-      ).length;
-      changesRequested = [...latestByUser.values()].filter(
-        (s) => s === "CHANGES_REQUESTED",
-      ).length;
-    } catch {
-      approvals = 0;
-      changesRequested = 0;
-    } finally {
-      reviewsLoading = false;
     }
-  });
+    approvals = [...latestByUser.values()].filter(
+      (s) => s === "APPROVED",
+    ).length;
+    changesRequested = [...latestByUser.values()].filter(
+      (s) => s === "CHANGES_REQUESTED",
+    ).length;
+  }
 
   function startEditing() {
     editTitle = pr.title;
@@ -140,16 +130,16 @@
     <span>{pr.user.login}</span>
     <span class="branch-ref">{pr.head.ref} → {pr.base.ref}</span>
     <span class="review-summary">
-      {#if reviewsLoading}
+      {#await loadReviews()}
         <span class="review-loading">...</span>
-      {:else}
+      {:then}
         {#if approvals > 0}
           <span class="review-approved">✓ {approvals}</span>
         {/if}
         {#if changesRequested > 0}
           <span class="review-changes">✗ {changesRequested}</span>
         {/if}
-      {/if}
+      {/await}
     </span>
     <span class="stats"
       ><span class="add">+{pr.additions}</span>
