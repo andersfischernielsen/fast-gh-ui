@@ -589,19 +589,6 @@
     color: var(--text-secondary);
     padding-bottom: 6px;
   }
-  .extra-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .extra-toggle:hover {
-    color: var(--text-primary);
-  }
   .extra-comment {
     padding-top: 6px;
   }
