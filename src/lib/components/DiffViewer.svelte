@@ -21,15 +21,20 @@
     inlineComments = [],
     currentFile = "",
     headSha = "",
+    owner = "",
+    repo = "",
     onCreateComment,
     onUpdateComment,
     onDeleteComment,
     onReplyComment,
+    onreaction,
   }: {
     patch: string;
     inlineComments?: InlineCommentData[];
     currentFile?: string;
     headSha?: string;
+    owner?: string;
+    repo?: string;
     onCreateComment?: (
       startLine: number,
       endLine: number,
@@ -39,6 +44,12 @@
     onUpdateComment?: (commentId: number, body: string) => Promise<void>;
     onDeleteComment?: (commentId: number) => Promise<void>;
     onReplyComment?: (commentId: number, body: string) => Promise<void>;
+    onreaction?: (
+      commentId: number,
+      emoji: string,
+      remove: boolean,
+      reactionId?: number,
+    ) => Promise<void>;
   } = $props();
 
   let selecting = $state(false);
@@ -316,11 +327,15 @@
                       body: comment.body,
                       user: comment.user,
                       createdAt: comment.createdAt,
+                      isReview: true,
                     }}
                     replies={comment.replies}
+                    {owner}
+                    {repo}
                     onupdate={onUpdateComment}
                     ondelete={onDeleteComment}
                     onreply={onReplyComment}
+                    {onreaction}
                   />
                 </div>
               </td>

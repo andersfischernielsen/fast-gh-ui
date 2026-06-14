@@ -9,6 +9,8 @@
     createInlineComment,
     updateInlineComment,
     deleteInlineComment,
+    createReviewCommentReaction,
+    deleteReviewCommentReaction,
   } from "$lib/github/pulls";
 
   let { headSha: sha = "" }: { headSha?: string } = $props();
@@ -205,6 +207,24 @@
       return c;
     });
   }
+
+  async function onreaction(
+    commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    if (remove && reactionId) {
+      await deleteReviewCommentReaction(
+        owner,
+        repo,
+        commentId,
+        reactionId,
+      );
+    } else {
+      await createReviewCommentReaction(owner, repo, commentId, emoji);
+    }
+  }
 </script>
 
 {#if loading}
@@ -322,10 +342,13 @@
                 )}
                 currentFile={currentFile.filename}
                 headSha={sha}
+                {owner}
+                {repo}
                 {onCreateComment}
                 {onUpdateComment}
                 {onDeleteComment}
                 {onReplyComment}
+                {onreaction}
               />
             {:else}
               <p class="status">No diff available (binary file or too large)</p>

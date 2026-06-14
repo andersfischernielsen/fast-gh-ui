@@ -4,6 +4,7 @@
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
   import CommentInput from "./CommentInput.svelte";
+  import Reactions from "./Reactions.svelte";
   import {
     listPRComments,
     createPRComment,
@@ -14,8 +15,20 @@
     updateInlineComment,
     deleteInlineComment,
     updatePullRequest,
+    listIssueReactions,
+    listCommentReactions,
+    listReviewCommentReactions,
+    createIssueCommentReaction,
+    deleteIssueCommentReaction,
+    createReviewCommentReaction,
+    deleteReviewCommentReaction,
+    createIssueReaction,
+    deleteIssueReaction,
+    getCurrentUser,
+    mapReactions,
   } from "$lib/github/pulls";
   import { pr } from "$lib/stores/pr.svelte";
+  import type { ReactionData } from "$lib/types/comment";
 
   interface CommentData {
     id: number;
@@ -50,6 +63,11 @@
   let savingDesc = $state(false);
   let descError = $state<string | null>(null);
 
+  let descriptionReactions = $state<ReactionData[]>([]);
+  let descReactionsLoading = $state(true);
+
+  let reviewIds = new Set<number>();
+
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
@@ -74,6 +92,15 @@
         listPRComments(owner, repo, number),
         listInlineComments(owner, repo, number),
       ]);
+
+      const user = await getCurrentUser();
+
+      const rawDescReactions = await listIssueReactions(owner, repo, number);
+      descriptionReactions = mapReactions(
+        rawDescReactions as Record<string, unknown>[],
+        user,
+      );
+      descReactionsLoading = false;
 
       const issueItems: ThreadedComment[] = (
         issueComments as Record<string, unknown>[]
@@ -102,7 +129,9 @@
 
       const reviewThreads: ThreadedComment[] = rootReviews.map((rc) => {
         const id = rc.id as number;
+        reviewIds.add(id);
         const childReplies = replyMap.get(id) ?? [];
+        childReplies.forEach((r) => reviewIds.add(r.id as number));
         return {
           ...toCommentData(rc),
           replies: childReplies.map(toCommentData),
@@ -224,6 +253,51 @@
       .filter((tc) => tc.id !== commentId);
   }
 
+  async function onreaction(
+    commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    const isReview = reviewIds.has(commentId);
+    if (remove && reactionId) {
+      if (isReview) {
+        await deleteReviewCommentReaction(
+          owner,
+          repo,
+          commentId,
+          reactionId,
+        );
+      } else {
+        await deleteIssueCommentReaction(
+          owner,
+          repo,
+          commentId,
+          reactionId,
+        );
+      }
+    } else {
+      if (isReview) {
+        await createReviewCommentReaction(owner, repo, commentId, emoji);
+      } else {
+        await createIssueCommentReaction(owner, repo, commentId, emoji);
+      }
+    }
+  }
+
+  async function onDescriptionReaction(
+    _commentId: number,
+    emoji: string,
+    remove: boolean,
+    reactionId?: number,
+  ) {
+    if (remove && reactionId) {
+      await deleteIssueReaction(owner, repo, number, reactionId);
+    } else {
+      await createIssueReaction(owner, repo, number, emoji);
+    }
+  }
+
   function startEditDescription() {
     editDescBody = body ?? "";
     editingDesc = true;
@@ -295,6 +369,13 @@
       {:else}
         <Markdown text={body} />
       {/if}
+      {#if !descReactionsLoading}
+        <Reactions
+          reactions={descriptionReactions}
+          commentId={-1}
+          onreaction={onDescriptionReaction}
+        />
+      {/if}
     </div>
   {/if}
   {#if loading}
@@ -305,9 +386,12 @@
         <Comment
           comment={c}
           replies={c.replies}
+          {owner}
+          {repo}
           onreply={replyToComment}
           onupdate={onUpdateComment}
           ondelete={onDeleteComment}
+          {onreaction}
         />
       {/each}
       {#if threadedComments.length === 0}
