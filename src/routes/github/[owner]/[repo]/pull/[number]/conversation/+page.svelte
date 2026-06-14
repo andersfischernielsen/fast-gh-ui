@@ -4,5 +4,5 @@
 </script>
 
 {#if pr.value}
-  <Conversation body={pr.value.body} />
+  <Conversation body={pr.value.body} editable />
 {/if}

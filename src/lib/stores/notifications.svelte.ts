@@ -22,8 +22,6 @@ interface NotificationItem {
 }
 
 const notifications = $state({ value: [] as NotificationItem[] });
-const loading = $state({ value: false });
-const error = $state({ value: null as string | null });
 let prStates = $state<Record<string, string>>({});
 
 function mapNotification(raw: {
@@ -68,22 +66,20 @@ function mapNotification(raw: {
   };
 }
 
-async function loadNotifications(): Promise<void> {
-  loading.value = true;
-  error.value = null;
+async function loadNotifications(): Promise<NotificationItem[]> {
   try {
     const raw = await fetchNotifications({ all: true, perPage: 50 });
-    notifications.value = raw.map(mapNotification);
+    const items = raw.map(mapNotification);
+    notifications.value = items;
+    return items;
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to load notifications";
     if (msg.includes("403") || msg.includes("Resource not accessible")) {
-      error.value =
-        "Token does not have Notifications permission. Ensure the token has Notifications (Read) under Account Permissions — not Repository Permissions.";
-    } else {
-      error.value = msg;
+      throw new Error(
+        "Token does not have Notifications permission. Ensure the token has Notifications (Read) under Account Permissions — not Repository Permissions.",
+      );
     }
-  } finally {
-    loading.value = false;
+    throw e;
   }
 }
 
@@ -102,5 +98,5 @@ async function markAsRead(threadId: string): Promise<void> {
   }
 }
 
-export { notifications, loading, error, prStates, loadNotifications, setPRState, markAsRead };
+export { notifications, prStates, loadNotifications, setPRState, markAsRead };
 export type { NotificationItem };
