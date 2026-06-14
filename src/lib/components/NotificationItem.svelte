@@ -6,12 +6,12 @@
     item,
     selected = false,
     href,
-    prState = undefined,
+    prStateKey = null,
   }: {
     item: NotificationItem;
     selected?: boolean;
     href: string;
-    prState?: string;
+    prStateKey?: string | null;
   } = $props();
 
   function getTypeBadge(type: string): string {
@@ -55,14 +55,6 @@
   </span>
   <span class="meta">
     <span class="badge">{getTypeBadge(item.subject.type)}</span>
-    {#if prState}
-      <span
-        class="pr-state"
-        class:open={prState === "open"}
-        class:merged={prState === "merged"}
-        class:closed={prState === "closed"}>{prState}</span
-      >
-    {/if}
     <span class="time">{formatTime(item.updatedAt)}</span>
   </span>
   {#if item.unread}
@@ -155,25 +147,6 @@
     border-radius: 10px;
     background: var(--bg-selected);
     color: var(--text-link);
-  }
-  .pr-state {
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 10px;
-    font-weight: 600;
-    text-transform: capitalize;
-  }
-  .pr-state.open {
-    background: var(--state-open-bg);
-    color: var(--text-success);
-  }
-  .pr-state.merged {
-    background: var(--state-merged-bg);
-    color: var(--state-merged-text);
-  }
-  .pr-state.closed {
-    background: var(--state-closed-bg);
-    color: var(--text-danger);
   }
   .time {
     font-size: 12px;

@@ -1,7 +1,6 @@
 import { error } from "@sveltejs/kit";
 import { githubErrorMessage } from "$lib/server/auth";
 import { fetchNotifications, markThreadAsRead } from "$lib/server/github/notifications";
-import { fetchPullRequest } from "$lib/server/github/pulls";
 import type { NotificationItem } from "$lib/types/notification";
 import type { PageServerLoad, Actions } from "./$types";
 
@@ -21,27 +20,7 @@ export const load: PageServerLoad = ({ locals }) => {
     throw error(500, msg);
   });
 
-  const prStates: Promise<Record<string, string>> = notifications.then(async (items) => {
-    const prItems = items.filter((n) => n.subject.type === "PullRequest");
-    const entries = await Promise.all(
-      prItems.map(async (n) => {
-        const match = n.subject.url.match(/repos\/([^/]+)\/([^/]+)\/pulls\/(\d+)/);
-        if (!match) return null;
-        const [, owner, repo, num] = match;
-        const key = `${owner}/${repo}#${num}`;
-        try {
-          const pr = await fetchPullRequest(token, owner, repo, parseInt(num));
-          const state = pr.state === "closed" && pr.merged ? "merged" : pr.state;
-          return [key, state] as [string, string];
-        } catch {
-          return null;
-        }
-      }),
-    );
-    return Object.fromEntries(entries.filter((e): e is [string, string] => e !== null));
-  });
-
-  return { notifications, prStates };
+  return { notifications };
 };
 
 export const actions: Actions = {

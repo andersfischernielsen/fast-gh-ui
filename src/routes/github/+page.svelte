@@ -10,13 +10,6 @@
   let selectedId = $state<string | null>(null);
   let repoFilter = $state<string | null>(null);
   let unreadFilter = $state<"all" | "unread" | "read">("all");
-  let prStates = $state<Record<string, string>>({});
-
-  $effect(() => {
-    data.prStates.then((states: Record<string, string>) => {
-      prStates = states;
-    });
-  });
 
   function refresh() {
     invalidateAll();
@@ -97,7 +90,7 @@
               {item}
               selected={selectedId === item.id}
               href={prHref(item)}
-              prState={prStateKey(item) ? prStates[prStateKey(item)!] : undefined}
+              prStateKey={prStateKey(item)}
             />
           {/each}
         </div>
