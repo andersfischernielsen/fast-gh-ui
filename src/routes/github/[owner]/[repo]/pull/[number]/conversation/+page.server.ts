@@ -1,5 +1,5 @@
 import { error, fail } from "@sveltejs/kit";
-import { githubErrorMessage } from "$lib/server/auth";
+import { githubErrorMessage, getCurrentUser } from "$lib/server/auth";
 import { getFormValue } from "$lib/server/forms";
 import {
   listPRComments,
@@ -13,21 +13,35 @@ import {
   deletePRComment,
   deleteInlineComment,
   updatePullRequest,
+  createIssueCommentReaction,
+  deleteIssueCommentReaction,
+  createReviewCommentReaction,
+  deleteReviewCommentReaction,
+  createIssueReaction,
+  deleteIssueReaction,
 } from "$lib/server/github/pulls";
 import type { CommentData, ReactionData, ReviewCommentData } from "$lib/types/comment";
 import type { Actions, PageServerLoad } from "./$types";
 
-function mapReactions(raw: Record<string, unknown>[]): ReactionData[] {
-  const grouped = new Map<string, string[]>();
+function mapReactions(raw: Record<string, unknown>[], currentUser: string): ReactionData[] {
+  const grouped = new Map<string, { authors: string[]; userReactionId?: number }>();
   for (const r of raw) {
     const emoji = (r.content as string) ?? "";
     const author = (r.user as { login?: string } | undefined)?.login ?? "";
+    const reactionId = r.id as number;
     if (!emoji) continue;
-    const list = grouped.get(emoji) ?? [];
-    list.push(author);
-    grouped.set(emoji, list);
+    const entry = grouped.get(emoji) ?? { authors: [] };
+    entry.authors.push(author);
+    if (author === currentUser) {
+      entry.userReactionId = reactionId;
+    }
+    grouped.set(emoji, entry);
   }
-  return Array.from(grouped.entries()).map(([emoji, authors]) => ({ emoji, authors }));
+  return Array.from(grouped.entries()).map(([emoji, { authors, userReactionId }]) => ({
+    emoji,
+    authors,
+    userReactionId,
+  }));
 }
 
 function mapComment(
@@ -35,6 +49,7 @@ function mapComment(
   token: string,
   owner: string,
   repo: string,
+  currentUser: string,
 ): CommentData {
   const id = raw.id as number;
   return {
@@ -48,7 +63,7 @@ function mapComment(
     updatedAt: raw.updated_at as string,
     htmlUrl: raw.html_url as string,
     reactions: listCommentReactions(token, owner, repo, id)
-      .then(mapReactions)
+      .then((r) => mapReactions(r, currentUser))
       .catch(() => []),
   };
 }
@@ -58,6 +73,7 @@ function mapReviewComment(
   token: string,
   owner: string,
   repo: string,
+  currentUser: string,
 ): ReviewCommentData {
   const id = raw.id as number;
   return {
@@ -76,7 +92,7 @@ function mapReviewComment(
     originalLine: (raw.original_line as number | null) ?? null,
     inReplyToId: (raw.in_reply_to_id as number | null) ?? null,
     reactions: listReviewCommentReactions(token, owner, repo, id)
-      .then(mapReactions)
+      .then((r) => mapReactions(r, currentUser))
       .catch(() => []),
   };
 }
@@ -86,9 +102,10 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
   const { owner, repo } = params;
   const number = Number(params.number);
   const { pr } = await parent();
+  const currentUser = await getCurrentUser(token);
 
   const comments: Promise<CommentData[]> = listPRComments(token, owner, repo, number)
-    .then((raw) => raw.map((c) => mapComment(c, token, owner, repo)))
+    .then((raw) => raw.map((c) => mapComment(c, token, owner, repo, currentUser)))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });
@@ -99,7 +116,7 @@ export const load: PageServerLoad = async ({ params, locals, parent }) => {
     repo,
     number,
   )
-    .then((raw) => raw.map((c) => mapReviewComment(c, token, owner, repo)))
+    .then((raw) => raw.map((c) => mapReviewComment(c, token, owner, repo, currentUser)))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });
@@ -177,6 +194,50 @@ export const actions: Actions = {
       title: title || undefined,
       body: body || undefined,
     });
+    return {};
+  },
+  react: async ({ request, locals, params }) => {
+    const token = locals.token!;
+    const data = await request.formData();
+    const commentId = Number(data.get("commentId"));
+    const emoji = getFormValue(data, "emoji");
+    const isReview = data.get("isReview") === "true";
+    const remove = data.get("remove") === "true";
+    const reactionId = data.get("reactionId") ? Number(data.get("reactionId")) : undefined;
+    if (!commentId || !emoji) return fail(400, { error: "Invalid input" });
+    if (remove && reactionId) {
+      if (isReview) {
+        await deleteReviewCommentReaction(token, params.owner, params.repo, commentId, reactionId);
+      } else {
+        await deleteIssueCommentReaction(token, params.owner, params.repo, commentId, reactionId);
+      }
+    } else {
+      if (isReview) {
+        await createReviewCommentReaction(token, params.owner, params.repo, commentId, emoji);
+      } else {
+        await createIssueCommentReaction(token, params.owner, params.repo, commentId, emoji);
+      }
+    }
+    return {};
+  },
+  reactDescription: async ({ request, locals, params }) => {
+    const token = locals.token!;
+    const data = await request.formData();
+    const emoji = getFormValue(data, "emoji");
+    const remove = data.get("remove") === "true";
+    const reactionId = data.get("reactionId") ? Number(data.get("reactionId")) : undefined;
+    if (!emoji) return fail(400, { error: "Invalid input" });
+    if (remove && reactionId) {
+      await deleteIssueReaction(
+        token,
+        params.owner,
+        params.repo,
+        Number(params.number),
+        reactionId,
+      );
+    } else {
+      await createIssueReaction(token, params.owner, params.repo, Number(params.number), emoji);
+    }
     return {};
   },
 };

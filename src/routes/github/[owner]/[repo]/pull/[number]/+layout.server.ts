@@ -1,15 +1,44 @@
 import { error } from "@sveltejs/kit";
-import { githubErrorMessage } from "$lib/server/auth";
-import { fetchPullRequest, listReviews } from "$lib/server/github/pulls";
+import { githubErrorMessage, getCurrentUser } from "$lib/server/auth";
+import { fetchPullRequest, listReviews, listIssueReactions } from "$lib/server/github/pulls";
 import type { PullRequest } from "$lib/types/pullRequest";
+import type { ReactionData } from "$lib/types/comment";
 import type { ReviewData } from "$lib/types/review";
 import type { LayoutServerLoad } from "./$types";
 
 export type { ReviewData };
 
-function mapPullRequest(raw: Awaited<ReturnType<typeof fetchPullRequest>>): PullRequest {
+function mapReactions(raw: Record<string, unknown>[], currentUser: string): ReactionData[] {
+  const grouped = new Map<string, { authors: string[]; userReactionId?: number }>();
+  for (const r of raw) {
+    const emoji = (r.content as string) ?? "";
+    const author = (r.user as { login?: string } | undefined)?.login ?? "";
+    const reactionId = r.id as number;
+    if (!emoji) continue;
+    const entry = grouped.get(emoji) ?? { authors: [] };
+    entry.authors.push(author);
+    if (author === currentUser) {
+      entry.userReactionId = reactionId;
+    }
+    grouped.set(emoji, entry);
+  }
+  return Array.from(grouped.entries()).map(([emoji, { authors, userReactionId }]) => ({
+    emoji,
+    authors,
+    userReactionId,
+  }));
+}
+
+function mapPullRequest(
+  raw: Awaited<ReturnType<typeof fetchPullRequest>>,
+  token: string,
+  owner: string,
+  repo: string,
+  currentUser: string,
+): PullRequest {
+  const number = raw.number;
   return {
-    number: raw.number,
+    number,
     title: raw.title,
     state: raw.state,
     body: raw.body,
@@ -27,6 +56,9 @@ function mapPullRequest(raw: Awaited<ReturnType<typeof fetchPullRequest>>): Pull
     additions: raw.additions ?? 0,
     deletions: raw.deletions ?? 0,
     changedFiles: raw.changed_files ?? 0,
+    reactions: listIssueReactions(token, owner, repo, number)
+      .then((r) => mapReactions(r, currentUser))
+      .catch(() => []),
   };
 }
 
@@ -43,8 +75,10 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
   const { owner, repo } = params;
   const number = Number(params.number);
 
+  const currentUser = await getCurrentUser(token);
+
   const pr: Promise<PullRequest> = fetchPullRequest(token, owner, repo, number)
-    .then(mapPullRequest)
+    .then((raw) => mapPullRequest(raw, token, owner, repo, currentUser))
     .catch((e: unknown) => {
       throw error(500, githubErrorMessage(e));
     });
@@ -53,5 +87,5 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
     .then((raw) => raw.map(mapReview))
     .catch(() => []);
 
-  return { pr, reviews, owner, repo, number };
+  return { pr, reviews, owner, repo, number, currentUser };
 };
