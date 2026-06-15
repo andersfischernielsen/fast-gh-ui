@@ -34,6 +34,7 @@
     createdAt: string;
     updatedAt: string;
     htmlUrl: string;
+    isReview?: boolean;
   }
 
   type EntryKind = "issue" | "inline-thread" | "review-summary";
@@ -144,6 +145,7 @@
       byId.set(id, {
         kind: "inline-thread",
         ...toCommentData(c),
+        isReview: true,
         replies: [],
         commitId: c.commit_id as string,
         path: c.path as string,
@@ -160,7 +162,7 @@
       const parent = byId.get(r.in_reply_to_id as number);
       if (!parent) continue;
       reviewIds.add(r.id as number);
-      parent.replies.push(toCommentData(r));
+      parent.replies.push({ ...toCommentData(r), isReview: true });
     }
     return [...byId.values()];
   }

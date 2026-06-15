@@ -10,8 +10,11 @@
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
+  import { browser } from "$app/environment";
 
-  let pages = $state<Promise<{ hasMore: boolean }>[]>([loadNotifications(1)]);
+  let pages = $state<Promise<{ hasMore: boolean }>[]>([
+    browser ? loadNotifications(1) : new Promise<{ hasMore: boolean }>(() => {}),
+  ]);
 
   let selectedId = $state<string | null>(null);
   let repoFilter = $derived($page.url.searchParams.get("repository"));
