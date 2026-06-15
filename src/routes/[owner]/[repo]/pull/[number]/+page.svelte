@@ -8,7 +8,7 @@
   let number = $derived($page.params.number);
 
   onMount(() => {
-    goto(`/github/${owner}/${repo}/issues/${number}/conversation`, {
+    goto(`/${owner}/${repo}/pull/${number}/conversation`, {
       replaceState: true,
     });
   });

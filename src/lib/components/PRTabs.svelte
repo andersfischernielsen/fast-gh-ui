@@ -2,7 +2,7 @@
   import { page } from "$app/stores";
 
   let base = $derived(
-    `/github/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`,
+    `/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`,
   );
   let active = $derived($page.route.id?.split("/").pop() ?? "conversation");
 </script>

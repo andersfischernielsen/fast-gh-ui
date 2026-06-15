@@ -20,7 +20,7 @@
       const octokit = new Octokit({ auth: trimmed });
       await octokit.rest.users.getAuthenticated();
       setToken(trimmed);
-      goto("/github");
+      goto("/");
     } catch {
       error = "Invalid token. Check your personal access token.";
     } finally {

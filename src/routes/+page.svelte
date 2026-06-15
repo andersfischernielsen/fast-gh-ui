@@ -56,13 +56,13 @@
       /repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/,
     );
     if (match) {
-      return `/github/${match[1]}/${match[2]}/pull/${match[3]}`;
+      return `/${match[1]}/${match[2]}/pull/${match[3]}`;
     }
     const issueMatch = item.subject.url.match(
       /repos\/([^/]+)\/([^/]+)\/issues\/(\d+)/,
     );
     if (issueMatch) {
-      return `/github/${issueMatch[1]}/${issueMatch[2]}/issues/${issueMatch[3]}`;
+      return `/${issueMatch[1]}/${issueMatch[2]}/issues/${issueMatch[3]}`;
     }
     return "#";
   }
