@@ -8,7 +8,7 @@
   import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
 
-  let notificationsPromise = $state(loadNotifications());
+  let pages = $state<Promise<{ hasMore: boolean }>[]>([loadNotifications(1)]);
 
   let selectedId = $state<string | null>(null);
   let repoFilter = $state<string | null>(null);
@@ -23,7 +23,20 @@
     }),
   );
 
-  $effect(() => useShortcut("r", () => { notificationsPromise = loadNotifications(); }, { shift: true }));
+  function refresh() {
+    pages = [loadNotifications(1)];
+  }
+
+  $effect(() => useShortcut("r", refresh, { shift: true }));
+
+  function lazySentinel(node: HTMLElement) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting)
+        pages = [...pages, loadNotifications(pages.length + 1)];
+    });
+    observer.observe(node);
+    return { destroy() { observer.disconnect(); } };
+  }
 
   function prHref(item: NotificationItemType): string {
     const match = item.subject.url.match(
@@ -53,7 +66,7 @@
 </script>
 
 <svelte:head>
-  <title>Fast GH UI</title>
+  <title>Fast GH</title>
 </svelte:head>
 
 <div class="app-shell">
@@ -74,17 +87,17 @@
           <option value="unread">Unread</option>
           <option value="read">Read</option>
         </select>
-        <button onclick={() => { notificationsPromise = loadNotifications(); }}
+        <button onclick={refresh}
           >Refresh <span class="shortcut-hint"
             >{shortcutHint("R", { shift: true })}</span
           ></button
         >
       </div>
     </div>
-    {#await notificationsPromise}
+    {#await pages[0]}
       <p class="status">Loading...</p>
     {:then}
-      {#if filtered.length === 0}
+      {#if filtered.length === 0 && pages.length === 1}
         <p class="status">No notifications</p>
       {:else}
         <div class="list">
@@ -96,6 +109,16 @@
               prStateKey={prStateKey(item)}
             />
           {/each}
+          {#each pages.slice(1) as p}
+            {#await p}
+              <p class="status">Loading...</p>
+            {:then}{/await}
+          {/each}
+          {#await pages[pages.length - 1] then result}
+            {#if result.hasMore}
+              <div use:lazySentinel></div>
+            {/if}
+          {/await}
         </div>
       {/if}
     {:catch error}

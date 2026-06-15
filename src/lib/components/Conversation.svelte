@@ -41,18 +41,15 @@
 
   let { body, editable = false }: { body: string | null; editable?: boolean } = $props();
 
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 50;
 
-  // One promise per page — {#await} handles the loading state for each
   let pages = $state<Promise<ThreadedComment[]>[]>([]);
 
-  // Mutation overlays applied on top of resolved page data
   let localComments = $state<ThreadedComment[]>([]);
   let deletedIds = $state(new Set<number>());
   let patchedBodies = $state(new Map<number, string>());
   let addedReplies = $state(new Map<number, CommentData[]>());
 
-  // Non-reactive lookup used for API routing on mutations
   let commentIndex = new Map<number, ThreadedComment>();
   let reviewIds = new Set<number>();
 
@@ -133,7 +130,6 @@
     return { destroy() { observer.disconnect(); } };
   }
 
-  // Applies mutation overlays to a comment before rendering
   function withOverlays(c: ThreadedComment): { comment: ThreadedComment; replies: CommentData[] } {
     return {
       comment: { ...c, body: patchedBodies.get(c.id) ?? c.body },

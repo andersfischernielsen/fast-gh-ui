@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-  <title>Fast GH UI</title>
+  <title>Fast GH</title>
 </svelte:head>
 
 {@render children()}

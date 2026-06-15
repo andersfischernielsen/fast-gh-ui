@@ -65,12 +65,18 @@ function mapNotification(raw: {
   };
 }
 
-async function loadNotifications(): Promise<NotificationItem[]> {
+const PAGE_SIZE = 50;
+
+async function loadNotifications(page = 1): Promise<{ hasMore: boolean }> {
   try {
-    const raw = await fetchNotifications({ all: true, perPage: 50 });
+    const raw = await fetchNotifications({ all: true, perPage: PAGE_SIZE, page });
     const items = raw.map(mapNotification);
-    notifications.value = items;
-    return items;
+    if (page === 1) {
+      notifications.value = items;
+    } else {
+      notifications.value = [...notifications.value, ...items];
+    }
+    return { hasMore: items.length === PAGE_SIZE };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Failed to load notifications";
     if (msg.includes("403") || msg.includes("Resource not accessible")) {

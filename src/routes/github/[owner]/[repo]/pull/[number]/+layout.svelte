@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-  <title>{pr.value ? `#${pr.value.number} ${pr.value.title}` : 'Fast GH UI'}</title>
+  <title>{pr.value ? `#${pr.value.number} ${pr.value.title}` : 'Fast GH'}</title>
 </svelte:head>
 
 <div class="page">

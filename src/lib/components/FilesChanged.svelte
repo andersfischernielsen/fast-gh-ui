@@ -44,7 +44,6 @@
 
   type InlineComment = (typeof inlineComments)[number];
 
-  // Non-reactive map used to thread replies incrementally across pages
   let commentMap = new Map<number, InlineComment>();
 
   function processCommentBatch(rawBatch: Record<string, unknown>[]): void {

@@ -54,7 +54,7 @@
 </script>
 
 <svelte:head>
-  <title>{issueData ? `#${issueData.number} ${issueData.title}` : 'Fast GH UI'}</title>
+  <title>{issueData ? `#${issueData.number} ${issueData.title}` : 'Fast GH'}</title>
 </svelte:head>
 
 <div class="page">
