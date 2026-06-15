@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import FileTree from "./FileTree.svelte";
+  import FileTreeSkeleton from "./FileTreeSkeleton.svelte";
   import DiffViewer from "./DiffViewer.svelte";
   import Comment from "./Comment.svelte";
   import {
@@ -14,6 +15,14 @@
   } from "$lib/github/pulls";
 
   let { headSha: sha = "" }: { headSha?: string } = $props();
+
+  interface PRFile {
+    filename: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    patch?: string;
+  }
 
   let files = $state<PRFile[]>([]);
   let selectedFile = $state<string | null>(null);
@@ -141,6 +150,7 @@
       isSingleLine ? undefined : startLine,
       isSingleLine ? undefined : startSide,
     );
+    if (!comment) return;
     inlineComments = [
       ...inlineComments,
       {
@@ -202,6 +212,7 @@
       undefined,
       commentId,
     );
+    if (!comment) return;
     inlineComments = inlineComments.map((c) => {
       if (c.id === commentId) {
         return {
@@ -245,7 +256,16 @@
 </script>
 
 {#await loadFiles()}
-  <p class="status">Loading files...</p>
+  <div class="files-changed-container">
+    <div class="files-changed">
+      <div class="tree-wrapper tree-open">
+        <FileTreeSkeleton />
+      </div>
+      <div class="diff-panel">
+        <p class="status">Loading files...</p>
+      </div>
+    </div>
+  </div>
 {:then}
   <div class="files-changed-container">
     <button class="tree-trigger" onclick={() => (showTree = !showTree)}>

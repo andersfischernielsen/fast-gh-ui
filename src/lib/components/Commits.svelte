@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { listPRCommits } from "$lib/github/pulls";
+  import CommitSkeleton from "./CommitSkeleton.svelte";
 
   interface PRCommit {
     sha: string;
@@ -39,7 +40,9 @@
 </script>
 
 {#await loadCommits()}
-  <p class="status">Loading commits...</p>
+  <div class="commits">
+    <CommitSkeleton />
+  </div>
 {:then}
   <div class="commits">
     {#each commits as commit (commit.sha)}

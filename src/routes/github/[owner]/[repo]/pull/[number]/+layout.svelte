@@ -2,8 +2,10 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
-  import { pr, loading, error, loadPR } from "$lib/stores/pr.svelte";
+  import { pr, error, loadPR } from "$lib/stores/pr.svelte";
+  import { notifications } from "$lib/stores/notifications.svelte";
   import PRHeader from "$lib/components/PRHeader.svelte";
+  import PRHeaderSkeleton from "$lib/components/PRHeaderSkeleton.svelte";
   import PRTabs from "$lib/components/PRTabs.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
 
@@ -12,6 +14,20 @@
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
+
+  let cachedTitle = $derived(
+    notifications.value.find((n) => {
+      const m = n.subject.url.match(
+        /repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/,
+      );
+      return (
+        m &&
+        m[1] === owner &&
+        m[2] === repo &&
+        Number(m[3]) === number
+      );
+    })?.subject.title ?? null,
+  );
 
   onMount(() => {
     loadPR(owner, repo, number);
@@ -31,17 +47,13 @@
 </svelte:head>
 
 <div class="page">
-  {#if loading.value}
-    <p class="status">Loading PR...</p>
-  {:else if error.value}
-    <p class="status error">{error.value}</p>
-  {:else if pr.value}
-    <div class="top-bar">
-      <a class="back-btn" href="/github"
-        >← Notifications <span class="shortcut-hint"
-          >{shortcutHint("H", { shift: true })}</span
-        ></a
-      >
+  <div class="top-bar">
+    <a class="back-btn" href="/github"
+      >← Notifications <span class="shortcut-hint"
+        >{shortcutHint("H", { shift: true })}</span
+      ></a
+    >
+    {#if pr.value}
       <a
         class="github-btn"
         href={pr.value.htmlUrl}
@@ -51,8 +63,28 @@
           >{shortcutHint("G", { shift: true })}</span
         ></a
       >
-    </div>
+    {:else}
+      <a
+        class="github-btn"
+        href={`https://github.com/${owner}/${repo}/pull/${number}`}
+        target="_blank"
+        rel="noopener"
+        >Open on GitHub ↗<span class="shortcut-hint"
+          >{shortcutHint("G", { shift: true })}</span
+        ></a
+      >
+    {/if}
+  </div>
+  {#if error.value}
+    <p class="status error">{error.value}</p>
+  {:else if pr.value}
     <PRHeader pr={pr.value} {owner} {repo} />
+    <PRTabs />
+    <div class="tab-content">
+      {@render children()}
+    </div>
+  {:else}
+    <PRHeaderSkeleton {owner} {repo} {number} title={cachedTitle} />
     <PRTabs />
     <div class="tab-content">
       {@render children()}
