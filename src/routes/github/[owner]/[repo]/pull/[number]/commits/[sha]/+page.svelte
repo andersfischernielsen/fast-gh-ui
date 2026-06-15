@@ -30,6 +30,7 @@
   let sha = $derived($page.params.sha);
 
   async function loadCommit(): Promise<void> {
+    if (!owner || !repo || !sha) return;
     const raw = await fetchCommit(owner, repo, sha);
     const authorLogin =
       (raw.author as { login?: string })?.login ??

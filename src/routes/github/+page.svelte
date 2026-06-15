@@ -4,15 +4,28 @@
     loadNotifications,
   } from "$lib/stores/notifications.svelte";
   import NotificationItem from "$lib/components/NotificationItem.svelte";
+  import NotificationItemSkeleton from "$lib/components/NotificationItemSkeleton.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+  import { browser } from "$app/environment";
 
-  let notificationsPromise = $state(loadNotifications());
+  let pages = $state<Promise<{ hasMore: boolean }>[]>([
+    browser ? loadNotifications(1) : new Promise<{ hasMore: boolean }>(() => {}),
+  ]);
 
   let selectedId = $state<string | null>(null);
-  let repoFilter = $state<string | null>(null);
+  let repoFilter = $derived($page.url.searchParams.get("repository"));
   let unreadFilter = $state<"all" | "unread" | "read">("all");
+
+  function setRepoFilter(repo: string | null) {
+    const url = new URL($page.url);
+    if (repo) url.searchParams.set("repository", repo);
+    else url.searchParams.delete("repository");
+    goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+  }
 
   let filtered = $derived(
     notifications.value.filter((n) => {
@@ -23,7 +36,20 @@
     }),
   );
 
-  $effect(() => useShortcut("r", () => { notificationsPromise = loadNotifications(); }, { shift: true }));
+  function refresh() {
+    pages = [loadNotifications(1)];
+  }
+
+  $effect(() => useShortcut("r", refresh, { shift: true }));
+
+  function lazySentinel(node: HTMLElement) {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting)
+        pages = [...pages, loadNotifications(pages.length + 1)];
+    });
+    observer.observe(node);
+    return { destroy() { observer.disconnect(); } };
+  }
 
   function prHref(item: NotificationItemType): string {
     const match = item.subject.url.match(
@@ -53,11 +79,11 @@
 </script>
 
 <svelte:head>
-  <title>Fast GH UI</title>
+  <title>Fast GH</title>
 </svelte:head>
 
 <div class="app-shell">
-  <Sidebar onfilterchange={(repo) => (repoFilter = repo)} />
+  <Sidebar selected={repoFilter} onfilterchange={setRepoFilter} />
   <div class="list-panel">
     <div class="list-header">
       <div class="header-actions">
@@ -74,17 +100,19 @@
           <option value="unread">Unread</option>
           <option value="read">Read</option>
         </select>
-        <button onclick={() => { notificationsPromise = loadNotifications(); }}
+        <button onclick={refresh}
           >Refresh <span class="shortcut-hint"
             >{shortcutHint("R", { shift: true })}</span
           ></button
         >
       </div>
     </div>
-    {#await notificationsPromise}
-      <p class="status">Loading...</p>
+    {#await pages[0]}
+      <div class="list">
+        <NotificationItemSkeleton count={8} />
+      </div>
     {:then}
-      {#if filtered.length === 0}
+      {#if filtered.length === 0 && pages.length === 1}
         <p class="status">No notifications</p>
       {:else}
         <div class="list">
@@ -96,6 +124,16 @@
               prStateKey={prStateKey(item)}
             />
           {/each}
+          {#each pages.slice(1) as p}
+            {#await p}
+              <NotificationItemSkeleton count={3} />
+            {:then}{/await}
+          {/each}
+          {#await pages[pages.length - 1] then result}
+            {#if result.hasMore}
+              <div use:lazySentinel></div>
+            {/if}
+          {/await}
         </div>
       {/if}
     {:catch error}

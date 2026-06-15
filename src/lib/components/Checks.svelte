@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { listChecks } from "$lib/github/pulls";
+  import CheckSkeleton from "./CheckSkeleton.svelte";
 
   interface CheckRun {
     id: number;
@@ -49,7 +50,9 @@
 </script>
 
 {#await loadChecks()}
-  <p class="status">Loading checks...</p>
+  <div class="checks-panel">
+    <CheckSkeleton />
+  </div>
 {:then}
   <div class="checks-panel">
     {#if checkRuns.length === 0}

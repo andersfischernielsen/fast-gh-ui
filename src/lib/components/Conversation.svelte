@@ -3,6 +3,7 @@
   import { untrack } from "svelte";
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
+  import CommentSkeleton from "./CommentSkeleton.svelte";
   import CommentInput from "./CommentInput.svelte";
   import DiffSnippet from "./DiffSnippet.svelte";
   import Reactions from "./Reactions.svelte";
@@ -33,6 +34,7 @@
     createdAt: string;
     updatedAt: string;
     htmlUrl: string;
+    isReview?: boolean;
   }
 
   type EntryKind = "issue" | "inline-thread" | "review-summary";
@@ -53,7 +55,7 @@
 
   let { body, editable = false }: { body: string | null; editable?: boolean } = $props();
 
-  const PAGE_SIZE = 20;
+  const PAGE_SIZE = 50;
 
   let timelineEntries = $state<ThreadedComment[]>([]);
   let inlineThreads = $state<ThreadedComment[]>([]);
@@ -62,13 +64,11 @@
   let pageError = $state<string | null>(null);
   let loadingPage = $state(false);
 
-  // Mutation overlays applied on top of merged entries
   let localComments = $state<ThreadedComment[]>([]);
   let deletedIds = $state(new Set<number>());
   let patchedBodies = $state(new Map<number, string>());
   let addedReplies = $state(new Map<number, CommentData[]>());
 
-  // Non-reactive lookup used for API routing on mutations
   let commentIndex = new Map<number, ThreadedComment>();
   let reviewIds = new Set<number>();
 
@@ -145,6 +145,7 @@
       byId.set(id, {
         kind: "inline-thread",
         ...toCommentData(c),
+        isReview: true,
         replies: [],
         commitId: c.commit_id as string,
         path: c.path as string,
@@ -161,7 +162,7 @@
       const parent = byId.get(r.in_reply_to_id as number);
       if (!parent) continue;
       reviewIds.add(r.id as number);
-      parent.replies.push(toCommentData(r));
+      parent.replies.push({ ...toCommentData(r), isReview: true });
     }
     return [...byId.values()];
   }
@@ -305,7 +306,6 @@
     return `${prefix}${end}`;
   }
 
-  // Applies mutation overlays to a comment before rendering
   function withOverlays(c: ThreadedComment): { comment: ThreadedComment; replies: CommentData[] } {
     return {
       comment: { ...c, body: patchedBodies.get(c.id) ?? c.body },
@@ -543,7 +543,7 @@
       {/if}
     {/each}
     {#if loadingPage}
-      <p class="status">Loading...</p>
+      <CommentSkeleton count={mergedEntries.length ? 2 : 3} />
     {:else if pageError}
       <p class="status error">{pageError}</p>
     {:else if !mergedEntries.length}
