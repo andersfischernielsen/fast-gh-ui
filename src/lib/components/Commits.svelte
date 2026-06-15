@@ -48,7 +48,7 @@
     {#each commits as commit (commit.sha)}
       <a
         class="commit"
-        href="/github/{owner}/{repo}/pull/{number}/commits/{commit.sha}"
+        href="/{owner}/{repo}/pull/{number}/commits/{commit.sha}"
       >
         <div class="commit-meta">
           <span class="sha">{shortSha(commit.sha)}</span>

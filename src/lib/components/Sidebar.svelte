@@ -18,7 +18,7 @@
 
   function logout() {
     clearToken();
-    goto("/github/login");
+    goto("/login");
   }
 </script>
 
@@ -39,7 +39,7 @@
     <OpenFromGitHub />
   </div>
   <div class="sidebar-footer">
-    <button class="nav-btn" onclick={() => goto("/github/settings")}
+    <button class="nav-btn" onclick={() => goto("/settings")}
       >Settings</button
     >
     <button class="logout-btn" onclick={logout}>Logout</button>

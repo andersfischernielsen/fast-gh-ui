@@ -1,37 +1,48 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
-  import { pr, error, loadPR } from "$lib/stores/pr.svelte";
-  import { notifications } from "$lib/stores/notifications.svelte";
-  import PRHeader from "$lib/components/PRHeader.svelte";
-  import PRHeaderSkeleton from "$lib/components/PRHeaderSkeleton.svelte";
-  import PRTabs from "$lib/components/PRTabs.svelte";
-  import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+  import { setContext } from "svelte";
+  import IssueHeader from "$lib/components/IssueHeader.svelte";
+  import { fetchIssue } from "$lib/github/pulls";
+  import { shortcutHint, useShortcut } from "$lib/utils/shortcut.svelte";
+
+  interface IssueData {
+    number: number;
+    title: string;
+    state: string;
+    body: string | null;
+    user: { login: string };
+    createdAt: string;
+    updatedAt: string;
+    htmlUrl: string;
+  }
 
   let { children } = $props();
 
+  let issueData = $state<IssueData | null>(null);
   let owner = $derived($page.params.owner);
   let repo = $derived($page.params.repo);
   let number = $derived(Number($page.params.number));
 
-  let cachedTitle = $derived(
-    notifications.value.find((n) => {
-      const m = n.subject.url.match(
-        /repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/,
-      );
-      return (
-        m &&
-        m[1] === owner &&
-        m[2] === repo &&
-        Number(m[3]) === number
-      );
-    })?.subject.title ?? null,
-  );
-
-  onMount(() => {
-    loadPR(owner, repo, number);
+  setContext("issue", {
+    get value() {
+      return issueData;
+    },
   });
+
+  async function loadIssue(): Promise<void> {
+    const raw = await fetchIssue(owner, repo, number);
+    issueData = {
+      number: raw?.number as number,
+      title: raw?.title as string,
+      state: raw?.state as string,
+      body: (raw?.body as string) ?? null,
+      user: { login: (raw?.user as { login?: string })?.login ?? "" },
+      createdAt: raw?.created_at as string,
+      updatedAt: raw?.updated_at as string,
+      htmlUrl: raw?.html_url as string,
+    };
+  }
 
   $effect(() =>
     useShortcut("g", () => {
@@ -39,57 +50,42 @@
       btn?.click();
     }),
   );
-  $effect(() => useShortcut("h", () => goto("/github"), { shift: true }));
+  $effect(() => useShortcut("h", () => goto("/"), { shift: true }));
 </script>
 
 <svelte:head>
-  <title>{pr.value ? `#${pr.value.number} ${pr.value.title}` : 'Fast GH'}</title>
+  <title>{issueData ? `#${issueData.number} ${issueData.title}` : 'Fast GH'}</title>
 </svelte:head>
 
 <div class="page">
-  <div class="top-bar">
-    <a class="back-btn" href="/github"
-      >← Notifications <span class="shortcut-hint"
-        >{shortcutHint("H", { shift: true })}</span
-      ></a
-    >
-    {#if pr.value}
+  {#await loadIssue()}
+    <p class="status">Loading issue...</p>
+  {:then}
+    {#if issueData}
+    <div class="top-bar">
+      <a class="back-btn" href="/"
+        >← Notifications <span class="shortcut-hint"
+          >{shortcutHint("H", { shift: true })}</span
+        ></a
+      >
       <a
         class="github-btn"
-        href={pr.value.htmlUrl}
+        href={issueData.htmlUrl}
         target="_blank"
         rel="noopener"
-        >Open on GitHub ↗<span class="shortcut-hint"
+        >Open on GitHub ↗ <span class="shortcut-hint"
           >{shortcutHint("G", { shift: true })}</span
         ></a
       >
-    {:else}
-      <a
-        class="github-btn"
-        href={`https://github.com/${owner}/${repo}/pull/${number}`}
-        target="_blank"
-        rel="noopener"
-        >Open on GitHub ↗<span class="shortcut-hint"
-          >{shortcutHint("G", { shift: true })}</span
-        ></a
-      >
+    </div>
+    <IssueHeader issue={issueData} {owner} {repo} />
+    <div class="tab-content">
+      {@render children()}
+    </div>
     {/if}
-  </div>
-  {#if error.value}
-    <p class="status error">{error.value}</p>
-  {:else if pr.value}
-    <PRHeader pr={pr.value} {owner} {repo} />
-    <PRTabs />
-    <div class="tab-content">
-      {@render children()}
-    </div>
-  {:else}
-    <PRHeaderSkeleton {owner} {repo} {number} title={cachedTitle} />
-    <PRTabs />
-    <div class="tab-content">
-      {@render children()}
-    </div>
-  {/if}
+  {:catch error}
+    <p class="status error">{error.message}</p>
+  {/await}
 </div>
 
 <style>

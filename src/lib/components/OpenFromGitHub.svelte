@@ -41,16 +41,16 @@
 
     const [, owner, repo, type, number, sha] = match;
     if (type === "issues") {
-      return { ok: true, route: `/github/${owner}/${repo}/issues/${number}` };
+      return { ok: true, route: `/${owner}/${repo}/issues/${number}` };
     }
     if (type === "pull") {
       if (sha) {
         return {
           ok: true,
-          route: `/github/${owner}/${repo}/pull/${number}/commits/${sha}`,
+          route: `/${owner}/${repo}/pull/${number}/commits/${sha}`,
         };
       }
-      return { ok: true, route: `/github/${owner}/${repo}/pull/${number}` };
+      return { ok: true, route: `/${owner}/${repo}/pull/${number}` };
     }
     return { ok: false, reason: "Unexpected error" };
   }
