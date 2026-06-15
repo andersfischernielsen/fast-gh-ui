@@ -1,11 +1,16 @@
 <script lang="ts">
   import { page } from "$app/stores";
+  import { untrack } from "svelte";
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
+  import CommentSkeleton from "./CommentSkeleton.svelte";
   import CommentInput from "./CommentInput.svelte";
+  import DiffSnippet from "./DiffSnippet.svelte";
   import Reactions from "./Reactions.svelte";
+  import { parsePatch, suggestionLinesFromPatch } from "$lib/utils/diff";
   import {
     listPRTimeline,
+    listInlineComments,
     createPRComment,
     updatePRComment,
     deletePRComment,
@@ -31,19 +36,32 @@
     htmlUrl: string;
   }
 
+  type EntryKind = "issue" | "inline-thread" | "review-summary";
+
   interface ThreadedComment extends CommentData {
+    kind: EntryKind;
     replies: CommentData[];
-    isReview?: boolean;
     commitId?: string;
     path?: string;
     line?: number;
+    startLine?: number | null;
+    originalLine?: number | null;
+    originalStartLine?: number | null;
+    side?: "LEFT" | "RIGHT";
+    diffHunk?: string;
+    reviewState?: string;
   }
 
   let { body, editable = false }: { body: string | null; editable?: boolean } = $props();
 
   const PAGE_SIZE = 50;
 
-  let pages = $state<Promise<ThreadedComment[]>[]>([]);
+  let timelineEntries = $state<ThreadedComment[]>([]);
+  let inlineThreads = $state<ThreadedComment[]>([]);
+  let loadedPages = $state(0);
+  let hasMore = $state(true);
+  let pageError = $state<string | null>(null);
+  let loadingPage = $state(false);
 
   let localComments = $state<ThreadedComment[]>([]);
   let deletedIds = $state(new Set<number>());
@@ -81,31 +99,118 @@
     for (const event of events) {
       const type = event.event as string;
       if (type === "commented") {
-        result.push({ ...toCommentData(event), replies: [] });
-      } else if (type === "line-commented") {
-        const comments = (event.comments as Record<string, unknown>[]) ?? [];
-        if (!comments.length) continue;
-        const root = comments[0];
-        reviewIds.add(root.id as number);
-        comments.slice(1).forEach((r) => reviewIds.add(r.id as number));
         result.push({
-          ...toCommentData(root),
-          replies: comments.slice(1).map(toCommentData),
-          isReview: true,
-          commitId: root.commit_id as string,
-          path: root.path as string,
-          line: ((root.line ?? root.original_line ?? root.position) as number) ?? 1,
+          kind: "issue",
+          ...toCommentData(event),
+          replies: [],
+        });
+      } else if (type === "reviewed") {
+        const reviewBody = (event.body as string) ?? "";
+        const state = (event.state as string) ?? "commented";
+        // A "commented" review with no body is just an inline-comment container;
+        // we already render those inline threads separately.
+        if (!reviewBody && state === "commented") continue;
+        const user = event.user as { login?: string; avatar_url?: string } | undefined;
+        result.push({
+          kind: "review-summary",
+          id: event.id as number,
+          body: reviewBody,
+          user: {
+            login: user?.login ?? "",
+            avatarUrl: user?.avatar_url ?? "",
+          },
+          createdAt: (event.submitted_at as string) ?? "",
+          updatedAt: (event.submitted_at as string) ?? "",
+          htmlUrl: event.html_url as string,
+          replies: [],
+          reviewState: state,
         });
       }
     }
     return result;
   }
 
-  async function fetchPage(o: string, r: string, n: number, pageNum: number): Promise<{ comments: ThreadedComment[]; hasMore: boolean }> {
-    const events = await listPRTimeline(o, r, n, pageNum);
-    const comments = mapTimelineEvents(events as Record<string, unknown>[]);
-    for (const c of comments) commentIndex.set(c.id, c);
-    return { comments, hasMore: events.length === PAGE_SIZE };
+  function buildInlineThreads(raw: Record<string, unknown>[]): ThreadedComment[] {
+    const byId = new Map<number, ThreadedComment>();
+    const pendingReplies: Record<string, unknown>[] = [];
+    for (const c of raw) {
+      const inReplyTo = c.in_reply_to_id as number | undefined;
+      if (inReplyTo != null) {
+        pendingReplies.push(c);
+        continue;
+      }
+      const id = c.id as number;
+      reviewIds.add(id);
+      byId.set(id, {
+        kind: "inline-thread",
+        ...toCommentData(c),
+        replies: [],
+        commitId: c.commit_id as string,
+        path: c.path as string,
+        line:
+          ((c.line ?? c.original_line ?? c.position) as number) ?? 1,
+        startLine: c.start_line as number | null,
+        originalLine: c.original_line as number | null,
+        originalStartLine: c.original_start_line as number | null,
+        side: (c.side as "LEFT" | "RIGHT" | undefined) ?? "RIGHT",
+        diffHunk: c.diff_hunk as string | undefined,
+      });
+    }
+    for (const r of pendingReplies) {
+      const parent = byId.get(r.in_reply_to_id as number);
+      if (!parent) continue;
+      reviewIds.add(r.id as number);
+      parent.replies.push(toCommentData(r));
+    }
+    return [...byId.values()];
+  }
+
+  async function loadNextTimelinePage(): Promise<void> {
+    if (loadingPage || !hasMore) return;
+    loadingPage = true;
+    pageError = null;
+    try {
+      const pageNum = loadedPages + 1;
+      const events = (await listPRTimeline(
+        owner,
+        repo,
+        number,
+        pageNum,
+        PAGE_SIZE,
+      )) as Record<string, unknown>[];
+      const entries = mapTimelineEvents(events);
+      for (const e of entries) commentIndex.set(e.id, e);
+      timelineEntries = [...timelineEntries, ...entries];
+      loadedPages = pageNum;
+      hasMore = events.length === PAGE_SIZE;
+    } catch (e) {
+      pageError = e instanceof Error ? e.message : "Failed to load timeline.";
+    } finally {
+      loadingPage = false;
+    }
+  }
+
+  async function loadAllInlineComments(
+    o: string | undefined,
+    r: string | undefined,
+    n: number,
+  ) {
+    if (!o || !r) return;
+    const all: Record<string, unknown>[] = [];
+    let pageNum = 1;
+    while (true) {
+      const batch = (await listInlineComments(o, r, n, pageNum, 100)) as Record<
+        string,
+        unknown
+      >[];
+      if (!batch.length) break;
+      all.push(...batch);
+      if (batch.length < 100) break;
+      pageNum++;
+    }
+    const threads = buildInlineThreads(all);
+    for (const t of threads) commentIndex.set(t.id, t);
+    inlineThreads = threads;
   }
 
   $effect(() => {
@@ -118,16 +223,85 @@
     deletedIds = new Set();
     patchedBodies = new Map();
     addedReplies = new Map();
-    pages = [fetchPage(o, r, n, 1)];
+    timelineEntries = [];
+    inlineThreads = [];
+    loadedPages = 0;
+    hasMore = true;
+    pageError = null;
+    loadingPage = false;
+    untrack(() => {
+      loadAllInlineComments(o, r, n);
+      loadNextTimelinePage();
+    });
+  });
+
+  let mergedEntries = $derived.by(() => {
+    const all = [...timelineEntries, ...inlineThreads, ...localComments].filter(
+      (c) => !deletedIds.has(c.id),
+    );
+    return all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   });
 
   function lazySentinel(node: HTMLElement) {
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting)
-        pages = [...pages, fetchPage(owner, repo, number, pages.length + 1)];
+      if (entries[0].isIntersecting) loadNextTimelinePage();
     });
     observer.observe(node);
-    return { destroy() { observer.disconnect(); } };
+    return {
+      destroy() {
+        observer.disconnect();
+      },
+    };
+  }
+
+  function reviewSuggestionLines(c: ThreadedComment): string[] {
+    if (!c.diffHunk) return [];
+    const side = c.side ?? "RIGHT";
+    const end =
+      side === "RIGHT"
+        ? (c.line ?? c.originalLine)
+        : (c.originalLine ?? c.line);
+    const start =
+      (side === "RIGHT" ? c.startLine : c.originalStartLine) ?? end;
+    if (end == null || start == null) return [];
+    return suggestionLinesFromPatch(parsePatch(c.diffHunk), side, start, end);
+  }
+
+  function formatReviewState(state: string | undefined): string {
+    switch (state) {
+      case "approved":
+        return "approved these changes";
+      case "changes_requested":
+        return "requested changes";
+      case "commented":
+      default:
+        return "reviewed";
+    }
+  }
+
+  function formatDate(dateStr: string): string {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return (
+      d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }) +
+      " " +
+      d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
+    );
+  }
+
+  function reviewLineLabel(c: ThreadedComment): string {
+    const side = c.side ?? "RIGHT";
+    const prefix = side === "RIGHT" ? "R" : "L";
+    const end = c.line ?? c.originalLine;
+    const start =
+      (side === "RIGHT" ? c.startLine : c.originalStartLine) ?? null;
+    if (end == null) return "";
+    if (start != null && start !== end) return `${prefix}${start}–${prefix}${end}`;
+    return `${prefix}${end}`;
   }
 
   function withOverlays(c: ThreadedComment): { comment: ThreadedComment; replies: CommentData[] } {
@@ -144,7 +318,11 @@
 
   async function postComment(commentBody: string) {
     const raw = await createPRComment(owner, repo, number, commentBody);
-    const comment = { ...toCommentData(raw as Record<string, unknown>), replies: [] };
+    const comment: ThreadedComment = {
+      kind: "issue",
+      ...toCommentData(raw as Record<string, unknown>),
+      replies: [],
+    };
     commentIndex.set(comment.id, comment);
     localComments = [...localComments, comment];
   }
@@ -154,7 +332,7 @@
     if (!parent) return;
 
     let raw: Record<string, unknown>;
-    if (parent.isReview && parent.commitId && parent.path) {
+    if (parent.kind === "inline-thread" && parent.commitId && parent.path) {
       raw = (await createInlineComment(
         owner, repo, number, replyBody,
         parent.commitId, parent.path, parent.line ?? 1,
@@ -282,15 +460,65 @@
   {/if}
 
   <div class="comments">
-    {#each pages as pagePromise, i}
-      {#await pagePromise}
-        <p class="status">Loading...</p>
-      {:then { comments, hasMore }}
-        {#each comments.filter((c) => !deletedIds.has(c.id)) as c (c.id)}
-          {@const { comment, replies } = withOverlays(c)}
+    {#each mergedEntries as c (c.id)}
+      {@const { comment, replies } = withOverlays(c)}
+      {#if c.kind === "review-summary"}
+        <article class="review-summary state-{c.reviewState ?? 'commented'}">
+          <header class="review-summary-header">
+            <span class="user-info">
+              <img
+                class="avatar"
+                src={c.user.avatarUrl}
+                alt=""
+                width="20"
+                height="20"
+              />
+              <strong>{c.user.login}</strong>
+              <span class="review-state-badge"
+                >{formatReviewState(c.reviewState)}</span
+              >
+            </span>
+            {#if c.htmlUrl}
+              <a
+                class="date"
+                href={c.htmlUrl}
+                target="_blank"
+                rel="noopener">{formatDate(c.createdAt)}</a
+              >
+            {/if}
+          </header>
+          {#if c.body}
+            <div class="review-summary-body">
+              <Markdown text={c.body} />
+            </div>
+          {/if}
+        </article>
+      {:else if c.kind === "inline-thread"}
+        <div class="review-block">
+          {#if c.path}
+            <div class="review-header">
+              <span class="review-path">{c.path}</span>
+              {#if reviewLineLabel(c)}
+                <span class="review-line">{reviewLineLabel(c)}</span>
+              {/if}
+            </div>
+          {/if}
+          {#if c.diffHunk}
+            <DiffSnippet
+              patch={c.diffHunk}
+              highlightSide={c.side ?? "RIGHT"}
+              highlightStart={(c.side ?? "RIGHT") === "RIGHT"
+                ? (c.startLine ?? c.line ?? null)
+                : (c.originalStartLine ?? c.originalLine ?? null)}
+              highlightEnd={(c.side ?? "RIGHT") === "RIGHT"
+                ? (c.line ?? null)
+                : (c.originalLine ?? null)}
+            />
+          {/if}
           <Comment
             {comment}
             {replies}
+            suggestionLines={reviewSuggestionLines(c)}
             {owner}
             {repo}
             onreply={replyToComment}
@@ -298,31 +526,30 @@
             ondelete={onDeleteComment}
             {onreaction}
           />
-        {/each}
-        {#if i === 0 && comments.length === 0 && localComments.length === 0}
-          <p class="status">No comments yet</p>
-        {/if}
-        {#if i === pages.length - 1 && hasMore}
-          <div use:lazySentinel></div>
-        {/if}
-      {:catch error}
-        <p class="status error">{error.message}</p>
-      {/await}
+        </div>
+      {:else}
+        <Comment
+          {comment}
+          {replies}
+          {owner}
+          {repo}
+          onreply={replyToComment}
+          onupdate={onUpdateComment}
+          ondelete={onDeleteComment}
+          {onreaction}
+        />
+      {/if}
     {/each}
-
-    {#each localComments.filter((c) => !deletedIds.has(c.id)) as c (c.id)}
-      {@const { comment, replies } = withOverlays(c)}
-      <Comment
-        {comment}
-        {replies}
-        {owner}
-        {repo}
-        onreply={replyToComment}
-        onupdate={onUpdateComment}
-        ondelete={onDeleteComment}
-        {onreaction}
-      />
-    {/each}
+    {#if loadingPage}
+      <CommentSkeleton count={mergedEntries.length ? 2 : 3} />
+    {:else if pageError}
+      <p class="status error">{pageError}</p>
+    {:else if !mergedEntries.length}
+      <p class="status">No comments yet</p>
+    {/if}
+    {#if hasMore && !loadingPage}
+      <div use:lazySentinel></div>
+    {/if}
   </div>
 
   <CommentInput onsubmit={postComment} />
@@ -429,6 +656,82 @@
   }
   .comments {
     margin-bottom: 16px;
+  }
+  .review-block {
+    margin-bottom: 4px;
+  }
+  .review-summary {
+    border: 1px solid var(--border-primary);
+    border-left-width: 3px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    overflow: hidden;
+  }
+  .review-summary.state-approved {
+    border-left-color: var(--text-success);
+  }
+  .review-summary.state-changes_requested {
+    border-left-color: var(--text-danger);
+  }
+  .review-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-primary);
+    font-size: 12px;
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+  }
+  .review-summary .user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .review-summary .avatar {
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .review-state-badge {
+    color: var(--text-secondary);
+    font-weight: normal;
+  }
+  .review-summary .date {
+    color: var(--text-secondary);
+    font-size: 11px;
+    text-decoration: none;
+  }
+  .review-summary-body {
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+  .review-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-primary);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    background: var(--bg-secondary);
+    font-family: "SF Mono", Menlo, Monaco, monospace;
+    font-size: 11px;
+  }
+  .review-path {
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+  }
+  .review-line {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+  .review-block :global(.snippet) {
+    border-radius: 0;
+    border-top: none;
+  }
+  .review-block > :global(.comment) {
+    border-radius: 0 0 6px 6px;
+    margin-top: -1px;
   }
   .status {
     padding: 16px 0;

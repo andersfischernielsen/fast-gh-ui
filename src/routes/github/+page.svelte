@@ -8,12 +8,21 @@
   import Sidebar from "$lib/components/Sidebar.svelte";
   import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
 
   let pages = $state<Promise<{ hasMore: boolean }>[]>([loadNotifications(1)]);
 
   let selectedId = $state<string | null>(null);
-  let repoFilter = $state<string | null>(null);
+  let repoFilter = $derived($page.url.searchParams.get("repository"));
   let unreadFilter = $state<"all" | "unread" | "read">("all");
+
+  function setRepoFilter(repo: string | null) {
+    const url = new URL($page.url);
+    if (repo) url.searchParams.set("repository", repo);
+    else url.searchParams.delete("repository");
+    goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+  }
 
   let filtered = $derived(
     notifications.value.filter((n) => {
@@ -71,7 +80,7 @@
 </svelte:head>
 
 <div class="app-shell">
-  <Sidebar onfilterchange={(repo) => (repoFilter = repo)} />
+  <Sidebar selected={repoFilter} onfilterchange={setRepoFilter} />
   <div class="list-panel">
     <div class="list-header">
       <div class="header-actions">

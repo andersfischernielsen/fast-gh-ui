@@ -1,5 +1,10 @@
 <script lang="ts">
   import Comment from "./Comment.svelte";
+  import {
+    parsePatch,
+    suggestionLinesFromPatch,
+    type DiffLine,
+  } from "$lib/utils/diff";
 
   interface InlineCommentData {
     id: number;
@@ -7,7 +12,11 @@
     user: { login: string; avatarUrl: string };
     createdAt: string;
     line: number | null;
+    startLine?: number | null;
     originalLine: number | null;
+    originalStartLine?: number | null;
+    side?: "LEFT" | "RIGHT";
+    outdated?: boolean;
     replies: Array<{
       id: number;
       body: string;
@@ -20,7 +29,6 @@
     patch,
     inlineComments = [],
     currentFile = "",
-    headSha = "",
     owner = "",
     repo = "",
     onCreateComment,
@@ -32,7 +40,6 @@
     patch: string;
     inlineComments?: InlineCommentData[];
     currentFile?: string;
-    headSha?: string;
     owner?: string;
     repo?: string;
     onCreateComment?: (
@@ -66,103 +73,75 @@
   let submitting = $state(false);
   let containerEl = $state<HTMLElement | null>(null);
 
-  interface DiffLine {
-    type: "add" | "remove" | "context" | "header";
-    oldLine: number | null;
-    newLine: number | null;
-    content: string;
-  }
-
-  let linesWithComments = $derived.by(() => {
-    const s = new Set<number>();
-    for (const c of inlineComments) {
-      if (c.originalLine != null) s.add(c.originalLine);
+  let lineIndex = $derived.by(() => {
+    const newLineToIdx = new Map<number, number>();
+    const oldLineToIdx = new Map<number, number>();
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (l.newLine != null) newLineToIdx.set(l.newLine, i);
+      if (l.oldLine != null) oldLineToIdx.set(l.oldLine, i);
     }
-    return s;
+    return { newLineToIdx, oldLineToIdx };
   });
 
-  let commentsByIndex = $derived.by(() => {
-    const result: InlineCommentData[][] = Array.from(
+  let placement = $derived.by(() => {
+    const byIndex: InlineCommentData[][] = Array.from(
       { length: lines.length },
       () => [],
     );
-    const seen = new Set<number>();
-    const pairIdx: Record<
-      number,
-      { remove: number | null; add: number | null }
-    > = {};
-    for (let i = 0; i < lines.length; i++) {
-      const num = lines[i].newLine ?? lines[i].oldLine;
-      if (num == null) continue;
-      pairIdx[num] ??= { remove: null, add: null };
-      if (lines[i].type === "remove") pairIdx[num].remove = i;
-      if (lines[i].type === "add") pairIdx[num].add = i;
-    }
-    for (let i = 0; i < lines.length; i++) {
-      for (const c of inlineComments) {
-        if (seen.has(c.id)) continue;
-        const l = lines[i];
-        if (c.originalLine !== l.newLine && c.originalLine !== l.oldLine)
-          continue;
-        seen.add(c.id);
-        const num = l.newLine ?? l.oldLine;
-        const pair = num != null ? pairIdx[num] : null;
-        const idx =
-          pair && l.type === "remove" && pair.add != null ? pair.add : i;
-        result[idx].push(c);
+    const newHighlights = new Set<number>();
+    const oldHighlights = new Set<number>();
+    const orphans: InlineCommentData[] = [];
+    const { newLineToIdx, oldLineToIdx } = lineIndex;
+
+    for (const c of inlineComments) {
+      if (c.outdated) continue;
+
+      const side: "LEFT" | "RIGHT" = c.side ?? "RIGHT";
+      const primaryEnd = c.line;
+      const primaryStart = c.startLine ?? c.line;
+      const primaryMap = side === "RIGHT" ? newLineToIdx : oldLineToIdx;
+      const targetSet = side === "RIGHT" ? newHighlights : oldHighlights;
+
+      let idx: number | undefined;
+      if (primaryEnd != null) idx = primaryMap.get(primaryEnd);
+      if (idx == null && c.originalLine != null) {
+        idx =
+          newLineToIdx.get(c.originalLine) ??
+          oldLineToIdx.get(c.originalLine);
+      }
+
+      if (idx != null) {
+        byIndex[idx].push(c);
+        if (primaryStart != null && primaryEnd != null) {
+          for (let n = primaryStart; n <= primaryEnd; n++) targetSet.add(n);
+        }
+      } else {
+        orphans.push(c);
       }
     }
-    return result;
+    return {
+      byIndex,
+      linesWithComments: {
+        newLines: newHighlights,
+        oldLines: oldHighlights,
+      },
+      orphans,
+    };
   });
+
+  let commentsByIndex = $derived(placement.byIndex);
+  let linesWithComments = $derived(placement.linesWithComments);
+  let orphanComments = $derived(placement.orphans);
 
   let lines = $derived(parsePatch(patch));
 
-  function parsePatch(patch: string): DiffLine[] {
-    const result: DiffLine[] = [];
-    let oldLine = 0,
-      newLine = 0;
-    const rawLines = patch.split("\n");
-    for (const line of rawLines) {
-      if (line.startsWith("@@")) {
-        const match = line.match(/@@ -(\d+),?\d* \+(\d+),?\d* @@/);
-        if (match) {
-          oldLine = Number(match[1]) - 1;
-          newLine = Number(match[2]) - 1;
-        }
-        result.push({
-          type: "header",
-          oldLine: null,
-          newLine: null,
-          content: line,
-        });
-      } else if (line.startsWith("+")) {
-        newLine++;
-        result.push({
-          type: "add",
-          oldLine: null,
-          newLine,
-          content: line.substring(1),
-        });
-      } else if (line.startsWith("-")) {
-        oldLine++;
-        result.push({
-          type: "remove",
-          oldLine,
-          newLine: null,
-          content: line.substring(1),
-        });
-      } else {
-        oldLine++;
-        newLine++;
-        result.push({
-          type: "context",
-          oldLine,
-          newLine,
-          content: line.startsWith(" ") ? line.substring(1) : line,
-        });
-      }
-    }
-    return result;
+  function getSuggestionLines(comment: InlineCommentData): string[] {
+    const side = comment.side ?? "RIGHT";
+    const end = comment.line ?? comment.originalLine;
+    const start = comment.startLine ?? comment.originalStartLine ?? end;
+    if (end == null || start == null) return [];
+    return suggestionLinesFromPatch(lines, side, start, end);
   }
 
   function isSelected(i: number): boolean {
@@ -242,6 +221,7 @@
     const endIdx = Math.max(selectionStart, selectionEnd);
     const content = lines
       .slice(startIdx, endIdx + 1)
+      .filter((l) => l.newLine != null)
       .map((l) => l.content)
       .join("\n");
     commentBody += "```suggestion\n" + content + "\n```";
@@ -285,8 +265,9 @@
             class:row-header={line.type === "header"}
             class:selected={isSelected(i)}
             class:has-comment={(line.newLine != null &&
-              linesWithComments.has(line.newLine)) ||
-              (line.oldLine != null && linesWithComments.has(line.oldLine))}
+              linesWithComments.newLines.has(line.newLine)) ||
+              (line.oldLine != null &&
+                linesWithComments.oldLines.has(line.oldLine))}
             data-index={i}
             data-type={line.type}
           >
@@ -327,6 +308,7 @@
                       isReview: true,
                     }}
                     replies={comment.replies}
+                    suggestionLines={getSuggestionLines(comment)}
                     {owner}
                     {repo}
                     onupdate={onUpdateComment}
@@ -391,6 +373,36 @@
       </tbody>
     </table>
   </div>
+  {#if orphanComments.length}
+    <section class="extra-comments">
+      <header class="extra-header">
+        {orphanComments.length} comment{orphanComments.length === 1
+          ? ""
+          : "s"} on lines no longer in this diff
+      </header>
+      {#each orphanComments as comment (comment.id)}
+        <div class="extra-comment">
+          <Comment
+            comment={{
+              id: comment.id,
+              body: comment.body,
+              user: comment.user,
+              createdAt: comment.createdAt,
+              isReview: true,
+            }}
+            replies={comment.replies}
+            suggestionLines={getSuggestionLines(comment)}
+            {owner}
+            {repo}
+            onupdate={onUpdateComment}
+            ondelete={onDeleteComment}
+            onreply={onReplyComment}
+            {onreaction}
+          />
+        </div>
+      {/each}
+    </section>
+  {/if}
 </div>
 
 <style>
@@ -563,5 +575,21 @@
     border-bottom: 1px solid var(--border-primary);
     background: var(--bg-secondary);
     max-width: 80vw;
+  }
+  .extra-comments {
+    border-top: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
+    padding: 8px 12px;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  .extra-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding-bottom: 6px;
+  }
+  .extra-comment {
+    padding-top: 6px;
   }
 </style>

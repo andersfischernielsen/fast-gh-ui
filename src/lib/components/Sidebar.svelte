@@ -5,15 +5,16 @@
   import OpenFromGitHub from "./OpenFromGitHub.svelte";
 
   let {
+    selected = null,
     onfilterchange,
   }: {
+    selected?: string | null;
     onfilterchange?: (repo: string | null) => void;
   } = $props();
 
   let repos = $derived(
     [...new Set(notifications.value.map((n) => n.repository.fullName))].sort(),
   );
-  let selectedRepo = $state<string | null>(null);
 
   function logout() {
     clearToken();
@@ -27,12 +28,8 @@
     {#each repos as repo}
       <button
         class="repo-item"
-        class:active={selectedRepo === repo}
-        onclick={() => {
-          const next = selectedRepo === repo ? null : repo;
-          selectedRepo = next;
-          onfilterchange?.(next);
-        }}
+        class:active={selected === repo}
+        onclick={() => onfilterchange?.(selected === repo ? null : repo)}
       >
         {repo}
       </button>
