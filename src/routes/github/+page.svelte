@@ -4,6 +4,7 @@
     loadNotifications,
   } from "$lib/stores/notifications.svelte";
   import NotificationItem from "$lib/components/NotificationItem.svelte";
+  import NotificationItemSkeleton from "$lib/components/NotificationItemSkeleton.svelte";
   import Sidebar from "$lib/components/Sidebar.svelte";
   import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
   import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
@@ -95,7 +96,9 @@
       </div>
     </div>
     {#await pages[0]}
-      <p class="status">Loading...</p>
+      <div class="list">
+        <NotificationItemSkeleton count={8} />
+      </div>
     {:then}
       {#if filtered.length === 0 && pages.length === 1}
         <p class="status">No notifications</p>
@@ -111,7 +114,7 @@
           {/each}
           {#each pages.slice(1) as p}
             {#await p}
-              <p class="status">Loading...</p>
+              <NotificationItemSkeleton count={3} />
             {:then}{/await}
           {/each}
           {#await pages[pages.length - 1] then result}
