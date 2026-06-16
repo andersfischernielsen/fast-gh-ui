@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { createReview, mergePullRequest } from "$lib/github/pulls";
+  import {
+    createReview,
+    fetchRepoMergeMethods,
+    mergePullRequest,
+  } from "$lib/github/pulls";
+
+  type MergeMethod = "merge" | "squash" | "rebase";
 
   let {
     owner,
@@ -11,6 +17,17 @@
     number: number | undefined;
   } = $props();
 
+  const METHOD_LABEL: Record<MergeMethod, string> = {
+    merge: "Create a merge commit",
+    squash: "Squash and merge",
+    rebase: "Rebase and merge",
+  };
+  const METHOD_BUTTON: Record<MergeMethod, string> = {
+    merge: "Merge pull request",
+    squash: "Squash and merge",
+    rebase: "Rebase and merge",
+  };
+
   let expanded = $state(false);
   let body = $state("");
   let submitting = $state(false);
@@ -19,6 +36,26 @@
   let mergeSuccess = $state<string | null>(null);
   let mergeError = $state<string | null>(null);
   let merging = $state(false);
+  let allowed = $state<MergeMethod[]>(["merge", "squash", "rebase"]);
+  let selectedMethod = $state<MergeMethod>("merge");
+  let methodMenuOpen = $state(false);
+
+  $effect(() => {
+    if (!owner || !repo) return;
+    fetchRepoMergeMethods(owner, repo)
+      .then((m) => {
+        if (!m) return;
+        const list: MergeMethod[] = [];
+        if (m.merge) list.push("merge");
+        if (m.squash) list.push("squash");
+        if (m.rebase) list.push("rebase");
+        allowed = list;
+        if (list.length && !list.includes(selectedMethod)) {
+          selectedMethod = list[0];
+        }
+      })
+      .catch(() => {});
+  });
 
   async function handleReview(event: "APPROVE" | "REQUEST_CHANGES") {
     submitting = true;
@@ -49,8 +86,9 @@
     merging = true;
     mergeError = null;
     mergeSuccess = null;
+    methodMenuOpen = false;
     try {
-      await mergePullRequest(owner, repo, number);
+      await mergePullRequest(owner, repo, number, selectedMethod);
       mergeSuccess = "Merged!";
       setTimeout(() => {
         mergeSuccess = null;
@@ -61,12 +99,57 @@
       merging = false;
     }
   }
+
+  function pickMethod(m: MergeMethod) {
+    selectedMethod = m;
+    methodMenuOpen = false;
+  }
 </script>
 
 <div class="wrapper">
-  <button class="merge-btn" onclick={handleMerge} disabled={merging}>
-    {merging ? "Merging..." : "Merge"}
-  </button>
+  {#if allowed.length > 0}
+    <div class="merge-split">
+      <button
+        class="merge-btn"
+        onclick={handleMerge}
+        disabled={merging}
+        title={METHOD_LABEL[selectedMethod]}
+      >
+        {merging ? "Merging..." : METHOD_BUTTON[selectedMethod]}
+      </button>
+      {#if allowed.length > 1}
+        <button
+          class="merge-caret"
+          onclick={() => (methodMenuOpen = !methodMenuOpen)}
+          disabled={merging}
+          aria-label="Choose merge method"
+        >
+          ▾
+        </button>
+      {/if}
+      {#if methodMenuOpen}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="overlay"
+          onclick={() => (methodMenuOpen = false)}
+          onkeydown={(e) => {
+            if (e.key === "Escape") methodMenuOpen = false;
+          }}
+        ></div>
+        <div class="method-menu">
+          {#each allowed as m (m)}
+            <button
+              class="method-item"
+              class:selected={m === selectedMethod}
+              onclick={() => pickMethod(m)}
+            >
+              {METHOD_LABEL[m]}
+            </button>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
   {#if mergeError}
     <span class="error-msg">{mergeError}</span>
   {/if}
@@ -141,6 +224,11 @@
   .review-btn:hover {
     background: var(--btn-secondary-hover);
   }
+  .merge-split {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+  }
   .merge-btn {
     padding: 5px 16px;
     border: 1px solid var(--state-merged-text);
@@ -154,12 +242,72 @@
     line-height: 1.4;
     box-sizing: border-box;
   }
+  .merge-split .merge-btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    border-right: none;
+  }
   .merge-btn:hover:not(:disabled) {
     background: var(--btn-merge-hover);
   }
   .merge-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+  .merge-caret {
+    padding: 5px 8px;
+    border: 1px solid var(--state-merged-text);
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    background: var(--state-merged-text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-white);
+    font-family: inherit;
+    line-height: 1.4;
+    box-sizing: border-box;
+  }
+  .merge-caret:hover:not(:disabled) {
+    background: var(--btn-merge-hover);
+  }
+  .merge-caret:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  .method-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    min-width: 220px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px var(--shadow-dialog);
+    z-index: 101;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+  }
+  .method-item {
+    text-align: left;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text-primary);
+  }
+  .method-item:hover {
+    background: var(--btn-secondary-hover);
+  }
+  .method-item.selected {
+    font-weight: 600;
   }
   .success {
     font-size: 12px;

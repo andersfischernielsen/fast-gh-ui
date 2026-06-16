@@ -275,10 +275,13 @@ async function fetchIssue(
   return response.data;
 }
 
+type MergeMethod = "merge" | "squash" | "rebase";
+
 async function mergePullRequest(
   owner: string | undefined,
   repo: string | undefined,
   pullNumber: number | undefined,
+  mergeMethod?: MergeMethod,
 ) {
   if (!owner || !repo || !pullNumber) return undefined;
 
@@ -287,8 +290,21 @@ async function mergePullRequest(
     owner,
     repo,
     pull_number: pullNumber,
+    merge_method: mergeMethod,
   });
   return response.data;
+}
+
+async function fetchRepoMergeMethods(owner: string | undefined, repo: string | undefined) {
+  if (!owner || !repo) return undefined;
+
+  const octokit = createClient();
+  const response = await octokit.rest.repos.get({ owner, repo });
+  return {
+    merge: response.data.allow_merge_commit ?? true,
+    squash: response.data.allow_squash_merge ?? true,
+    rebase: response.data.allow_rebase_merge ?? true,
+  };
 }
 
 async function updatePullRequest(
@@ -558,6 +574,7 @@ export {
   listPRTimeline,
   fetchIssue,
   mergePullRequest,
+  fetchRepoMergeMethods,
   updatePullRequest,
   createReview,
   listPRComments,
