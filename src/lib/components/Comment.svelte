@@ -344,6 +344,7 @@
   .edit-actions .cancel {
     border: 1px solid var(--border-primary);
     background: var(--bg-primary);
+    color: var(--text-primary);
   }
   .edit-actions .submit {
     border: 1px solid var(--btn-primary-bg);

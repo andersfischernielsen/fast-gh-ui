@@ -256,6 +256,7 @@
     border: 1px solid var(--border-primary);
     border-radius: 6px;
     background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
     font-size: 12px;
     cursor: pointer;
     font-family: inherit;
