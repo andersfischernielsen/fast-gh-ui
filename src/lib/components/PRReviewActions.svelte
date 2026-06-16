@@ -242,7 +242,7 @@
     line-height: 1.4;
     box-sizing: border-box;
   }
-  .merge-split .merge-btn {
+  .merge-split:has(.merge-caret) .merge-btn {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
     border-right: none;
