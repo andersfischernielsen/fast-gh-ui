@@ -338,7 +338,7 @@
       raw = (await createInlineComment(
         owner, repo, number, replyBody,
         parent.commitId, parent.path, parent.line ?? 1,
-        undefined, parentId,
+        undefined, undefined, undefined, parentId,
       )) as Record<string, unknown>;
     } else {
       raw = (await createPRComment(owner, repo, number, replyBody)) as Record<string, unknown>;

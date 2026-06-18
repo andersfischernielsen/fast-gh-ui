@@ -216,13 +216,16 @@ async function createInlineComment(
     repo,
     pull_number: pullNumber,
     body,
-    commit_id: commitId,
-    path,
-    line,
-    side,
-    ...(startLine ? { start_line: startLine, start_side: startSide ?? side } : {}),
-    ...(inReplyTo ? { in_reply_to: inReplyTo } : {}),
-  });
+    ...(inReplyTo
+      ? { in_reply_to: inReplyTo }
+      : {
+          commit_id: commitId,
+          path,
+          line,
+          side,
+          ...(startLine ? { start_line: startLine, start_side: startSide ?? side } : {}),
+        }),
+  } as Parameters<typeof octokit.rest.pulls.createReviewComment>[0]);
   return response.data;
 }
 
