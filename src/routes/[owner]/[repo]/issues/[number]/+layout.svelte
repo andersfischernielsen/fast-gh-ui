@@ -45,16 +45,22 @@
   }
 
   $effect(() =>
-    useShortcut("g", () => {
-      const btn = document.querySelector<HTMLAnchorElement>(".github-btn");
-      btn?.click();
-    }),
+    useShortcut(
+      "g",
+      () => {
+        const btn = document.querySelector<HTMLAnchorElement>(".github-btn");
+        btn?.click();
+      },
+      { shift: true },
+    ),
   );
   $effect(() => useShortcut("h", () => goto("/"), { shift: true }));
 </script>
 
 <svelte:head>
-  <title>{issueData ? `#${issueData.number} ${issueData.title}` : 'Fast GH'}</title>
+  <title
+    >{issueData ? `#${issueData.number} ${issueData.title}` : "Fast GH"}</title
+  >
 </svelte:head>
 
 <div class="page">
@@ -62,26 +68,26 @@
     <p class="status">Loading issue...</p>
   {:then}
     {#if issueData}
-    <div class="top-bar">
-      <a class="back-btn" href="/"
-        >← Notifications <span class="shortcut-hint"
-          >{shortcutHint("H", { shift: true })}</span
-        ></a
-      >
-      <a
-        class="github-btn"
-        href={issueData.htmlUrl}
-        target="_blank"
-        rel="noopener"
-        >Open on GitHub ↗ <span class="shortcut-hint"
-          >{shortcutHint("G", { shift: true })}</span
-        ></a
-      >
-    </div>
-    <IssueHeader issue={issueData} {owner} {repo} />
-    <div class="tab-content">
-      {@render children()}
-    </div>
+      <div class="top-bar">
+        <a class="back-btn" href="/"
+          >← Notifications <span class="shortcut-hint"
+            >{shortcutHint("H", { shift: true })}</span
+          ></a
+        >
+        <a
+          class="github-btn"
+          href={issueData.htmlUrl}
+          target="_blank"
+          rel="noopener"
+          >Open on GitHub ↗ <span class="shortcut-hint"
+            >{shortcutHint("G", { shift: true })}</span
+          ></a
+        >
+      </div>
+      <IssueHeader issue={issueData} {owner} {repo} />
+      <div class="tab-content">
+        {@render children()}
+      </div>
     {/if}
   {:catch error}
     <p class="status error">{error.message}</p>

@@ -20,12 +20,7 @@
       const m = n.subject.url.match(
         /repos\/([^/]+)\/([^/]+)\/(?:pull|pulls)\/(\d+)/,
       );
-      return (
-        m &&
-        m[1] === owner &&
-        m[2] === repo &&
-        Number(m[3]) === number
-      );
+      return m && m[1] === owner && m[2] === repo && Number(m[3]) === number;
     })?.subject.title ?? null,
   );
 
@@ -34,16 +29,21 @@
   });
 
   $effect(() =>
-    useShortcut("g", () => {
-      const btn = document.querySelector<HTMLAnchorElement>(".github-btn");
-      btn?.click();
-    }),
+    useShortcut(
+      "g",
+      () => {
+        const btn = document.querySelector<HTMLAnchorElement>(".github-btn");
+        btn?.click();
+      },
+      { shift: true },
+    ),
   );
   $effect(() => useShortcut("h", () => goto("/"), { shift: true }));
 </script>
 
 <svelte:head>
-  <title>{pr.value ? `#${pr.value.number} ${pr.value.title}` : 'Fast GH'}</title>
+  <title>{pr.value ? `#${pr.value.number} ${pr.value.title}` : "Fast GH"}</title
+  >
 </svelte:head>
 
 <div class="page">
