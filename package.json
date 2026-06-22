@@ -11,25 +11,25 @@
     "preview": "vp preview"
   },
   "dependencies": {
-    "@octokit/rest": "^22.0.1",
-    "@octokit/types": "^16.0.0",
-    "@sveltejs/adapter-node": "^5.5.4",
-    "dompurify": "^3.4.7",
-    "marked": "^18.0.4"
+    "@octokit/rest": "22.0.1",
+    "@octokit/types": "16.0.0",
+    "@sveltejs/adapter-node": "5.5.4",
+    "dompurify": "3.4.11",
+    "marked": "18.0.5"
   },
   "devDependencies": {
-    "@sveltejs/kit": "^2.57.0",
-    "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "@types/node": "^25.9.1",
-    "svelte": "^5.55.2",
-    "svelte-check": "^4.4.6",
-    "typescript": "^6.0.2",
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vite-plus": "latest"
+    "@sveltejs/kit": "2.65.2",
+    "@sveltejs/vite-plugin-svelte": "7.1.2",
+    "@types/node": "25.9.4",
+    "svelte": "5.56.3",
+    "svelte-check": "4.6.0",
+    "typescript": "6.0.3",
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.1.24",
+    "vite-plus": "0.1.24"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.1.24",
+    "vitest": "npm:@voidzero-dev/vite-plus-test@0.1.24"
   },
   "packageManager": "npm@11.17.0"
 }
