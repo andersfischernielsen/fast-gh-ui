@@ -35,7 +35,7 @@ jobs:
 
       - name: Set up Node
         if: steps.branch.outputs.name
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: ".node-version"
 
