@@ -1,0 +1,72 @@
+name: Fix Renovate Lockfile
+
+on:
+  status:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fix-lockfile:
+    if: github.event.context == 'renovate/artifacts' && github.event.state == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve Renovate branch
+        id: branch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branches = context.payload.branches || [];
+            const branch = branches.find((b) => b.name.startsWith('renovate/'));
+            if (!branch) {
+              core.info('No renovate/* branch for this status; skipping.');
+              return;
+            }
+            core.setOutput('name', branch.name);
+
+      - name: Checkout branch
+        if: steps.branch.outputs.name
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.branch.outputs.name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        if: steps.branch.outputs.name
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".node-version"
+
+      - name: Regenerate lockfile
+        if: steps.branch.outputs.name
+        run: |
+          corepack enable
+          rm -rf node_modules package-lock.json
+          npm install
+
+      - name: Open pull request with regenerated lockfile
+        if: steps.branch.outputs.name
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_BRANCH: ${{ steps.branch.outputs.name }}
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "No lockfile changes to commit; nothing to do."
+            exit 0
+          fi
+
+          FIX_BRANCH="lockfile-fix/${SOURCE_BRANCH#renovate/}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$FIX_BRANCH"
+          git add package-lock.json
+          git commit -m "chore: regenerate package-lock.json for ${SOURCE_BRANCH}"
+          git push origin "$FIX_BRANCH"
+
+          gh pr create \
+            --base "$SOURCE_BRANCH" \
+            --head "$FIX_BRANCH" \
+            --title "Fix lockfile for ${SOURCE_BRANCH}" \
+            --body "Renovate failed to update \`package-lock.json\` for \`${SOURCE_BRANCH}\` (\`renovate/artifacts\` status failed). Merge this into \`${SOURCE_BRANCH}\` to add a freshly regenerated lockfile so the original Renovate PR can pass CI and auto-merge."
