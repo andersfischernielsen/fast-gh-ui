@@ -27,7 +27,7 @@ jobs:
 
       - name: Checkout branch
         if: steps.branch.outputs.name
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.branch.outputs.name }}
           fetch-depth: 0
