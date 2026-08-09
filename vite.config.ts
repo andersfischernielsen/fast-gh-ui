@@ -5,7 +5,11 @@ export default defineConfig({
   fmt: {},
   lint: {
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
-    rules: { "vite-plus/prefer-vite-plus-imports": "error" },
+    categories: { correctness: "error", suspicious: "warn" },
+    rules: {
+      "vite-plus/prefer-vite-plus-imports": "error",
+      "eslint/no-shadow": "off",
+    },
     options: { typeAware: true, typeCheck: true },
   },
   plugins: [sveltekit()],

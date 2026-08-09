@@ -82,6 +82,7 @@ async function loadNotifications(page = 1): Promise<{ hasMore: boolean }> {
     if (msg.includes("403") || msg.includes("Resource not accessible")) {
       throw new Error(
         "Token does not have Notifications permission. Ensure the token has Notifications (Read) under Account Permissions — not Repository Permissions.",
+        { cause: e },
       );
     }
     throw e;

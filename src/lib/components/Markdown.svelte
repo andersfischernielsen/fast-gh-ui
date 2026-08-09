@@ -15,14 +15,14 @@
     loadEmojiMap().then((m) => (emojiMap = m));
   });
 
-  let _suggestionLines: string[] = [];
+  let currentSuggestionLines: string[] = [];
 
   const marked = new Marked();
   marked.use({
     renderer: {
       code({ text: code, lang }) {
         if (lang === "suggestion") {
-          return renderSuggestion(code, _suggestionLines);
+          return renderSuggestion(code, currentSuggestionLines);
         }
         return false;
       },
@@ -59,7 +59,7 @@
   let rendered = $derived(text ?? "");
 
   let html = $derived.by(() => {
-    _suggestionLines = suggestionLines;
+    currentSuggestionLines = suggestionLines;
     let content = rendered;
     if (emojiMap) {
       content = replaceEmojis(content, emojiMap);

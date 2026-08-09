@@ -6,7 +6,7 @@ async function loadEmojiMap(): Promise<Record<string, string>> {
   if (emojiMap) return emojiMap;
   const octokit = createClient();
   const response = await octokit.request("GET /emojis");
-  emojiMap = response.data as Record<string, string>;
+  emojiMap = response.data;
   return emojiMap;
 }
 

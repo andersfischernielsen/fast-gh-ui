@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vp dev",
     "build": "vp build",
+    "build:docker": "docker build .",
     "check": "vp check",
     "test": "vp test",
     "preview": "vp preview"

@@ -13,7 +13,7 @@
   } = $props();
 
   let repos = $derived(
-    [...new Set(notifications.value.map((n) => n.repository.fullName))].sort(),
+    [...new Set(notifications.value.map((n) => n.repository.fullName))].toSorted(),
   );
 
   function logout() {

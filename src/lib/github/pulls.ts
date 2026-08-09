@@ -2,22 +2,48 @@ import { createClient } from "./client";
 import { getToken } from "$lib/stores/token.svelte";
 import type { ReactionData } from "$lib/types/comment";
 
-let _currentUser: string | null = null;
+let cachedCurrentUser: string | null = null;
 
 async function getCurrentUser(): Promise<string> {
-  if (_currentUser) return _currentUser;
+  if (cachedCurrentUser) return cachedCurrentUser;
   const octokit = createClient();
   const response = await octokit.rest.users.getAuthenticated();
-  _currentUser = response.data.login;
-  return _currentUser;
+  cachedCurrentUser = response.data.login;
+  return cachedCurrentUser;
+}
+
+type ReactionContent = "+1" | "-1" | "laugh" | "confused" | "heart" | "hooray" | "rocket" | "eyes";
+
+const REACTION_CONTENTS: readonly string[] = [
+  "+1",
+  "-1",
+  "laugh",
+  "confused",
+  "heart",
+  "hooray",
+  "rocket",
+  "eyes",
+];
+
+function isReactionContent(value: string): value is ReactionContent {
+  return REACTION_CONTENTS.includes(value);
+}
+
+function asRecordArray(data: unknown): Record<string, unknown>[] {
+  return Array.isArray(data) ? data : [];
+}
+
+function getLogin(user: unknown): string {
+  if (!user || typeof user !== "object" || !("login" in user)) return "";
+  return typeof user.login === "string" ? user.login : "";
 }
 
 function mapReactions(raw: Record<string, unknown>[], currentUser: string): ReactionData[] {
   const grouped = new Map<string, { authors: string[]; userReactionId?: number }>();
   for (const r of raw) {
-    const emoji = (r.content as string) ?? "";
-    const author = (r.user as { login?: string } | undefined)?.login ?? "";
-    const reactionId = r.id as number;
+    const emoji = typeof r.content === "string" ? r.content : "";
+    const author = getLogin(r.user);
+    const reactionId = typeof r.id === "number" ? r.id : 0;
     if (!emoji) continue;
     const entry = grouped.get(emoji) ?? { authors: [] };
     entry.authors.push(author);
@@ -216,16 +242,13 @@ async function createInlineComment(
     repo,
     pull_number: pullNumber,
     body,
-    ...(inReplyTo
-      ? { in_reply_to: inReplyTo }
-      : {
-          commit_id: commitId,
-          path,
-          line,
-          side,
-          ...(startLine ? { start_line: startLine, start_side: startSide ?? side } : {}),
-        }),
-  } as Parameters<typeof octokit.rest.pulls.createReviewComment>[0]);
+    commit_id: commitId,
+    path,
+    line,
+    side,
+    ...(startLine ? { start_line: startLine, start_side: startSide ?? side } : {}),
+    ...(inReplyTo ? { in_reply_to: inReplyTo } : {}),
+  });
   return response.data;
 }
 
@@ -367,7 +390,7 @@ async function listIssueReactions(
       },
     );
     if (!res.ok) break;
-    const data = (await res.json()) as Record<string, unknown>[];
+    const data = asRecordArray(await res.json());
     all.push(...data);
     if (data.length < 100) break;
     page++;
@@ -397,7 +420,7 @@ async function listCommentReactions(
       },
     );
     if (!res.ok) break;
-    const data = (await res.json()) as Record<string, unknown>[];
+    const data = asRecordArray(await res.json());
     all.push(...data);
     if (data.length < 100) break;
     page++;
@@ -427,7 +450,7 @@ async function listReviewCommentReactions(
       },
     );
     if (!res.ok) break;
-    const data = (await res.json()) as Record<string, unknown>[];
+    const data = asRecordArray(await res.json());
     all.push(...data);
     if (data.length < 100) break;
     page++;
@@ -441,13 +464,13 @@ async function createIssueReaction(
   issueNumber: number,
   content: string,
 ) {
-  if (!owner || !repo) return;
+  if (!owner || !repo || !isReactionContent(content)) return;
   const octokit = createClient();
   await octokit.rest.reactions.createForIssue({
     owner,
     repo,
     issue_number: issueNumber,
-    content: content as any,
+    content,
   });
 }
 
@@ -476,13 +499,13 @@ async function createIssueCommentReaction(
   commentId: number,
   content: string,
 ) {
-  if (!owner || !repo) return;
+  if (!owner || !repo || !isReactionContent(content)) return;
   const octokit = createClient();
   await octokit.rest.reactions.createForIssueComment({
     owner,
     repo,
     comment_id: commentId,
-    content: content as any,
+    content,
   });
 }
 
@@ -511,13 +534,13 @@ async function createReviewCommentReaction(
   commentId: number,
   content: string,
 ) {
-  if (!owner || !repo) return;
+  if (!owner || !repo || !isReactionContent(content)) return;
   const octokit = createClient();
   await octokit.rest.reactions.createForPullRequestReviewComment({
     owner,
     repo,
     comment_id: commentId,
-    content: content as any,
+    content,
   });
 }
 

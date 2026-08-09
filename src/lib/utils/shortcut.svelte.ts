@@ -9,7 +9,7 @@ export function useShortcut(
       e.key.toLowerCase() === key.toLowerCase() &&
       (!options?.shift || e.shiftKey)
     ) {
-      const tag = (e.target as HTMLElement)?.tagName;
+      const tag = e.target instanceof HTMLElement ? e.target.tagName : undefined;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       e.preventDefault();
       action();

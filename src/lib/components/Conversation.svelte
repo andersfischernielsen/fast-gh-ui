@@ -241,7 +241,7 @@
     const all = [...timelineEntries, ...inlineThreads, ...localComments].filter(
       (c) => !deletedIds.has(c.id),
     );
-    return all.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return all.toSorted((a, b) => a.createdAt.localeCompare(b.createdAt));
   });
 
   function lazySentinel(node: HTMLElement) {
