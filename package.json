@@ -15,7 +15,7 @@
     "@octokit/rest": "22.0.1",
     "@octokit/types": "17.0.0",
     "@sveltejs/adapter-node": "5.5.7",
-    "dompurify": "3.4.13",
+    "dompurify": "3.4.14",
     "marked": "18.0.10"
   },
   "devDependencies": {
