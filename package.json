@@ -14,7 +14,7 @@
   "dependencies": {
     "@octokit/rest": "22.0.1",
     "@octokit/types": "18.0.0",
-    "@sveltejs/adapter-node": "5.5.7",
+    "@sveltejs/adapter-node": "6.0.0",
     "dompurify": "3.4.16",
     "marked": "18.1.0"
   },
