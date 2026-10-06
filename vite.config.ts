@@ -1,3 +1,4 @@
+import adapter from "@sveltejs/adapter-node";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite-plus";
 
@@ -12,5 +13,13 @@ export default defineConfig({
     },
     options: { typeAware: true, typeCheck: true },
   },
-  plugins: [sveltekit()],
+  plugins: [
+    sveltekit({
+      compilerOptions: {
+        runes: ({ filename }) =>
+          filename.split(/[/\\]/).includes("node_modules") ? undefined : true,
+      },
+      adapter: adapter(),
+    }),
+  ],
 });

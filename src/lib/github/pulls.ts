@@ -1,6 +1,6 @@
 import { createClient } from "./client";
-import { getToken } from "$lib/stores/token.svelte";
-import type { ReactionData } from "$lib/types/comment";
+import { getToken } from "#lib/stores/token.svelte.js";
+import type { ReactionData } from "#lib/types/comment.js";
 
 let cachedCurrentUser: string | null = null;
 

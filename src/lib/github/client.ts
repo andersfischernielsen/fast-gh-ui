@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import { getToken } from "$lib/stores/token.svelte";
+import { getToken } from "#lib/stores/token.svelte.js";
 
 function createClient(): Octokit {
   const token = getToken();

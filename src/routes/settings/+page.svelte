@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getToken, clearToken, setToken } from "$lib/stores/token.svelte";
+  import { getToken, clearToken, setToken } from "#lib/stores/token.svelte.js";
   import { goto } from "$app/navigation";
 
   let currentToken = $state(getToken() ?? "");

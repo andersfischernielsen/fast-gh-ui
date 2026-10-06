@@ -1,4 +1,4 @@
-import { fetchNotifications, markThreadAsRead } from "$lib/github/notifications";
+import { fetchNotifications, markThreadAsRead } from "#lib/github/notifications.js";
 
 interface NotificationItem {
   id: string;

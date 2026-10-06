@@ -1,4 +1,4 @@
-import { getToken } from "$lib/stores/token.svelte";
+import { getToken } from "#lib/stores/token.svelte.js";
 
 export interface FetchParams {
   all?: boolean;

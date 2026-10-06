@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { NotificationItem } from "$lib/stores/notifications.svelte";
-  import { markAsRead } from "$lib/stores/notifications.svelte";
-  import { fetchPullRequest } from "$lib/github/pulls";
+  import type { NotificationItem } from "#lib/stores/notifications.svelte.js";
+  import { markAsRead } from "#lib/stores/notifications.svelte.js";
+  import { fetchPullRequest } from "#lib/github/pulls.js";
 
   let {
     item,

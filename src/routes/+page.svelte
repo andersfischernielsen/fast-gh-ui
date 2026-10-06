@@ -2,37 +2,38 @@
   import {
     notifications,
     loadNotifications,
-  } from "$lib/stores/notifications.svelte";
-  import NotificationItem from "$lib/components/NotificationItem.svelte";
-  import NotificationItemSkeleton from "$lib/components/NotificationItemSkeleton.svelte";
-  import Sidebar from "$lib/components/Sidebar.svelte";
-  import type { NotificationItem as NotificationItemType } from "$lib/stores/notifications.svelte";
-  import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
-  import { page } from "$app/stores";
+  } from "#lib/stores/notifications.svelte.js";
+  import NotificationItem from "#lib/components/NotificationItem.svelte";
+  import NotificationItemSkeleton from "#lib/components/NotificationItemSkeleton.svelte";
+  import Sidebar from "#lib/components/Sidebar.svelte";
+  import type { NotificationItem as NotificationItemType } from "#lib/stores/notifications.svelte.js";
+  import { useShortcut, shortcutHint } from "#lib/utils/shortcut.svelte.js";
+  import { page } from '$app/state';
   import { goto } from "$app/navigation";
-  import { browser } from "$app/environment";
+  import { browser } from '$app/env';
 
   let pages = $state<Promise<{ hasMore: boolean }>[]>([
     browser ? loadNotifications(1) : new Promise<{ hasMore: boolean }>(() => {}),
   ]);
 
   let selectedId = $state<string | null>(null);
-  let repoFilter = $derived($page.url.searchParams.get("repository"));
+  let repoFilter = $derived(page.url.searchParams.get("repository"));
   let unreadFilter = $state<"all" | "unread" | "read">("all");
 
   function setRepoFilter(repo: string | null) {
-    const url = new URL($page.url);
-    if (repo) url.searchParams.set("repository", repo);
-    else url.searchParams.delete("repository");
-    goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+    const url = new URL(page.url.href);
+
+    if (repo) url.searchParams.set("repository", repo); else url.searchParams.delete("repository");
+
+    goto(url, { replaceState: true, reset: false });
   }
 
   let filtered = $derived(
     notifications.value.filter((n) => {
-      if (repoFilter && n.repository.fullName !== repoFilter) return false;
-      if (unreadFilter === "unread" && !n.unread) return false;
-      if (unreadFilter === "read" && n.unread) return false;
-      return true;
+    if (repoFilter && n.repository.fullName !== repoFilter) return false;
+    if (unreadFilter === "unread" && !n.unread) return false;
+    if (unreadFilter === "read" && n.unread) return false;
+    return true;
     }),
   );
 
@@ -90,11 +91,7 @@
         <select
           class="unread-filter"
           value={unreadFilter}
-          onchange={(e) =>
-            (unreadFilter = (e.target as HTMLSelectElement).value as
-              | "all"
-              | "unread"
-              | "read")}
+          onchange={(e) => unreadFilter = (e.target as HTMLSelectElement).value as "all" | "unread" | "read"}
         >
           <option value="all">All</option>
           <option value="unread">Unread</option>
@@ -118,7 +115,7 @@
         <div class="list">
           {#each filtered as item (item.id)}
             <NotificationItem
-              {item}
+              item={item}
               selected={selectedId === item.id}
               href={prHref(item)}
               prStateKey={prStateKey(item)}

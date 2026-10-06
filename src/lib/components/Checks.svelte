@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { listChecks } from "$lib/github/pulls";
+  import { page } from '$app/state';
+  import { listChecks } from "#lib/github/pulls.js";
   import CheckSkeleton from "./CheckSkeleton.svelte";
 
   interface CheckRun {
@@ -15,20 +15,20 @@
 
   let checkRuns = $state<CheckRun[]>([]);
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
 
   async function loadChecks(): Promise<void> {
     if (!headSha) return;
     const raw = await listChecks(owner, repo, headSha);
     checkRuns =
       raw?.check_runs.map((r: Record<string, unknown>) => ({
-        id: r.id as number,
-        name: (r.name as string) ?? "",
-        status: (r.status as string) ?? "unknown",
-        conclusion: (r.conclusion as string | null) ?? null,
-        detailsUrl: (r.details_url as string | null) ?? null,
-      })) ?? [];
+      id: r.id as number,
+      name: r.name as string ?? "",
+      status: r.status as string ?? "unknown",
+      conclusion: r.conclusion as string | null ?? null,
+      detailsUrl: r.details_url as string | null ?? null
+    })) ?? [];
   }
 
   function conclusionIcon(conclusion: string | null): string {

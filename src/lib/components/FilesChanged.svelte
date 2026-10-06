@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from '$app/state';
   import FileTree from "./FileTree.svelte";
   import FileTreeSkeleton from "./FileTreeSkeleton.svelte";
   import DiffViewer from "./DiffViewer.svelte";
@@ -12,7 +12,7 @@
     deleteInlineComment,
     createReviewCommentReaction,
     deleteReviewCommentReaction,
-  } from "$lib/github/pulls";
+  } from "#lib/github/pulls.js";
 
   let { headSha: sha = "" }: { headSha?: string } = $props();
 
@@ -32,29 +32,28 @@
   let showTree = $state(false);
   let inlineComments = $state<
     Array<{
+    id: number;
+    body: string;
+    user: { login: string; avatarUrl: string };
+    createdAt: string;
+    path: string;
+    line: number | null;
+    startLine: number | null;
+    originalLine: number | null;
+    originalStartLine: number | null;
+    side: "LEFT" | "RIGHT";
+    outdated: boolean;
+    replies: Array<{ 
       id: number;
       body: string;
       user: { login: string; avatarUrl: string };
-      createdAt: string;
-      path: string;
-      line: number | null;
-      startLine: number | null;
-      originalLine: number | null;
-      originalStartLine: number | null;
-      side: "LEFT" | "RIGHT";
-      outdated: boolean;
-      replies: Array<{
-        id: number;
-        body: string;
-        user: { login: string; avatarUrl: string };
-        createdAt: string;
-      }>;
-    }>
-  >([]);
+      createdAt: string
+     }>
+   }>>([]);
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(Number(page.params.number));
 
   type InlineComment = (typeof inlineComments)[number];
 
@@ -63,7 +62,7 @@
   function processCommentBatch(rawBatch: Record<string, unknown>[]): void {
     for (const c of rawBatch) {
       const id = c.id as number;
-      const body = (c.body as string) ?? "";
+      const body = c.body as string ?? "";
       const user = {
         login: (c.user as { login?: string })?.login ?? "",
         avatarUrl: (c.user as { avatar_url?: string })?.avatar_url ?? "",
@@ -75,7 +74,7 @@
         commentMap.get(inReplyToId)?.replies.push({ id, body, user, createdAt });
       } else {
         const line = c.line as number | null;
-        const side = (c.side as "LEFT" | "RIGHT" | undefined) ?? "RIGHT";
+        const side = c.side as "LEFT" | "RIGHT" | undefined ?? "RIGHT";
         commentMap.set(id, {
           id, body, user, createdAt,
           path: c.path as string,
@@ -155,7 +154,7 @@
       ...inlineComments,
       {
         id: comment.id,
-        body: (comment.body as string) ?? "",
+        body: comment.body as string ?? "",
         user: {
           login: (comment.user as { login?: string })?.login ?? "",
           avatarUrl:
@@ -167,8 +166,7 @@
         startLine: comment.start_line as number | null,
         originalLine: comment.original_line as number | null,
         originalStartLine: comment.original_start_line as number | null,
-        side:
-          ((comment.side as "LEFT" | "RIGHT" | undefined) ?? "RIGHT"),
+        side: comment.side as "LEFT" | "RIGHT" | undefined ?? "RIGHT",
         outdated: false,
         replies: [],
       },
@@ -221,7 +219,7 @@
             ...c.replies,
             {
               id: comment.id,
-              body: (comment.body as string) ?? "",
+              body: comment.body as string ?? "",
               user: {
                 login: (comment.user as { login?: string })?.login ?? "",
                 avatarUrl:
@@ -268,15 +266,18 @@
   </div>
 {:then}
   <div class="files-changed-container">
-    <button class="tree-trigger" onclick={() => (showTree = !showTree)}>
+    <button
+      class="tree-trigger"
+      onclick={() => showTree = !showTree}
+    >
       <span>Files</span>
       <span class="tree-arrow">{showTree ? "▾" : "▸"}</span>
     </button>
     <div class="files-changed">
       <div class="tree-wrapper" class:tree-open={showTree}>
         <FileTree
-          {files}
-          {selectedFile}
+          files={files}
+          selectedFile={selectedFile}
           onselect={(f: string) => {
             selectedFile = f;
             showTree = false;
@@ -288,7 +289,7 @@
           {#if outdatedComments.length}
             <button
               class="outdated-toggle"
-              onclick={() => (showOutdated = !showOutdated)}
+              onclick={() => showOutdated = !showOutdated}
             >
               <span
                 >{outdatedComments.length} outdated comment{outdatedComments.length ===
@@ -311,12 +312,12 @@
                         isReview: true,
                       }}
                       replies={comment.replies}
-                      {owner}
-                      {repo}
+                      owner={owner}
+                      repo={repo}
                       onupdate={onUpdateComment}
                       ondelete={onDeleteComment}
                       onreply={onReplyComment}
-                      {onreaction}
+                      onreaction={onreaction}
                     />
                   </div>
                 {/each}
@@ -328,9 +329,9 @@
               <span>{currentFile.filename}</span>
               <button
                 class="file-comment-btn"
-                onclick={() => (showFileComment = !showFileComment)}
-                title="Comment on this file">+</button
-              >
+                onclick={() => showFileComment = !showFileComment}
+                title="Comment on this file"
+              >+</button>
             </span>
             <span class="diff-stats">
               <span class="add">+{currentFile.additions}</span>
@@ -410,13 +411,13 @@
                   (c) => c.path === currentFile.filename,
                 )}
                 currentFile={currentFile.filename}
-                {owner}
-                {repo}
-                {onCreateComment}
-                {onUpdateComment}
-                {onDeleteComment}
-                {onReplyComment}
-                {onreaction}
+                owner={owner}
+                repo={repo}
+                onCreateComment={onCreateComment}
+                onUpdateComment={onUpdateComment}
+                onDeleteComment={onDeleteComment}
+                onReplyComment={onReplyComment}
+                onreaction={onreaction}
               />
             {:else}
               <p class="status">No diff available (binary file or too large)</p>

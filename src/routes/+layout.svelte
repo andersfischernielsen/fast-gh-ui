@@ -1,14 +1,14 @@
 <script lang="ts">
   import "../app.css";
-  import { isValid } from "$lib/stores/token.svelte";
+  import { isValid } from "#lib/stores/token.svelte.js";
   import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
-  import favicon from "$lib/assets/favicon.png";
+  import { page } from '$app/state';
+  import favicon from "#lib/assets/favicon.png";
 
   let { children } = $props();
 
   $effect(() => {
-    if ($page.url.pathname !== "/login" && !isValid()) {
+    if (page.url.pathname !== "/login" && !isValid()) {
       goto("/login");
     }
   });

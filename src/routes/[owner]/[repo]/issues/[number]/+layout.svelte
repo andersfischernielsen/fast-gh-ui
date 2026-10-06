@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from '$app/state';
   import { goto } from "$app/navigation";
   import { setContext } from "svelte";
-  import IssueHeader from "$lib/components/IssueHeader.svelte";
-  import { fetchIssue } from "$lib/github/pulls";
-  import { shortcutHint, useShortcut } from "$lib/utils/shortcut.svelte";
+  import IssueHeader from "#lib/components/IssueHeader.svelte";
+  import { fetchIssue } from "#lib/github/pulls.js";
+  import { shortcutHint, useShortcut } from "#lib/utils/shortcut.svelte.js";
 
   interface IssueData {
     number: number;
@@ -20,9 +20,9 @@
   let { children } = $props();
 
   let issueData = $state<IssueData | null>(null);
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(Number(page.params.number));
 
   setContext("issue", {
     get value() {
@@ -36,7 +36,7 @@
       number: raw?.number as number,
       title: raw?.title as string,
       state: raw?.state as string,
-      body: (raw?.body as string) ?? null,
+      body: raw?.body as string ?? null,
       user: { login: (raw?.user as { login?: string })?.login ?? "" },
       createdAt: raw?.created_at as string,
       updatedAt: raw?.updated_at as string,
@@ -79,15 +79,14 @@
           href={issueData.htmlUrl}
           target="_blank"
           rel="noopener"
-          >Open on GitHub ↗ <span class="shortcut-hint"
-            >{shortcutHint("G", { shift: true })}</span
-          ></a
         >
+          Open on GitHub ↗ 
+          <span class="shortcut-hint">{shortcutHint("G", { shift: true })}</span>
+        </a>
       </div>
-      <IssueHeader issue={issueData} {owner} {repo} />
-      <div class="tab-content">
-        {@render children()}
-      </div>
+
+      <IssueHeader issue={issueData} owner={owner} repo={repo} />
+      <div class="tab-content">{@render children()}</div>
     {/if}
   {:catch error}
     <p class="status error">{error.message}</p>

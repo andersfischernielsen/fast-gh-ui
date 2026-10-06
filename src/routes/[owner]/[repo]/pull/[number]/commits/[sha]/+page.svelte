@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { fetchCommit } from "$lib/github/pulls";
-  import DiffViewer from "$lib/components/DiffViewer.svelte";
+  import { page } from '$app/state';
+  import { fetchCommit } from "#lib/github/pulls.js";
+  import DiffViewer from "#lib/components/DiffViewer.svelte";
 
   interface CommitFile {
     filename: string;
@@ -24,10 +24,10 @@
   let selectedFile = $state<CommitFile | null>(null);
   let showFiles = $state(false);
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived($page.params.number);
-  let sha = $derived($page.params.sha);
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(page.params.number);
+  let sha = $derived(page.params.sha);
 
   async function loadCommit(): Promise<void> {
     if (!owner || !repo || !sha) return;
@@ -48,7 +48,7 @@
       date:
         (raw.commit as { author?: { date?: string } })?.author?.date ?? "",
     };
-    const rawFiles = (raw.files as Array<Record<string, unknown>>) || [];
+    const rawFiles = raw.files as Array<Record<string, unknown>> || [];
     files = rawFiles.map((f) => ({
       filename: f.filename as string,
       status: f.status as string,
@@ -69,41 +69,44 @@
   <p class="status">Loading commit...</p>
 {:then}
   {#if commitInfo}
-  <div class="commit-detail">
-    <div class="commit-header">
-      <h2>{commitInfo.message}</h2>
-      <div class="commit-meta">
-        <span class="author">{commitInfo.author.login}</span>
-        <span class="sha">{shortSha(commitInfo.sha)}</span>
+    <div class="commit-detail">
+      <div class="commit-header">
+        <h2>{commitInfo.message}</h2>
+        <div class="commit-meta">
+          <span class="author">{commitInfo.author.login}</span>
+          <span class="sha">{shortSha(commitInfo.sha)}</span>
+        </div>
       </div>
-    </div>
-    <button class="files-trigger" onclick={() => (showFiles = !showFiles)}>
-      Files {showFiles ? "▾" : "▸"}
-    </button>
-    <div class="file-diff-layout">
-      <div class="files-wrapper" class:files-open={showFiles}>
-        {#if showFiles}
-          <div
-            class="files-overlay"
-            role="button"
-            tabindex="0"
-            onclick={() => (showFiles = false)}
-            onkeydown={(e) => e.key === "Enter" && (showFiles = false)}
-          ></div>
-        {/if}
-        <div class="file-list">
-          <h3>{files.length} files</h3>
-          {#each files as file (file.filename)}
-            <button
-              class="file-item"
-              class:active={selectedFile?.filename === file.filename}
-              onclick={() => {
-                selectedFile = file;
-                showFiles = false;
-              }}
-            >
-              <span class="file-name">{file.filename}</span>
-              <span class="file-stats">
+
+      <button
+        class="files-trigger"
+        onclick={() => showFiles = !showFiles}
+      >Files {showFiles ? "▾" : "▸"}</button>
+
+      <div class="file-diff-layout">
+        <div class="files-wrapper" class:files-open={showFiles}>
+          {#if showFiles}
+            <div
+              class="files-overlay"
+              role="button"
+              tabindex="0"
+              onclick={() => showFiles = false}
+              onkeydown={(e) => e.key === "Enter" && (showFiles = false)}
+            ></div>
+          {/if}
+          <div class="file-list">
+            <h3>{files.length} files</h3>
+            {#each files as file (file.filename)}
+              <button
+                class="file-item"
+                class:active={selectedFile?.filename === file.filename}
+                onclick={() => {
+                  selectedFile = file;
+                  showFiles = false;
+                }}
+              >
+                <span class="file-name">{file.filename}</span>
+                <span class="file-stats">
                 {#if file.status === "added"}<span class="added-badge"
                     >added</span
                   >{/if}
@@ -113,26 +116,26 @@
                 {#if file.status === "renamed"}<span class="renamed-badge"
                     >renamed</span
                   >{/if}
-                <span class="adds">+{file.additions}</span>
-                <span class="dels">-{file.deletions}</span>
-              </span>
-            </button>
-          {/each}
+                  <span class="adds">+{file.additions}</span>
+                  <span class="dels">-{file.deletions}</span>
+                </span>
+              </button>
+            {/each}
+          </div>
+        </div>
+        <div class="diff-view">
+          {#if selectedFile?.patch}
+            <div class="diff-header">{selectedFile.filename}</div>
+            <DiffViewer
+              patch={selectedFile.patch}
+              currentFile={selectedFile.filename}
+            />
+          {:else}
+            <p class="no-diff">No diff available for {selectedFile?.filename}</p>
+          {/if}
         </div>
       </div>
-      <div class="diff-view">
-        {#if selectedFile?.patch}
-          <div class="diff-header">{selectedFile.filename}</div>
-          <DiffViewer
-            patch={selectedFile.patch}
-            currentFile={selectedFile.filename}
-          />
-        {:else}
-          <p class="no-diff">No diff available for {selectedFile?.filename}</p>
-        {/if}
-      </div>
     </div>
-  </div>
   {/if}
 {:catch error}
   <p class="status error">{error.message}</p>

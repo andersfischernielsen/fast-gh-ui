@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { notifications } from "$lib/stores/notifications.svelte";
-  import { clearToken } from "$lib/stores/token.svelte";
+  import { notifications } from "#lib/stores/notifications.svelte.js";
+  import { clearToken } from "#lib/stores/token.svelte.js";
   import { goto } from "$app/navigation";
   import OpenFromGitHub from "./OpenFromGitHub.svelte";
 

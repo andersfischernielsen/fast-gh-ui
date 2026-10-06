@@ -4,7 +4,7 @@
     parsePatch,
     suggestionLinesFromPatch,
     type DiffLine,
-  } from "$lib/utils/diff";
+  } from "#lib/utils/diff.js";
 
   interface InlineCommentData {
     id: number;

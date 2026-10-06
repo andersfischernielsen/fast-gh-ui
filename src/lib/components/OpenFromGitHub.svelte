@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
-  import { useShortcut, shortcutHint } from "$lib/utils/shortcut.svelte";
+  import { useShortcut, shortcutHint } from "#lib/utils/shortcut.svelte.js";
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let urlInput = $state("");

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parsePatch } from "$lib/utils/diff";
+  import { parsePatch } from "#lib/utils/diff.js";
 
   let {
     patch,

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { page } from "$app/stores";
-  import { listPRCommits } from "$lib/github/pulls";
+  import { page } from '$app/state';
+  import { listPRCommits } from "#lib/github/pulls.js";
   import CommitSkeleton from "./CommitSkeleton.svelte";
 
   interface PRCommit {
@@ -12,9 +12,9 @@
 
   let commits = $state<PRCommit[]>([]);
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(Number(page.params.number));
 
   async function loadCommits(): Promise<void> {
     const raw = await listPRCommits(owner, repo, number);

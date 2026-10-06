@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from '$app/state';
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived($page.params.number);
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(page.params.number);
 
   onMount(() => {
     goto(`/${owner}/${repo}/pull/${number}/conversation`, {

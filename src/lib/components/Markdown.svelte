@@ -2,7 +2,7 @@
   import { Marked } from "marked";
   import DOMPurify from "dompurify";
   import { onMount } from "svelte";
-  import { loadEmojiMap, replaceEmojis } from "$lib/github/emojis";
+  import { loadEmojiMap, replaceEmojis } from "#lib/github/emojis.js";
 
   let {
     text = "",

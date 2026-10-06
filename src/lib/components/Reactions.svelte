@@ -6,8 +6,8 @@
     listIssueReactions,
     mapReactions,
     getCurrentUser,
-  } from "$lib/github/pulls";
-  import type { ReactionData } from "$lib/types/comment";
+  } from "#lib/github/pulls.js";
+  import type { ReactionData } from "#lib/types/comment.js";
 
   let {
     owner,

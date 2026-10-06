@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from '$app/state';
 
-  let base = $derived(
-    `/${$page.params.owner}/${$page.params.repo}/pull/${$page.params.number}`,
-  );
-  let active = $derived($page.route.id?.split("/").pop() ?? "conversation");
+  let base = $derived(`/${page.params.owner}/${page.params.repo}/pull/${page.params.number}`);
+  let active = $derived(page.route.id?.split("/").pop() ?? "conversation");
 </script>
 
 <nav class="tabs">
@@ -12,16 +10,25 @@
     class="tab"
     class:active={active === "conversation"}
     href="{base}/conversation"
+  >Conversation</a>
+
+  <a
+    class="tab"
+    class:active={active === "commits"}
+    href="{base}/commits"
+  >Commits</a>
+
+  <a
+    class="tab"
+    class:active={active === "checks"}
+    href="{base}/checks"
+  >Checks</a>
+
+  <a
+    class="tab"
+    class:active={active === "changes"}
+    href="{base}/changes"
   >
-    Conversation
-  </a>
-  <a class="tab" class:active={active === "commits"} href="{base}/commits">
-    Commits
-  </a>
-  <a class="tab" class:active={active === "checks"} href="{base}/checks">
-    Checks
-  </a>
-  <a class="tab" class:active={active === "changes"} href="{base}/changes">
     <span class="full-label">Files changed</span>
     <span class="short-label">Files</span>
   </a>

@@ -3,7 +3,7 @@
     createReview,
     fetchRepoMergeMethods,
     mergePullRequest,
-  } from "$lib/github/pulls";
+  } from "#lib/github/pulls.js";
 
   type MergeMethod = "merge" | "squash" | "rebase";
 

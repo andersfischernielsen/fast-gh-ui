@@ -1,4 +1,4 @@
-import { fetchPullRequest } from "$lib/github/pulls";
+import { fetchPullRequest } from "#lib/github/pulls.js";
 
 interface PullRequest {
   number: number;

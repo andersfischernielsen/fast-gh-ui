@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { PullRequest } from "$lib/stores/pr.svelte";
-  import { updatePullRequest, listReviews } from "$lib/github/pulls";
+  import type { PullRequest } from "#lib/stores/pr.svelte.js";
+  import { updatePullRequest, listReviews } from "#lib/github/pulls.js";
   import PRReviewActions from "./PRReviewActions.svelte";
 
   let {

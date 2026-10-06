@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from '$app/state';
   import { untrack } from "svelte";
   import Markdown from "./Markdown.svelte";
   import Comment from "./Comment.svelte";
@@ -7,7 +7,7 @@
   import CommentInput from "./CommentInput.svelte";
   import DiffSnippet from "./DiffSnippet.svelte";
   import Reactions from "./Reactions.svelte";
-  import { parsePatch, suggestionLinesFromPatch } from "$lib/utils/diff";
+  import { parsePatch, suggestionLinesFromPatch } from "#lib/utils/diff.js";
   import {
     listPRTimeline,
     listInlineComments,
@@ -24,8 +24,8 @@
     deleteReviewCommentReaction,
     createIssueReaction,
     deleteIssueReaction,
-  } from "$lib/github/pulls";
-  import { pr } from "$lib/stores/pr.svelte";
+  } from "#lib/github/pulls.js";
+  import { pr } from "#lib/stores/pr.svelte.js";
 
   interface CommentData {
     id: number;
@@ -77,21 +77,21 @@
   let savingDesc = $state(false);
   let descError = $state<string | null>(null);
 
-  let owner = $derived($page.params.owner);
-  let repo = $derived($page.params.repo);
-  let number = $derived(Number($page.params.number));
+  let owner = $derived(page.params.owner);
+  let repo = $derived(page.params.repo);
+  let number = $derived(Number(page.params.number));
 
   function toCommentData(raw: Record<string, unknown>): CommentData {
     return {
       id: raw.id as number,
-      body: (raw.body as string) ?? "",
+      body: raw.body as string ?? "",
       user: {
         login: (raw.user as { login?: string })?.login ?? "",
         avatarUrl: (raw.user as { avatar_url?: string })?.avatar_url ?? "",
       },
-      createdAt: (raw.created_at as string) ?? "",
-      updatedAt: (raw.updated_at as string) ?? "",
-      htmlUrl: raw.html_url as string,
+      createdAt: raw.created_at as string ?? "",
+      updatedAt: raw.updated_at as string ?? "",
+      htmlUrl: raw.html_url as string
     };
   }
 
@@ -106,8 +106,8 @@
           replies: [],
         });
       } else if (type === "reviewed") {
-        const reviewBody = (event.body as string) ?? "";
-        const state = (event.state as string) ?? "commented";
+        const reviewBody = event.body as string ?? "";
+        const state = event.state as string ?? "commented";
         // A "commented" review with no body is just an inline-comment container;
         // we already render those inline threads separately.
         if (!reviewBody && state === "commented") continue;
@@ -116,12 +116,9 @@
           kind: "review-summary",
           id: event.id as number,
           body: reviewBody,
-          user: {
-            login: user?.login ?? "",
-            avatarUrl: user?.avatar_url ?? "",
-          },
-          createdAt: (event.submitted_at as string) ?? "",
-          updatedAt: (event.submitted_at as string) ?? "",
+          user: { login: user?.login ?? "", avatarUrl: user?.avatar_url ?? "" },
+          createdAt: event.submitted_at as string ?? "",
+          updatedAt: event.submitted_at as string ?? "",
           htmlUrl: event.html_url as string,
           replies: [],
           reviewState: state,
@@ -149,13 +146,12 @@
         replies: [],
         commitId: c.commit_id as string,
         path: c.path as string,
-        line:
-          ((c.line ?? c.original_line ?? c.position) as number) ?? 1,
+        line: (c.line ?? c.original_line ?? c.position) as number ?? 1,
         startLine: c.start_line as number | null,
         originalLine: c.original_line as number | null,
         originalStartLine: c.original_start_line as number | null,
-        side: (c.side as "LEFT" | "RIGHT" | undefined) ?? "RIGHT",
-        diffHunk: c.diff_hunk as string | undefined,
+        side: c.side as "LEFT" | "RIGHT" | undefined ?? "RIGHT",
+        diffHunk: c.diff_hunk as string | undefined
       });
     }
     for (const r of pendingReplies) {
@@ -173,13 +169,7 @@
     pageError = null;
     try {
       const pageNum = loadedPages + 1;
-      const events = (await listPRTimeline(
-        owner,
-        repo,
-        number,
-        pageNum,
-        PAGE_SIZE,
-      )) as Record<string, unknown>[];
+      const events = await listPRTimeline(owner, repo, number, pageNum, PAGE_SIZE) as Record<string, unknown>[];
       const entries = mapTimelineEvents(events);
       for (const e of entries) commentIndex.set(e.id, e);
       timelineEntries = [...timelineEntries, ...entries];
@@ -201,10 +191,8 @@
     const all: Record<string, unknown>[] = [];
     let pageNum = 1;
     while (true) {
-      const batch = (await listInlineComments(o, r, n, pageNum, 100)) as Record<
-        string,
-        unknown
-      >[];
+      const batch = await listInlineComments(o, r, n, pageNum, 100) as Record<string, unknown>[];
+
       if (!batch.length) break;
       all.push(...batch);
       if (batch.length < 100) break;
@@ -259,12 +247,9 @@
   function reviewSuggestionLines(c: ThreadedComment): string[] {
     if (!c.diffHunk) return [];
     const side = c.side ?? "RIGHT";
-    const end =
-      side === "RIGHT"
-        ? (c.line ?? c.originalLine)
-        : (c.originalLine ?? c.line);
-    const start =
-      (side === "RIGHT" ? c.startLine : c.originalStartLine) ?? end;
+    const end = side === "RIGHT" ? c.line ?? c.originalLine : c.originalLine ?? c.line;
+    const start = (side === "RIGHT" ? c.startLine : c.originalStartLine) ?? end;
+
     if (end == null || start == null) return [];
     return suggestionLinesFromPatch(parsePatch(c.diffHunk), side, start, end);
   }
@@ -284,15 +269,8 @@
   function formatDate(dateStr: string): string {
     if (!dateStr) return "";
     const d = new Date(dateStr);
-    return (
-      d.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }) +
-      " " +
-      d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
-    );
+
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) + " " + d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   }
 
   function reviewLineLabel(c: ThreadedComment): string {
@@ -310,11 +288,9 @@
     return {
       comment: { ...c, body: patchedBodies.get(c.id) ?? c.body },
       replies: [
-        ...c.replies
-          .filter((r) => !deletedIds.has(r.id))
-          .map((r) => ({ ...r, body: patchedBodies.get(r.id) ?? r.body })),
-        ...(addedReplies.get(c.id) ?? []),
-      ],
+        ...c.replies.filter((r) => !deletedIds.has(r.id)).map((r) => ({ ...r, body: patchedBodies.get(r.id) ?? r.body })),
+        ...addedReplies.get(c.id) ?? []
+      ]
     };
   }
 
@@ -335,18 +311,16 @@
 
     let raw: Record<string, unknown>;
     if (parent.kind === "inline-thread" && parent.commitId && parent.path) {
-      raw = (await createInlineComment(
-        owner, repo, number, replyBody,
-        parent.commitId, parent.path, parent.line ?? 1,
-        undefined, undefined, undefined, parentId,
-      )) as Record<string, unknown>;
+      raw = await createInlineComment(owner, repo, number, replyBody, parent.commitId, parent.path, parent.line ?? 1, undefined, undefined, undefined, parentId) as Record<string, unknown>;
     } else {
-      raw = (await createPRComment(owner, repo, number, replyBody)) as Record<string, unknown>;
+      raw = await createPRComment(owner, repo, number, replyBody) as Record<string, unknown>;
     }
 
     const reply = toCommentData(raw);
-    addedReplies = new Map([...addedReplies,
-      [parentId, [...(addedReplies.get(parentId) ?? []), reply]],
+
+    addedReplies = new Map([
+      ...addedReplies,
+      [parentId, [...addedReplies.get(parentId) ?? [], reply]]
     ]);
   }
 
@@ -457,7 +431,13 @@
       {:else}
         <Markdown text={body} />
       {/if}
-      <Reactions {owner} {repo} issueNumber={number} onreaction={onDescriptionReaction} />
+
+      <Reactions
+        owner={owner}
+        repo={repo}
+        issueNumber={number}
+        onreaction={onDescriptionReaction}
+      />
     </div>
   {/if}
 
@@ -510,35 +490,33 @@
               patch={c.diffHunk}
               highlightSide={c.side ?? "RIGHT"}
               highlightStart={(c.side ?? "RIGHT") === "RIGHT"
-                ? (c.startLine ?? c.line ?? null)
-                : (c.originalStartLine ?? c.originalLine ?? null)}
-              highlightEnd={(c.side ?? "RIGHT") === "RIGHT"
-                ? (c.line ?? null)
-                : (c.originalLine ?? null)}
+                ? c.startLine ?? c.line ?? null
+                : c.originalStartLine ?? c.originalLine ?? null}
+              highlightEnd={(c.side ?? "RIGHT") === "RIGHT" ? c.line ?? null : c.originalLine ?? null}
             />
           {/if}
           <Comment
-            {comment}
-            {replies}
+            comment={comment}
+            replies={replies}
             suggestionLines={reviewSuggestionLines(c)}
-            {owner}
-            {repo}
+            owner={owner}
+            repo={repo}
             onreply={replyToComment}
             onupdate={onUpdateComment}
             ondelete={onDeleteComment}
-            {onreaction}
+            onreaction={onreaction}
           />
         </div>
       {:else}
         <Comment
-          {comment}
-          {replies}
-          {owner}
-          {repo}
+          comment={comment}
+          replies={replies}
+          owner={owner}
+          repo={repo}
           onreply={replyToComment}
           onupdate={onUpdateComment}
           ondelete={onDeleteComment}
-          {onreaction}
+          onreaction={onreaction}
         />
       {/if}
     {/each}

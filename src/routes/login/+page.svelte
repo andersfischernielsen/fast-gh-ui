@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { setToken } from "$lib/stores/token.svelte";
+  import { setToken } from "#lib/stores/token.svelte.js";
   import { goto } from "$app/navigation";
   import { Octokit } from "@octokit/rest";
 
